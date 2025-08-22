@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <!--Definisanje kategorije - grupisanje vise elemenata. -->
+    <PreferenceCategory 
+        android:title="Auto data sync"
+        android:icon="@drawable/ic_action_settings"
+        android:key="sync_settings">
+        <!-- CheckBox element u podesavanjima -->
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="@string/pref_sync"
+            android:summary="@string/pref_sync_summ"
+            android:title="@string/pref_sync_title" />
+        <!-- Dropdown lista koja je vezana za checkbox prethodni - dependency -->
+        <ListPreference
+            android:dependency="@string/pref_sync"
+            android:dialogTitle="@string/pref_syncConnectionType"
+            android:entries="@array/pref_syncConnectionTypes_entries"
+            android:entryValues="@array/pref_syncConnectionTypes_values"
+            android:key="@string/pref_sync_list"
+            android:title="@string/pref_syncConnectionType"
+            android:defaultValue="1"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:allowDividerAbove="true"
+        android:key="dopusti_settings"
+        android:icon="@drawable/ic_action_about"
+        android:title="About">
+
+        <EditTextPreference
+            android:enabled="true"
+            android:dialogTitle="Application name"
+            android:key="pref_name"
+            android:inputType="text"
+            android:defaultValue=""
+            android:title="Change application name"
+            android:icon="@drawable/ic_launcher_foreground" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:title="General">
+        <SwitchPreference
+            app:key="play_tone"
+            app:title="Background music"
+            app:defaultValue="false"/>
+    </PreferenceCategory>
+
+
+</PreferenceScreen>
