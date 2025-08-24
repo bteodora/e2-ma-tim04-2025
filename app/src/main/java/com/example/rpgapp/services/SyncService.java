@@ -8,6 +8,7 @@ import android.os.Looper;
 import android.util.Log;
 
 import com.example.rpgapp.activities.HomeActivity;
+import com.example.rpgapp.database.ProductRepository;
 import com.example.rpgapp.tools.CheckConnectionTools;
 
 import java.util.concurrent.ExecutorService;
@@ -33,26 +34,33 @@ public class SyncService extends Service {
             // Alternativa za SyncTask
             executor.execute(() -> {
                 //Background work here
-                Log.i("REZ", "Background work here");
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                handler.post(() -> {
-                    //UI Thread work here
-                    Log.i("REZ", "UI Thread work here");
-                    Intent ints = new Intent(HomeActivity.SYNC_DATA);
-                    int intsStatus = CheckConnectionTools.getConnectivityStatus(getApplicationContext());
-                    ints.putExtra(RESULT_CODE, intsStatus);
-                    getApplicationContext().sendBroadcast(ints);
+                Log.i("REZ", "Background work here - POKRECEMO PRAVU SINHRONIZACIJU");
+
+                // KREIRAMO INSTANCU REPOZITORIJUMA
+                ProductRepository repository = new ProductRepository(getApplicationContext());
+
+                // POZIVAMO SINHRONIZACIJU!
+                repository.syncFirebaseData(new ProductRepository.SyncCompleteListener() {
+                    @Override
+                    public void onSyncComplete() {
+                        // Sada kada je sinhronizacija gotova, možemo poslati broadcast
+                        // da bi se npr. lista u aplikaciji osvežila.
+                        handler.post(() -> {
+                            Log.i("REZ", "Prava sinhronizacija završena, šaljem obaveštenje.");
+                            Intent ints = new Intent(HomeActivity.SYNC_DATA);
+                            int intsStatus = CheckConnectionTools.getConnectivityStatus(getApplicationContext());
+                            ints.putExtra(RESULT_CODE, intsStatus);
+                            sendBroadcast(ints);
+                        });
+                    }
                 });
+                // NAPOMENA: Izbrisali smo onaj drugi, suvišni handler.post() blok.
+                // Obaveštenje (Broadcast) šaljemo SAMO kada je sinhronizacija zaista gotova.
             });
         }
-        stopSelf();
+        stopSelf(); // Servis se sam ugasi nakon što je pokrenuo posao, da ne troši resurse.
         return START_NOT_STICKY;
     }
-
     @Override
     public IBinder onBind(Intent arg0) {
         return null;

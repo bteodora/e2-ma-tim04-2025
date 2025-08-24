@@ -179,7 +179,7 @@ public class HomeActivity extends AppCompatActivity implements SharedPreferences
         // konfiguracijom akcione trake i navigacije.
         // Svaki ID menija prosleđuje se kao skup ID-ova jer svaki meni treba smatrati odredištima najvišeg nivoa.
         mAppBarConfiguration = new AppBarConfiguration
-                .Builder(R.id.nav_products, R.id.nav_new, R.id.nav_profile, R.id.nav_logout, R.id.nav_settings, R.id.nav_language)
+                .Builder(R.id.nav_products, R.id.nav_new, R.id.nav_profile, R.id.nav_logout, R.id.nav_settings, R.id.nav_language, R.id.nav_register)
                 .setOpenableLayout(drawer)
                 .build();
         // Ova linija koda postavlja navigationView da radi zajedno sa NavController-om.

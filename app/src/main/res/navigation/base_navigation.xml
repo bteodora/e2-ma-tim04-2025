@@ -58,5 +58,11 @@
         app:popUpToInclusive="true"
         />
 
+    <fragment
+        android:id="@+id/nav_register"
+        android:name="com.example.rpgapp.fragments.registration.fragment_register"
+        android:label="Register"
+        tools:layout="@layout/fragment_register" />
+
 
 </navigation>
