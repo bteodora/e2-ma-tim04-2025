@@ -1,5 +1,6 @@
 package com.example.rpgapp.database;
 
+import android.content.Context;
 import android.util.Log;
 import androidx.lifecycle.MutableLiveData;
 import com.example.rpgapp.model.User;
@@ -8,6 +9,7 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 public class AuthRepository {
+    private UserRepository userRepository;
     private static final String TAG = "AuthRepository";
     private FirebaseAuth mAuth = FirebaseAuth.getInstance();
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
@@ -15,6 +17,13 @@ public class AuthRepository {
     public MutableLiveData<String> errorMessage = new MutableLiveData<>();
     public MutableLiveData<Boolean> userExpired = new MutableLiveData<>();
     public MutableLiveData<FirebaseUser> loggedInUser = new MutableLiveData<>();
+    private Context context;
+
+    public AuthRepository(Context context){
+        this.context = context;
+        userRepository = new UserRepository(context);
+    }
+
 
 
     public void registerUser(String email, String password, String username, String avatarId) {
@@ -55,7 +64,7 @@ public class AuthRepository {
                         FirebaseUser firebaseUser = mAuth.getCurrentUser();
                         if (firebaseUser != null) {
                             if (firebaseUser.isEmailVerified()) {
-                                Log.d(TAG, "Login successful and email is verified.");
+                                userRepository.setLoggedInUser(firebaseUser.getUid());
                                 loggedInUser.postValue(firebaseUser);
                             } else {
                                 checkVerification(firebaseUser);
@@ -66,6 +75,11 @@ public class AuthRepository {
                         errorMessage.postValue("Invalid email or password.");
                     }
                 });
+    }
+
+    public void logout() {
+        mAuth.signOut();
+        userRepository.logoutUser();
     }
 
     private void checkVerification(FirebaseUser firebaseUser) {

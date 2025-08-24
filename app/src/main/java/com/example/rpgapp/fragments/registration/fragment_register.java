@@ -14,10 +14,11 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.rpgapp.R;
-
+import androidx.navigation.fragment.NavHostFragment;
 /**
  * A simple {@link Fragment} subclass.
  * Use the {@link fragment_register#newInstance} factory method to
@@ -107,6 +108,13 @@ public class fragment_register extends Fragment {
             // Logika za biranje avatara će ići ovde KASNIJE
             Log.d("RegisterFragment", "Dugme za biranje avatara kliknuto!");
             Toast.makeText(getContext(), "Biram avatara!", Toast.LENGTH_SHORT).show();
+        });
+
+        TextView goToLogin = view.findViewById(R.id.textViewGoToLogin);
+        goToLogin.setOnClickListener(v -> {
+            // Koristimo drugu akciju koju smo definisali u auth_nav_graph.xml
+            NavHostFragment.findNavController(fragment_register.this)
+                    .navigate(R.id.action_registerFragment_to_loginFragment);
         });
     }
 

@@ -9,6 +9,7 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.core.view.MenuProvider;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.lifecycle.Lifecycle;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
@@ -33,6 +34,7 @@ import android.widget.Toast;
 
 import com.example.rpgapp.R;
 import com.example.rpgapp.databinding.ActivityHomeBinding;
+import com.example.rpgapp.fragments.registration.AuthViewModel;
 import com.example.rpgapp.recievers.SyncReceiver;
 import com.example.rpgapp.services.ForegroundService;
 import com.example.rpgapp.services.SyncService;
@@ -160,9 +162,17 @@ public class HomeActivity extends AppCompatActivity implements SharedPreferences
                 } else if (id == R.id.nav_profile) {
                     Toast.makeText(HomeActivity.this, "Profile", Toast.LENGTH_SHORT).show();
                 } else if (id == R.id.nav_logout) {
-                    Toast.makeText(HomeActivity.this, "Logout", Toast.LENGTH_SHORT).show();
+                    // todo proveriti da li je dobro
+                    AuthViewModel authViewModel = new ViewModelProvider(this).get(AuthViewModel.class);
+                    authViewModel.logout();
+
+                    Intent intent = new Intent(HomeActivity.this, AuthActvity.class);
+
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
+
+                    return;
                 }
-                // Close the drawer if the destination is not a top-level destination
                 drawer.closeDrawers();
             } else {
                 if (id == R.id.nav_settings) {
