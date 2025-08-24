@@ -11,11 +11,11 @@ public class AuthRepository {
     private static final String TAG = "AuthRepository";
     private FirebaseAuth mAuth = FirebaseAuth.getInstance();
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
-
-    // LiveData za praćenje da li je registracija uspešna
     public MutableLiveData<Boolean> registrationSuccess = new MutableLiveData<>();
-    // LiveData za praćenje poruka o greškama
     public MutableLiveData<String> errorMessage = new MutableLiveData<>();
+    public MutableLiveData<Boolean> userExpired = new MutableLiveData<>();
+    public MutableLiveData<FirebaseUser> loggedInUser = new MutableLiveData<>();
+
 
     public void registerUser(String email, String password, String username, String avatarId) {
         mAuth.createUserWithEmailAndPassword(email, password)
@@ -25,6 +25,7 @@ public class AuthRepository {
                         if (firebaseUser != null) {
                             String userId = firebaseUser.getUid();
                             User newUser = new User(username, avatarId);
+                            newUser.setRegistrationTimestamp(System.currentTimeMillis());
 
                             db.collection("users").document(userId)
                                     .set(newUser)
@@ -44,6 +45,77 @@ public class AuthRepository {
                     } else {
                         errorMessage.postValue(task.getException().getMessage());
                     }
+                });
+    }
+
+    public void loginUser(String email, String password) {
+        mAuth.signInWithEmailAndPassword(email, password)
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        FirebaseUser firebaseUser = mAuth.getCurrentUser();
+                        if (firebaseUser != null) {
+                            if (firebaseUser.isEmailVerified()) {
+                                Log.d(TAG, "Login successful and email is verified.");
+                                loggedInUser.postValue(firebaseUser);
+                            } else {
+                                checkVerification(firebaseUser);
+                            }
+                        }
+                    } else {
+                        Log.w(TAG, "Login failed", task.getException());
+                        errorMessage.postValue("Invalid email or password.");
+                    }
+                });
+    }
+
+    private void checkVerification(FirebaseUser firebaseUser) {
+        String userId = firebaseUser.getUid();
+
+        db.collection("users").document(userId).get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists() && documentSnapshot.contains("registrationTimestamp")) {
+                        long registrationTimestamp = documentSnapshot.getLong("registrationTimestamp");
+                        long currentTime = System.currentTimeMillis();
+                        long time = 24 * 60 * 60 * 1000;
+
+                        if ((currentTime - registrationTimestamp) < time) {
+                            Log.d(TAG, "User not verified, but still within 24h window.");
+                            errorMessage.postValue("Your account is not activated. Please check your email.");
+                            mAuth.signOut();
+                        } else {
+                            Log.d(TAG, "User not verified and 24h window has passed. Deleting user.");
+                            deleteExpiredUser(firebaseUser, userId);
+                        }
+                    } else {
+                        errorMessage.postValue("Error: User data is incomplete.");
+                        mAuth.signOut();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    errorMessage.postValue("Could not check account status.");
+                    mAuth.signOut();
+                });
+    }
+
+    private void deleteExpiredUser(FirebaseUser firebaseUser, String userId) {
+        db.collection("users").document(userId).delete()
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "Expired user data deleted from Firestore.");
+                    firebaseUser.delete()
+                            .addOnCompleteListener(task -> {
+                                if (task.isSuccessful()) {
+                                    Log.d(TAG, "Expired user deleted from Authentication.");
+                                    errorMessage.postValue("Activation link has expired. Your account has been deleted. Please register again.");
+                                    userExpired.postValue(true);
+                                } else {
+                                    Log.w(TAG, "Failed to delete expired user from Authentication.", task.getException());
+                                    errorMessage.postValue("Error cleaning up expired account.");
+                                }
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    Log.w(TAG, "Failed to delete expired user data from Firestore.", e);
+                    errorMessage.postValue("Error cleaning up expired account.");
                 });
     }
 }

@@ -21,6 +21,16 @@ public class User {
     @Exclude
     private String userId;
 
+    private long registrationTimestamp;
+
+    public void setRegistrationTimestamp(long registrationTimestamp) {
+        this.registrationTimestamp = registrationTimestamp;
+    }
+
+    public long getRegistrationTimestamp() {
+        return registrationTimestamp;
+    }
+
     public User() {}
 
     public User(String username, String avatarId) {

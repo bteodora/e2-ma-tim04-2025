@@ -33,9 +33,9 @@
 
     <fragment
         android:id="@+id/nav_logout"
-        android:name="com.example.rpgapp.fragments.login.LoginFragment"
+        android:name="com.example.rpgapp.fragments.login2.LoginFragment"
         android:label="Login"
-        tools:layout="@layout/fragment_login"
+        tools:layout="@layout/fragment_login2"
         app:popUpTo="@+id/nav_products"
         app:popUpToInclusive="true"
         />
@@ -63,6 +63,16 @@
         android:name="com.example.rpgapp.fragments.registration.fragment_register"
         android:label="Register"
         tools:layout="@layout/fragment_register" />
+
+    <fragment
+        android:id="@+id/nav_login"
+        android:name="com.example.rpgapp.fragments.login.LoginFragment"
+        android:label="Login"
+        tools:layout="@layout/fragment_login" >
+        <action
+            android:id="@+id/action_loginFragment_to_registerFragment"
+            app:destination="@id/nav_register" />
+    </fragment>
 
 
 </navigation>

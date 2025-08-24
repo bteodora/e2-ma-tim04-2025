@@ -27,5 +27,10 @@
             android:id="@+id/nav_register"
             android:icon="@drawable/ic_face"
             android:title="Register - Teodora" />
+
+        <item
+            android:id="@+id/nav_login"
+            android:icon="@drawable/ic_face"
+            android:title="Log in - Teodora" />
     </group>
 </menu>

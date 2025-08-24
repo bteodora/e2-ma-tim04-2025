@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 1. PROMENA: Koristimo LinearLayout -->
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
@@ -10,7 +9,6 @@
     android:padding="16dp"
     tools:context=".fragments.registration.fragment_register">
 
-    <!-- Polje za korisničko ime -->
     <EditText
         android:id="@+id/editTextUsername"
         android:layout_width="match_parent"
