@@ -5,6 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fillViewport="true"
     tools:context=".fragments.profile.ProfileFragment">
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -12,16 +13,18 @@
         android:layout_height="wrap_content"
         android:padding="16dp">
 
+        <!-- ===== GLAVNI DEO PROFILA (IDENTITET) ===== -->
 
         <ImageView
             android:id="@+id/imageViewProfileAvatar"
             android:layout_width="120dp"
             android:layout_height="120dp"
             android:layout_marginTop="16dp"
+            android:contentDescription="User Avatar"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            tools:src="@drawable/default_avatar" />
+            tools:src="@drawable/default_avatar" /> <!-- Placeholder slika -->
 
         <TextView
             android:id="@+id/textViewProfileUsername"
@@ -32,7 +35,7 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/imageViewProfileAvatar"
-            tools:text="KorisnickoIme" />
+            tools:text="Username" />
 
         <TextView
             android:id="@+id/textViewProfileTitle"
@@ -44,16 +47,20 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/textViewProfileUsername"
-            tools:text="Begginer" />
+            tools:text="Beginner" />
+
+        <!-- ===== STATISTIKA (JAVNA I PRIVATNA) ===== -->
 
         <LinearLayout
             android:id="@+id/layout_stats"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
+            android:baselineAligned="false"
             android:orientation="horizontal"
             app:layout_constraintTop_toBottomOf="@id/textViewProfileTitle">
 
+            <!-- Stat: Level -->
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -72,7 +79,7 @@
                     android:text="Level" />
             </LinearLayout>
 
-
+            <!-- Stat: XP -->
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -91,14 +98,16 @@
                     android:text="XP" />
             </LinearLayout>
 
-
+            <!-- Stat: Coins (Privatno) -->
             <LinearLayout
                 android:id="@+id/layout_coins"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="center"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:visibility="visible"
+                tools:visibility="visible">
                 <TextView
                     android:id="@+id/textViewProfileCoins"
                     android:layout_width="wrap_content"
@@ -111,13 +120,16 @@
                     android:text="Coins" />
             </LinearLayout>
 
+            <!-- Stat: Power Points (Privatno) -->
             <LinearLayout
                 android:id="@+id/layout_power_points"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="center"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:visibility="visible"
+                tools:visibility="visible">
                 <TextView
                     android:id="@+id/textViewProfilePP"
                     android:layout_width="wrap_content"
@@ -134,13 +146,15 @@
 
         <View
             android:id="@+id/divider1"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="1dp"
             android:layout_marginTop="24dp"
             android:background="?android:attr/listDivider"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/layout_stats" />
 
-
+        <!-- ===== BEDŽEVI ===== -->
 
         <TextView
             android:id="@+id/title_badges"
@@ -161,35 +175,42 @@
             app:layout_constraintStart_toEndOf="@id/title_badges"
             tools:text="(3)" />
 
-        <!-- Koristimo horizontalni LinearLayout za lakši prikaz bedževa -->
-        <LinearLayout
-            android:id="@+id/layout_badges_container"
-            android:layout_width="match_parent"
+        <HorizontalScrollView
+            android:id="@+id/scroll_badges"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:orientation="horizontal"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/title_badges">
-            <!-- Ovde ćeš programski dodavati ImageView-ove za bedževe -->
-            <!-- Primer: -->
-            <ImageView
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_marginEnd="8dp"
-                tools:src="@mipmap/ic_launcher"/>
-        </LinearLayout>
+            <LinearLayout
+                android:id="@+id/layout_badges_container"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp">
+                <ImageView
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginEnd="8dp"
+                    android:contentDescription="Badge"
+                    tools:src="@mipmap/ic_launcher"/>
+            </LinearLayout>
+        </HorizontalScrollView>
+
 
         <View
             android:id="@+id/divider2"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="1dp"
             android:layout_marginTop="24dp"
             android:background="?android:attr/listDivider"
-            app:layout_constraintTop_toBottomOf="@id/layout_badges_container" />
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/scroll_badges" />
 
-        <!-- ===== OPREMA ===== -->
-        <!-- Implementacija slična kao za bedževe -->
-
-        <!-- ===== OPREMA (ŠTA KORISNIK NOSI) ===== -->
+        <!-- ===== EQUIPPED ===== -->
 
         <TextView
             android:id="@+id/title_equipment"
@@ -201,21 +222,19 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/divider2" />
 
-        <!-- Koristimo horizontalni raspored za prikaz opremljenih predmeta -->
         <HorizontalScrollView
             android:id="@+id/scroll_equipped"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/title_equipment">
-
             <LinearLayout
                 android:id="@+id/layout_equipment_container"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal">
-                <!-- Ovde ćeš programski dodavati opremu koju korisnik nosi -->
-                <!-- Primer jednog slota za opremu -->
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="80dp"
                     android:layout_height="100dp"
@@ -223,12 +242,13 @@
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:orientation="vertical"
-                        android:gravity="center">
+                        android:gravity="center"
+                        android:orientation="vertical">
                         <ImageView
                             android:layout_width="48dp"
                             android:layout_height="48dp"
-                            tools:src="@mipmap/ic_launcher"/> <!-- Ikonica mača -->
+                            android:contentDescription="Equipped item icon"
+                            tools:src="@mipmap/ic_launcher"/>
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
@@ -241,22 +261,26 @@
 
         <View
             android:id="@+id/divider3"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="1dp"
             android:layout_marginTop="24dp"
             android:background="?android:attr/listDivider"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/scroll_equipped" />
 
-        <!-- ===== INVENTAR (ŠTA KORISNIK POSEDUJE) - VIDLJIVO SAMO VLASNIKU ===== -->
+        <!-- ===== Kupljeno ===== -->
 
         <LinearLayout
             android:id="@+id/layout_inventory_section"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:visibility="gone"
-            tools:visibility="visible"
-            app:layout_constraintTop_toBottomOf="@id/divider3">
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/divider3"
+            tools:visibility="visible">
 
             <TextView
                 android:id="@+id/title_inventory"
@@ -266,32 +290,34 @@
                 android:text="Inventory (Backpack)"
                 android:textAppearance="@style/TextAppearance.MaterialComponents.Headline6" />
 
-
             <GridLayout
                 android:id="@+id/grid_inventory_container"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:columnCount="4">
+                <!-- Primer predmeta u inventaru -->
                 <ImageView
                     android:layout_width="0dp"
                     android:layout_height="70dp"
                     android:layout_columnWeight="1"
                     android:padding="8dp"
+                    android:contentDescription="Inventory item"
                     tools:src="@mipmap/ic_launcher"/>
             </GridLayout>
-
-            <View
-                android:id="@+id/divider4"
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginTop="24dp"
-                android:background="?android:attr/listDivider" />
-
         </LinearLayout>
 
+        <View
+            android:id="@+id/divider_after_inventory"
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_marginTop="24dp"
+            android:background="?android:attr/listDivider"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/layout_inventory_section" />
 
-
+        <!-- ===== QR KOD ===== -->
         <TextView
             android:id="@+id/title_qr_code"
             android:layout_width="wrap_content"
@@ -300,26 +326,45 @@
             android:text="User QR Code"
             android:textAppearance="@style/TextAppearance.MaterialComponents.Headline6"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/layout_inventory_section" />
+            app:layout_constraintTop_toBottomOf="@id/divider_after_inventory" />
 
         <ImageView
             android:id="@+id/imageViewQrCode"
             android:layout_width="200dp"
             android:layout_height="200dp"
             android:layout_marginTop="8dp"
+            android:contentDescription="User's QR Code"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/title_qr_code"
             tools:background="#CCCCCC" />
 
+        <!-- ===== AKCIJE KORISNIKA ===== -->
+
         <Button
             android:id="@+id/buttonViewStatistics"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="32dp"
-            android:text="View My Statistics"
+            android:layout_marginEnd="8dp"
+            android:text="View Statistics"
             android:visibility="gone"
+            app:layout_constraintEnd_toStartOf="@+id/buttonChangePassword"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/imageViewQrCode"
+            tools:visibility="visible" />
+
+        <Button
+            android:id="@+id/buttonChangePassword"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:text="Change Password"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/buttonViewStatistics"
+            app:layout_constraintTop_toTopOf="@+id/buttonViewStatistics"
             tools:visibility="visible" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>

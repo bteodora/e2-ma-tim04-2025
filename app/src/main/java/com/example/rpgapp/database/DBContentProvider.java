@@ -22,10 +22,7 @@ public class DBContentProvider extends ContentProvider {
     public static final Uri CONTENT_URI_PRODUCTS = Uri.parse("content://" + AUTHORITY + "/" + PRODUCT_PATH);
     private static final UriMatcher sURIMatcher = new UriMatcher(UriMatcher.NO_MATCH);
 
-    /**
-     * content://com.example.shopapp/products
-     * content://com.example.shopapp/products/1
-     */
+
     static {
         sURIMatcher.addURI(AUTHORITY, PRODUCT_PATH, PRODUCTS);
         sURIMatcher.addURI(AUTHORITY, PRODUCT_PATH + "/#", PRODUCT_ID);

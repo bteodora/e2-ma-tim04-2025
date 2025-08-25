@@ -4,6 +4,7 @@ import com.google.firebase.firestore.Exclude;
 import java.util.List;
 import java.util.Map;
 
+
 public class User {
 
     private String username;
@@ -12,11 +13,13 @@ public class User {
     private String title;
     private long xp;
     private List<String> badges;
-    private Map<String, String> equippedItems;
+    private Map<String, UserItem> userItems;
+    private Map<String, UserWeapon> userWeapons;
+    private Map<String, String> equipped;
 
     private int powerPoints;
     private long coins;
-    private List<String> inventory;
+
 
     @Exclude
     private String userId;
@@ -44,8 +47,9 @@ public class User {
         this.coins = 0;
 
         this.badges = null;
-        this.equippedItems = null;
-        this.inventory = null;
+        this.userItems = null;
+        this.userWeapons = null;
+        this.equipped = null;
     }
 
     public String getUsername() { return username; }
@@ -81,14 +85,6 @@ public class User {
         this.badges = badges;
     }
 
-    public Map<String, String> getEquippedItems() {
-        return equippedItems;
-    }
-
-    public void setEquippedItems(Map<String, String> equippedItems) {
-        this.equippedItems = equippedItems;
-    }
-
     public int getPowerPoints() {
         return powerPoints;
     }
@@ -105,15 +101,30 @@ public class User {
         this.coins = coins;
     }
 
-    public List<String> getInventory() {
-        return inventory;
+    public Map<String, UserItem> getUserItems() {
+        return userItems;
     }
 
-    public void setInventory(List<String> inventory) {
-        this.inventory = inventory;
+    public void setUserItems(Map<String, UserItem> userItems) {
+        this.userItems = userItems;
     }
 
-    // Specijalni getter i setter za UserId koji se ne čuva u bazi
+    public Map<String, UserWeapon> getUserWeapons() {
+        return userWeapons;
+    }
+
+    public void setUserWeapons(Map<String, UserWeapon> userWeapons) {
+        this.userWeapons = userWeapons;
+    }
+
+    public Map<String, String> getEquipped() {
+        return equipped;
+    }
+
+    public void setEquipped(Map<String, String> equipped) {
+        this.equipped = equipped;
+    }
+
     @Exclude
     public String getUserId() { return userId; }
     public void setUserId(String userId) { this.userId = userId; }

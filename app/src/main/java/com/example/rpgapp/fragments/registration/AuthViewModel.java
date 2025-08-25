@@ -48,4 +48,12 @@ public class AuthViewModel extends AndroidViewModel {
     public void logout() {
         authRepository.logout();
     }
+
+    public void changePassword(String oldPass, String newPass) {
+        authRepository.changePassword(oldPass, newPass);
+    }
+
+    public LiveData<Boolean> getPasswordChangedSuccess() {
+        return authRepository.passwordChangedSuccess;
+    }
 }

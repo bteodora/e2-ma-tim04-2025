@@ -134,11 +134,15 @@ public class UserRepository {
             if (user.getBadges() != null) {
                 values.put(SQLiteHelper.COLUMN_BADGES_JSON, gson.toJson(user.getBadges()));
             }
-            if (user.getEquippedItems() != null) {
-                values.put(SQLiteHelper.COLUMN_EQUIPPED_ITEMS_JSON, gson.toJson(user.getEquippedItems()));
+            if (user.getEquipped() != null) {
+                values.put(SQLiteHelper.COLUMN_EQUIPPED_ITEMS_JSON, gson.toJson(user.getEquipped()));
             }
-            if (user.getInventory() != null) {
-                values.put(SQLiteHelper.COLUMN_INVENTORY_JSON, gson.toJson(user.getInventory()));
+            if (user.getUserWeapons() != null) {
+                values.put(SQLiteHelper.COLUMN_WEAPONS_JSON, gson.toJson(user.getUserWeapons()));
+            }
+
+            if (user.getUserItems() != null) {
+                values.put(SQLiteHelper.COLUMN_ITEMS_JSON, gson.toJson(user.getUserItems()));
             }
 
             database.insert(SQLiteHelper.TABLE_USERS, null, values);
@@ -171,8 +175,9 @@ public class UserRepository {
                 Type mapType = new TypeToken<Map<String, String>>(){}.getType();
 
                 user.setBadges(gson.fromJson(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_BADGES_JSON)), listType));
-                user.setEquippedItems(gson.fromJson(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_EQUIPPED_ITEMS_JSON)), mapType));
-                user.setInventory(gson.fromJson(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_INVENTORY_JSON)), listType));
+                user.setEquipped(gson.fromJson(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_EQUIPPED_ITEMS_JSON)), mapType));
+                user.setUserItems(gson.fromJson(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_ITEMS_JSON)), listType));
+                user.setUserWeapons(gson.fromJson(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_WEAPONS_JSON)), listType));
 
                 cursor.close();
             }

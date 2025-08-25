@@ -1,14 +1,4 @@
-package com.example.rpgapp.fragments.profile;
-
-import android.os.Bundle;
-
-import androidx.fragment.app.Fragment;
-
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-
-import com.example.rpgapp.R;
+package com.example.rpgapp.fragments.profile; // Proveri da li je putanja tačna!
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -24,6 +14,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.rpgapp.R;
 import com.example.rpgapp.model.User;
@@ -38,7 +29,7 @@ public class ProfileFragment extends Fragment {
     private ImageView imageViewProfileAvatar;
     private TextView textViewProfileUsername, textViewProfileTitle, textViewProfileLevel, textViewProfileXp, textViewProfileCoins, textViewProfilePP, textViewBadgesCount;
     private LinearLayout layout_coins, layout_power_points, layout_inventory_section;
-    private Button buttonViewStatistics;
+    private Button buttonViewStatistics, buttonChangePassword;
     private ImageView imageViewQrCode;
 
     @Override
@@ -55,8 +46,12 @@ public class ProfileFragment extends Fragment {
         bindViews(view);
 
         String userId = null;
-
         viewModel.loadUserProfile(userId);
+
+        buttonChangePassword.setOnClickListener(v -> {
+            NavHostFragment.findNavController(ProfileFragment.this)
+                    .navigate(R.id.action_profileFragment_to_changePasswordFragment);
+        });
 
         observeViewModel();
     }
@@ -74,6 +69,7 @@ public class ProfileFragment extends Fragment {
         layout_power_points = view.findViewById(R.id.layout_power_points);
         layout_inventory_section = view.findViewById(R.id.layout_inventory_section);
         buttonViewStatistics = view.findViewById(R.id.buttonViewStatistics);
+        buttonChangePassword = view.findViewById(R.id.buttonChangePassword);
         imageViewQrCode = view.findViewById(R.id.imageViewQrCode);
     }
 
@@ -89,6 +85,7 @@ public class ProfileFragment extends Fragment {
                 int visibility = isMyProfile ? View.VISIBLE : View.GONE;
 
                 buttonViewStatistics.setVisibility(visibility);
+                buttonChangePassword.setVisibility(visibility);
                 layout_coins.setVisibility(visibility);
                 layout_power_points.setVisibility(visibility);
                 layout_inventory_section.setVisibility(visibility);

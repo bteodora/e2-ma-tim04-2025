@@ -4,6 +4,8 @@ import android.content.Context;
 import android.util.Log;
 import androidx.lifecycle.MutableLiveData;
 import com.example.rpgapp.model.User;
+import com.google.firebase.auth.AuthCredential;
+import com.google.firebase.auth.EmailAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -135,5 +137,40 @@ public class AuthRepository {
                     Log.w(TAG, "Failed to delete expired user data from Firestore.", e);
                     errorMessage.postValue("Error cleaning up expired account.");
                 });
+    }
+
+    // U AuthRepository.java
+
+    // Trebaće ti LiveData za praćenje statusa promene lozinke
+    public MutableLiveData<Boolean> passwordChangedSuccess = new MutableLiveData<>();
+
+    public void changePassword(String oldPassword, String newPassword) {
+        FirebaseUser user = mAuth.getCurrentUser();
+        if (user == null || user.getEmail() == null) {
+            errorMessage.postValue("No user is currently logged in.");
+            return;
+        }
+
+        AuthCredential credential = EmailAuthProvider.getCredential(user.getEmail(), oldPassword);
+
+        user.reauthenticate(credential).addOnCompleteListener(reauthTask -> {
+            if (reauthTask.isSuccessful()) {
+                Log.d(TAG, "User re-authenticated successfully.");
+
+                user.updatePassword(newPassword).addOnCompleteListener(updateTask -> {
+                    if (updateTask.isSuccessful()) {
+                        Log.d(TAG, "Password updated successfully.");
+                        passwordChangedSuccess.postValue(true);
+                    } else {
+                        Log.w(TAG, "Error updating password.", updateTask.getException());
+                        errorMessage.postValue("Failed to update password. Please try again.");
+                    }
+                });
+
+            } else {
+                Log.w(TAG, "Re-authentication failed.", reauthTask.getException());
+                errorMessage.postValue("Incorrect old password.");
+            }
+        });
     }
 }
