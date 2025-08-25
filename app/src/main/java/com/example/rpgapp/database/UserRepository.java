@@ -70,6 +70,7 @@ public class UserRepository {
 
     public interface UserCallback {
         void onUserLoaded(User user);
+        void onError(Exception e);
     }
     public void getUserById(String userId, UserCallback callback) {
         User cachedUser = getUserFromSQLite(userId);
@@ -82,12 +83,20 @@ public class UserRepository {
                 .addOnSuccessListener(documentSnapshot -> {
                     if (documentSnapshot.exists()) {
                         User user = documentSnapshot.toObject(User.class);
-                        callback.onUserLoaded(user);
+                        if (user != null) {
+                            user.setUserId(userId);
+                            callback.onUserLoaded(user);
+                        } else {
+                            callback.onError(new Exception("Failed to parse user data."));
+                        }
                     } else {
                         callback.onUserLoaded(null);
                     }
                 })
-                .addOnFailureListener(e -> callback.onUserLoaded(null));
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error fetching user from Firestore", e);
+                    callback.onError(e);
+                });
     }
 
     public void updateUser(User userToUpdate) {

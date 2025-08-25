@@ -14,8 +14,8 @@
             android:icon="@drawable/ic_new"
             android:orderInCategory="200"/>
 
-        <item android:id="@+id/nav_profile"
-            android:title="@string/profile"
+        <item android:id="@+id/nav_profile_new"
+            android:title="Profile - Teodora"
             android:icon="@drawable/ic_face"
             android:orderInCategory="300" />
 

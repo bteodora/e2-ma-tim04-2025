@@ -82,6 +82,10 @@ public class AuthRepository {
         userRepository.logoutUser();
     }
 
+    public FirebaseUser getCurrentUser() {
+        return mAuth.getCurrentUser();
+    }
+
     private void checkVerification(FirebaseUser firebaseUser) {
         String userId = firebaseUser.getUid();
 
