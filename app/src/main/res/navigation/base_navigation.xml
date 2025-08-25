@@ -56,6 +56,13 @@
         />
 
     <fragment
+        android:id="@+id/nav_shop"
+        android:name="com.example.rpgapp.fragments.shop.ShopFragment"
+        android:label="Settings"
+        tools:layout="@layout/fragment_shop"
+        />
+
+    <fragment
         android:id="@+id/nav_language"
         android:name="com.example.rpgapp.fragments.LanguageFragment"
         android:label="Language"

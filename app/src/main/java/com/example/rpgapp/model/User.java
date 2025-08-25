@@ -19,12 +19,23 @@ public class User {
 
     private int powerPoints;
     private long coins;
-
+    private int lastBossReward;
 
     @Exclude
     private String userId;
 
     private long registrationTimestamp;
+
+
+    public int calculatePrizeFormula() {
+        return (int) (200 * Math.pow(1.2, level - 1));
+    }
+    public int calculatePreviosPrizeFormula() {
+        if(level == 1){
+            return 200;
+        }
+        return (int) (200 * Math.pow(1.2, level - 2));
+    }
 
     public void setRegistrationTimestamp(long registrationTimestamp) {
         this.registrationTimestamp = registrationTimestamp;
@@ -50,6 +61,16 @@ public class User {
         this.userItems = null;
         this.userWeapons = null;
         this.equipped = null;
+        this.lastBossReward = 200;
+    }
+
+    public int getLastBossReward() {
+        //calculatePreviosPrizeFormula();
+        return lastBossReward;
+    }
+
+    public void setLastBossReward(int lastBossReward) {
+        this.lastBossReward = lastBossReward;
     }
 
     public String getUsername() { return username; }

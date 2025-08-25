@@ -5,6 +5,7 @@ public class UserItem {
     public int lifespan;
     public double currentBonus;
     public BonusType bonusType;
+    public int quantity;
 
     public UserItem() {}
 }

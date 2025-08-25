@@ -20,7 +20,7 @@ public class GameData {
         gloves.setBonusType(BonusType.TEMPORARY_PP);
         gloves.setBonusValue(0.10);
         gloves.setLifespan(2);
-        gloves.setPrice_percentage(0.6);
+        gloves.setPrice_percentage(60);
         gloves.setType(ItemType.CLOTHING);
         items.put(gloves.getId(), gloves);
 
@@ -32,7 +32,7 @@ public class GameData {
         shield.setDescription("Increases your successful attack chance by 10%. Lasts for 2 boss fights.");
         shield.setImage("icon_shield");
         shield.setType(ItemType.CLOTHING);
-        shield.setPrice_percentage(0.6);
+        shield.setPrice_percentage(60);
         shield.setLifespan(2);
         shield.setBonusType(BonusType.SUCCESS_PERCENTAGE);
         shield.setBonusValue(0.10);
@@ -45,7 +45,7 @@ public class GameData {
         boots.setDescription("Grants a 40% chance to perform an extra attack. Lasts for 2 boss fights.");
         boots.setImage("icon_boots");
         boots.setType(ItemType.CLOTHING);
-        boots.setPrice_percentage(0.8);
+        boots.setPrice_percentage(80);
         boots.setLifespan(2);
         boots.setBonusType(BonusType.ATTACK_NUM);
         boots.setBonusValue(0.40);
@@ -59,7 +59,7 @@ public class GameData {
         tempPotion20.setDescription("Temporarily increases your Power Points by 20% for the next boss fight.");
         tempPotion20.setImage("icon_potion_pp_temp_1");
         tempPotion20.setType(ItemType.POTION);
-        tempPotion20.setPrice_percentage(0.5);
+        tempPotion20.setPrice_percentage(50);
         tempPotion20.setLifespan(1);
         tempPotion20.setBonusType(BonusType.TEMPORARY_PP);
         tempPotion20.setBonusValue(0.20);
@@ -72,7 +72,7 @@ public class GameData {
         tempPotion40.setDescription("Temporarily increases your Power Points by 40% for the next boss fight.");
         tempPotion40.setImage("icon_potion_pp_temp_2");
         tempPotion40.setType(ItemType.POTION);
-        tempPotion40.setPrice_percentage(0.7);
+        tempPotion40.setPrice_percentage(70);
         tempPotion40.setLifespan(1);
         tempPotion40.setBonusType(BonusType.TEMPORARY_PP);
         tempPotion40.setBonusValue(0.40);
@@ -85,7 +85,7 @@ public class GameData {
         permPotion5.setDescription("Permanently increases your base Power Points by 5%.");
         permPotion5.setImage("icon_potion_pp_perm_1");
         permPotion5.setType(ItemType.POTION);
-        permPotion5.setPrice_percentage(2); // Cena je 200% nagrade
+        permPotion5.setPrice_percentage(200);
         permPotion5.setLifespan(0);
         permPotion5.setBonusType(BonusType.PERMANENT_PP);
         permPotion5.setBonusValue(0.05);
@@ -98,7 +98,7 @@ public class GameData {
         permPotion10.setDescription("Permanently increases your base Power Points by 10%.");
         permPotion10.setImage("icon_potion_pp_perm_2");
         permPotion10.setType(ItemType.POTION);
-        permPotion10.setPrice_percentage(10);
+        permPotion10.setPrice_percentage(1000);
         permPotion10.setLifespan(0);
         permPotion10.setBonusType(BonusType.PERMANENT_PP);
         permPotion10.setBonusValue(0.10);

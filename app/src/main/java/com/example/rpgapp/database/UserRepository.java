@@ -11,6 +11,8 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.example.rpgapp.model.User;
+import com.example.rpgapp.model.UserItem;
+import com.example.rpgapp.model.UserWeapon;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -171,14 +173,30 @@ public class UserRepository {
                 user.setCoins(cursor.getLong(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_COINS)));
                 user.setRegistrationTimestamp(cursor.getLong(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_REGISTRATION_TIMESTAMP)));
 
-                Type listType = new TypeToken<List<String>>(){}.getType();
-                Type mapType = new TypeToken<Map<String, String>>(){}.getType();
+                Type badgeListType = new TypeToken<List<String>>(){}.getType();
+                Type equippedMapType = new TypeToken<Map<String, String>>(){}.getType();
+                Type userItemMapType = new TypeToken<Map<String, UserItem>>(){}.getType();
+                Type userWeaponMapType = new TypeToken<Map<String, UserWeapon>>(){}.getType();
 
-                user.setBadges(gson.fromJson(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_BADGES_JSON)), listType));
-                user.setEquipped(gson.fromJson(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_EQUIPPED_ITEMS_JSON)), mapType));
-                user.setUserItems(gson.fromJson(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_ITEMS_JSON)), listType));
-                user.setUserWeapons(gson.fromJson(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_WEAPONS_JSON)), listType));
+                String badgesJson = cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_BADGES_JSON));
+                if (badgesJson != null) {
+                    user.setBadges(gson.fromJson(badgesJson, badgeListType));
+                }
 
+                String equippedJson = cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_EQUIPPED_ITEMS_JSON));
+                if (equippedJson != null) {
+                    user.setEquipped(gson.fromJson(equippedJson, equippedMapType));
+                }
+
+                String userItemsJson = cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_ITEMS_JSON));
+                if (userItemsJson != null) {
+                    user.setUserItems(gson.fromJson(userItemsJson, userItemMapType));
+                }
+
+                String userWeaponsJson = cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_WEAPONS_JSON));
+                if (userWeaponsJson != null) {
+                    user.setUserWeapons(gson.fromJson(userWeaponsJson, userWeaponMapType)); 
+                }
                 cursor.close();
             }
         } finally {

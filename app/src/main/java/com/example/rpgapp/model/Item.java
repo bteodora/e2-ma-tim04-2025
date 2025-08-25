@@ -9,7 +9,7 @@ public class Item {
     private String description;
 
     private ItemType type;
-    private double price_percentage; //npr 20% -> cena je 20% boss money
+    private int price_percentage; //npr 20% -> cena je 20% boss money
     private int lifespan; // za brojanje koliko dugo se koristi nesto
                           // posle borbe sa bosom, svima se smanji za -1, a brisu se oni s nulom iz onih koji su kupljeni
     private BonusType bonusType;
@@ -18,7 +18,7 @@ public class Item {
     private  String image;
 
     public int calculatePrice(int bossMoney){
-        return (int) price_percentage*bossMoney;
+        return (int) ((price_percentage/100.0)*bossMoney);
     }
 
     public void duplicateChlothes(){
@@ -32,7 +32,7 @@ public class Item {
 
     public Item() {    }
 
-    public Item(String id, String name, String description, ItemType type, double price_percentage, int lifespan, BonusType bonusType, double bonusValue, String image) {
+    public Item(String id, String name, String description, ItemType type, int price_percentage, int lifespan, BonusType bonusType, double bonusValue, String image) {
         this.id = id;
         this.name = name;
         this.description = description;
@@ -84,11 +84,11 @@ public class Item {
         this.type = type;
     }
 
-    public double getPrice_percentage() {
+    public int getPrice_percentage() {
         return price_percentage;
     }
 
-    public void setPrice_percentage(double price_percentage) {
+    public void setPrice_percentage(int price_percentage) {
         this.price_percentage = price_percentage;
     }
 
