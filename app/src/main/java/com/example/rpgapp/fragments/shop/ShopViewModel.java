@@ -24,6 +24,11 @@ public class ShopViewModel extends AndroidViewModel {
     private MutableLiveData<List<Item>> shopItemsLiveData = new MutableLiveData<>();
     private MutableLiveData<String> purchaseStatusLiveData = new MutableLiveData<>();
 
+    private MutableLiveData<ShopScreenState> screenState = new MutableLiveData<>();
+    private User currentUser; // Čuvaćemo ga ovde
+    private List<Item> currentShopItems;
+    private MutableLiveData<String> purchaseStatus = new MutableLiveData<>();
+
     public ShopViewModel(@NonNull Application application) {
         super(application);
         // Pretpostavka da EquipmentRepository nema zavisnosti
@@ -34,22 +39,23 @@ public class ShopViewModel extends AndroidViewModel {
         loadInitialData();
     }
 
+    public LiveData<ShopScreenState> getScreenState() { return screenState; }
+    public LiveData<String> getPurchaseStatus() { return purchaseStatus; }
+
     // Getteri ostaju isti
     public LiveData<User> getCurrentUser() { return currentUserLiveData; }
     public LiveData<List<Item>> getShopItems() { return shopItemsLiveData; }
-    public LiveData<String> getPurchaseStatus() { return purchaseStatusLiveData; }
 
     private void loadInitialData() {
-        shopItemsLiveData.postValue(equipmentRepository.getShopStock());
-
-        FirebaseUser firebaseUser = authRepository.getCurrentUser();
-        if (firebaseUser != null) {
-            userRepository.getUserById(firebaseUser.getUid(), new UserRepository.UserCallback() {
+        currentShopItems = equipmentRepository.getShopStock();
+        FirebaseUser fbUser = authRepository.getCurrentUser();
+        if (fbUser != null) {
+            userRepository.getUserById(fbUser.getUid(), new UserRepository.UserCallback() {
                 @Override
                 public void onUserLoaded(User user) {
-                    currentUserLiveData.postValue(user);
+                    currentUser = user;
+                    updateScreenState();
                 }
-
                 @Override
                 public void onError(Exception e) {
                     purchaseStatusLiveData.postValue("Failed to load user data.");
@@ -60,23 +66,29 @@ public class ShopViewModel extends AndroidViewModel {
         }
     }
 
+    private void updateScreenState() {
+        if (currentUser != null && currentShopItems != null) {
+            screenState.postValue(new ShopScreenState(currentUser, currentShopItems));
+        }
+    }
+
     public void purchaseItem(Item itemToBuy) {
-        User user = currentUserLiveData.getValue();
-        if (user == null) {
-            purchaseStatusLiveData.postValue("Error: User data not available!");
+        if (currentUser == null) {
+            purchaseStatus.postValue("Error: User data not available!");
             return;
         }
+        int price = itemToBuy.calculatePrice(currentUser.calculatePreviosPrizeFormula());
 
-        int price = itemToBuy.calculatePrice(user.calculatePreviosPrizeFormula());
-
-        boolean isSuccess = equipmentRepository.purchaseItem(user, itemToBuy, price);
+        boolean isSuccess = equipmentRepository.purchaseItem(currentUser, itemToBuy, price);
 
         if (isSuccess) {
-            userRepository.updateUser(user);
+            userRepository.updateUser(currentUser);
 
-            purchaseStatusLiveData.postValue("Purchase successful!");
+            updateScreenState();
+
+            purchaseStatus.postValue("Purchase successful!");
         } else {
-            purchaseStatusLiveData.postValue("Purchase failed! Check if you have enough coins or already own this item.");
+            purchaseStatus.postValue("Purchase failed! Check coins or if you already own this item.");
         }
     }
 }

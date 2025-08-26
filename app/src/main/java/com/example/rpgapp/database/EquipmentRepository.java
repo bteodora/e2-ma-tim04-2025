@@ -23,12 +23,11 @@ public class EquipmentRepository {
         return new ArrayList<>(allItems.values());
     }
 
-    public boolean purchaseItem(User currentUser, Item itemToBuy, int currentBossReward) {
-        int price = itemToBuy.calculatePrice(currentBossReward);
+    public boolean purchaseItem(User currentUser, Item itemToBuy, int price) {
 
         if (currentUser.getCoins() < price) {
             Log.e("Shop", "Neuspešna kupovina: Nedovoljno novčića!");
-            return false; // JAVI DA NIJE USPELO
+            return false;
         }
 
         // Oduzmi novac
@@ -56,13 +55,11 @@ public class EquipmentRepository {
                 potionState.currentBonus = itemToBuy.getBonusValue();
             }
             userItems.put(itemId, potionState);
-        } else { // Ako je odeća
+        } else {
             if (userItems.containsKey(itemId)) {
-                // Korisnik već ima ovaj komad odeće, kupovina nije moguća.
                 Log.w("Shop", "Pokušaj kupovine duplikata odeće, neuspešno.");
-                // VAŽNO: Vrati novac koji si oduzeo!
                 currentUser.setCoins(currentUser.getCoins() + price);
-                return false; // JAVI DA NIJE USPELO
+                return false;
             } else {
                 UserItem newClothing = new UserItem();
                 newClothing.itemId = itemId;

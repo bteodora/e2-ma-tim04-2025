@@ -1,9 +1,11 @@
 package com.example.rpgapp.fragments.shop;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -20,6 +22,8 @@ public class ShopFragment extends Fragment {
     private ShopViewModel viewModel;
     private RecyclerView recyclerView;
     private ShopAdapter adapter;
+    private TextView textViewUserCoins;
+
 
     public ShopFragment() {}
 
@@ -35,6 +39,7 @@ public class ShopFragment extends Fragment {
 
         recyclerView = view.findViewById(R.id.recyclerViewShop);
         viewModel = new ViewModelProvider(this).get(ShopViewModel.class);
+        textViewUserCoins = view.findViewById(R.id.textViewUserCoins);
 
         setupRecyclerView();
         observeViewModel();
@@ -49,21 +54,15 @@ public class ShopFragment extends Fragment {
     }
 
     private void observeViewModel() {
-        // Posmatramo listu predmeta iz prodavnice
-        viewModel.getShopItems().observe(getViewLifecycleOwner(), items -> {
-            if (items != null) {
-                adapter.setItems(items);
+        viewModel.getScreenState().observe(getViewLifecycleOwner(), state -> {
+            if (state != null) {
+                textViewUserCoins.setText(String.valueOf(state.user.getCoins()));
+                adapter.updateData(state);
+
+                Log.d("ShopFragment", "Stanje ekrana je osveženo. Korisnik: " + state.user.getUsername());
             }
         });
 
-        // Posmatramo trenutnog korisnika da bismo znali njegov inventar
-        viewModel.getCurrentUser().observe(getViewLifecycleOwner(), user -> {
-            if (user != null) {
-                adapter.setCurrentUser(user);
-            }
-        });
-
-        // Posmatramo status kupovine (poruke o uspehu/grešci)
         viewModel.getPurchaseStatus().observe(getViewLifecycleOwner(), status -> {
             if (status != null && !status.isEmpty()) {
                 Toast.makeText(getContext(), status, Toast.LENGTH_SHORT).show();

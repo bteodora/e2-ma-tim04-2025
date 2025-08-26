@@ -12,7 +12,34 @@ public class Weapon {
     private  String image;
 
     public int getUpgradePrice(int bossMoney){
-        return (int) 0.6*bossMoney;
+        return (int) (0.6*bossMoney);
+    }
+
+    public String getBoostAsString() {
+        StringBuilder sb = new StringBuilder();
+
+        switch (boost_type) {
+            case PERMANENT_PP:
+                sb.append("Permanent Power Points: +").append(boost);
+                break;
+            case TEMPORARY_PP:
+                sb.append("Temporary Power Points: +").append(boost);
+                break;
+            case ATTACK_NUM:
+                sb.append("Additional attack chance: ").append(boost).append("%");
+                break;
+            case SUCCESS_PERCENTAGE:
+                sb.append("Success Percentage: +").append(boost).append("%");
+                break;
+            case MONEY_BOOST:
+                sb.append("Money Boost: +").append(boost).append("%");
+                break;
+            default:
+                sb.append("Unknown boost type");
+                break;
+        }
+
+        return sb.toString();
     }
 
     public void upgrade(){

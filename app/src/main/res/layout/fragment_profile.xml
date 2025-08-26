@@ -210,54 +210,31 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/scroll_badges" />
 
-        <!-- ===== EQUIPPED ===== -->
 
+
+        <!-- ============================================= -->
+        <!-- ===== SEKCIJA 1: ORUŽJE (WEAPONS) ===== -->
+        <!-- ============================================= -->
         <TextView
-            android:id="@+id/title_equipment"
+            android:id="@+id/title_weapons"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
-            android:text="Equipped Gear"
+            android:text="Weapons"
             android:textAppearance="@style/TextAppearance.MaterialComponents.Headline6"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/divider2" />
 
-        <HorizontalScrollView
-            android:id="@+id/scroll_equipped"
+        <LinearLayout
+            android:id="@+id/layout_weapons_container"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:orientation="vertical"
             android:layout_marginTop="8dp"
-            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/title_equipment">
-            <LinearLayout
-                android:id="@+id/layout_equipment_container"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-                <com.google.android.material.card.MaterialCardView
-                    android:layout_width="80dp"
-                    android:layout_height="100dp"
-                    android:layout_marginEnd="8dp">
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:orientation="vertical">
-                        <ImageView
-                            android:layout_width="48dp"
-                            android:layout_height="48dp"
-                            android:contentDescription="Equipped item icon"
-                            tools:src="@mipmap/ic_launcher"/>
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textSize="12sp"
-                            tools:text="Weapon"/>
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-            </LinearLayout>
-        </HorizontalScrollView>
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/title_weapons" />
+        <!-- Ovde će se programski dodavati oružje -->
 
         <View
             android:id="@+id/divider3"
@@ -265,22 +242,56 @@
             android:layout_height="1dp"
             android:layout_marginTop="24dp"
             android:background="?android:attr/listDivider"
-            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/scroll_equipped" />
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/layout_weapons_container" />
 
-        <!-- ===== Kupljeno ===== -->
+        <!-- ============================================= -->
+        <!-- ===== SEKCIJA 2: OPREMLJENO (EQUIPPED) ===== -->
+        <!-- ============================================= -->
+        <TextView
+            android:id="@+id/title_equipped"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="Equipped Items"
+            android:textAppearance="@style/TextAppearance.MaterialComponents.Headline6"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/divider3" />
 
+        <GridLayout
+            android:id="@+id/grid_equipped_container"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:columnCount="4"
+            android:layout_marginTop="8dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/title_equipped" />
+
+        <View
+            android:id="@+id/divider4"
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_marginTop="24dp"
+            android:background="?android:attr/listDivider"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/grid_equipped_container" />
+
+        <!-- ================================================= -->
+        <!-- ===== SEKCIJA 3: INVENTAR (PRIVATE) ===== -->
+        <!-- ================================================= -->
         <LinearLayout
             android:id="@+id/layout_inventory_section"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:visibility="gone"
-            app:layout_constraintEnd_toEndOf="parent"
+            tools:visibility="visible"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/divider3"
-            tools:visibility="visible">
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/divider4">
 
             <TextView
                 android:id="@+id/title_inventory"
@@ -294,18 +305,10 @@
                 android:id="@+id/grid_inventory_container"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:columnCount="4">
-                <!-- Primer predmeta u inventaru -->
-                <ImageView
-                    android:layout_width="0dp"
-                    android:layout_height="70dp"
-                    android:layout_columnWeight="1"
-                    android:padding="8dp"
-                    android:contentDescription="Inventory item"
-                    tools:src="@mipmap/ic_launcher"/>
-            </GridLayout>
+                android:columnCount="4"
+                android:layout_marginTop="8dp"/>
         </LinearLayout>
+
 
         <View
             android:id="@+id/divider_after_inventory"

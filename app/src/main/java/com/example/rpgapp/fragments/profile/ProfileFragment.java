@@ -1,10 +1,13 @@
-package com.example.rpgapp.fragments.profile; // Proveri da li je putanja tačna!
+package com.example.rpgapp.fragments.profile;
 
+import android.app.AlertDialog;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.GridLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -17,18 +20,27 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.rpgapp.R;
+import com.example.rpgapp.model.Item;
 import com.example.rpgapp.model.User;
+import com.example.rpgapp.model.UserItem;
+import com.example.rpgapp.model.UserWeapon;
+import com.example.rpgapp.model.Weapon;
+import com.example.rpgapp.tools.GameData;
 
 import java.text.NumberFormat;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 public class ProfileFragment extends Fragment {
 
+    private static final String TAG = "ProfileFragment";
     private ProfileViewModel viewModel;
 
     private ImageView imageViewProfileAvatar;
     private TextView textViewProfileUsername, textViewProfileTitle, textViewProfileLevel, textViewProfileXp, textViewProfileCoins, textViewProfilePP, textViewBadgesCount;
-    private LinearLayout layout_coins, layout_power_points, layout_inventory_section;
+    private LinearLayout layout_coins, layout_power_points, layout_inventory_section, layout_weapons_container;
+    private GridLayout grid_equipped_container, grid_inventory_container;
     private Button buttonViewStatistics, buttonChangePassword;
     private ImageView imageViewQrCode;
 
@@ -42,18 +54,10 @@ public class ProfileFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         viewModel = new ViewModelProvider(this).get(ProfileViewModel.class);
-
         bindViews(view);
-
-        String userId = null;
-        viewModel.loadUserProfile(userId);
-
-        buttonChangePassword.setOnClickListener(v -> {
-            NavHostFragment.findNavController(ProfileFragment.this)
-                    .navigate(R.id.action_profileFragment_to_changePasswordFragment);
-        });
-
         observeViewModel();
+
+        viewModel.loadUserProfile(null);
     }
 
     private void bindViews(View view) {
@@ -68,9 +72,20 @@ public class ProfileFragment extends Fragment {
         layout_coins = view.findViewById(R.id.layout_coins);
         layout_power_points = view.findViewById(R.id.layout_power_points);
         layout_inventory_section = view.findViewById(R.id.layout_inventory_section);
+        imageViewQrCode = view.findViewById(R.id.imageViewQrCode);
+
+        layout_weapons_container = view.findViewById(R.id.layout_weapons_container);
+        grid_equipped_container = view.findViewById(R.id.grid_equipped_container);
+        grid_inventory_container = view.findViewById(R.id.grid_inventory_container);
+        layout_inventory_section = view.findViewById(R.id.layout_inventory_section);
+
         buttonViewStatistics = view.findViewById(R.id.buttonViewStatistics);
         buttonChangePassword = view.findViewById(R.id.buttonChangePassword);
-        imageViewQrCode = view.findViewById(R.id.imageViewQrCode);
+
+        buttonChangePassword.setOnClickListener(v -> {
+            NavHostFragment.findNavController(ProfileFragment.this)
+                    .navigate(R.id.action_profileFragment_to_changePasswordFragment);
+        });
     }
 
     private void observeViewModel() {
@@ -109,12 +124,172 @@ public class ProfileFragment extends Fragment {
         textViewProfileCoins.setText(numberFormat.format(user.getCoins()));
         textViewProfilePP.setText(String.valueOf(user.getPowerPoints()));
 
-        int badgeCount = (user.getBadges() != null) ? user.getBadges().size() : 0;
-        textViewBadgesCount.setText("(" + badgeCount + ")");
+        populateWeapons(user);
+        populateEquipped(user);
+        populateInventory(user);
 
-        // TODO: Učitati pravu sliku avatara na osnovu user.getAvatarId()
-        // TODO: Dinamički popuniti layout_badges_container sa sličicama bedževa
-        // TODO: Dinamički popuniti layout_equipment_container i grid_inventory_container
-        // TODO: Generisati i prikazati QR kod na osnovu user.getUserId()
+        // TODO: QR kod, bedževi
+    }
+
+
+    // U ProfileFragment.java
+
+    /**
+     * Prikazuje oružje koje korisnik poseduje u svom kontejneru.
+     */
+    private void populateWeapons(User user) {
+        layout_weapons_container.removeAllViews();
+        if (user.getUserWeapons() == null || user.getUserWeapons().isEmpty()) {
+            TextView noWeaponsText = new TextView(getContext());
+            noWeaponsText.setText("No weapons owned.");
+            layout_weapons_container.addView(noWeaponsText);
+            return;
+        }
+
+        LayoutInflater inflater = LayoutInflater.from(getContext());
+
+        for (UserWeapon userWeapon : user.getUserWeapons().values()) {
+            View weaponView = inflater.inflate(R.layout.list_item_weapon, layout_weapons_container, false);
+
+            ImageView weaponIcon = weaponView.findViewById(R.id.imageViewWeaponIcon);
+            TextView weaponName = weaponView.findViewById(R.id.textViewWeaponName);
+            TextView weaponBonus = weaponView.findViewById(R.id.textViewWeaponBonus);
+            Button upgradeButton = weaponView.findViewById(R.id.buttonUpgradeWeapon);
+
+            Weapon baseWeapon = GameData.getAllWeapons().get(userWeapon.getWeaponId());
+            if (baseWeapon == null) continue;
+
+            weaponName.setText(baseWeapon.getName() + " (Lvl " + userWeapon.getLevel() + ")");
+            weaponBonus.setText(userWeapon.getBoostAsString());
+
+            // TODO: Postavi pravu sliku oružja na osnovu baseWeapon.getImageId()
+            // weaponIcon.setImageResource(...);
+
+            int upgradePrice = baseWeapon.getUpgradePrice(user.calculatePreviosPrizeFormula());
+            upgradeButton.setText("Upgrade\n(" + upgradePrice + " coins)");
+
+            if (user.getCoins() < upgradePrice) {
+                upgradeButton.setEnabled(false);
+            }
+
+            upgradeButton.setOnClickListener(v -> {
+                handleWeaponUpgrade(user, userWeapon, baseWeapon, upgradePrice);
+            });
+
+            // 6. Dodaj gotov prikaz u glavni kontejner
+            layout_weapons_container.addView(weaponView);
+        }
+    }
+
+    /**
+     * Logika koja se izvršava kada korisnik klikne na "Upgrade" dugme.
+     */
+    private void handleWeaponUpgrade(User user, UserWeapon userWeapon, Weapon baseWeapon, int price) {
+        if (user.getCoins() < price) {
+            Toast.makeText(getContext(), "Not enough coins to upgrade!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Prikaži dijalog za potvrdu
+        new AlertDialog.Builder(getContext())
+                .setTitle("Upgrade " + baseWeapon.getName() + "?")
+                .setMessage("This will cost " + price + " coins.")
+                .setPositiveButton("Upgrade", (dialog, which) -> {
+                    user.setCoins(user.getCoins() - price);
+
+                    userWeapon.upgrade();
+
+                    viewModel.updateUser(user);
+
+                    Toast.makeText(getContext(), baseWeapon.getName() + " upgraded!", Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+
+    private void populateEquipped(User user) {
+        grid_equipped_container.removeAllViews();
+        if (user.getEquipped() == null) return;
+
+        for (UserItem equippedItem : user.getEquipped().values()) {
+
+            // grid_equipped_container.addView(...);
+        }
+    }
+
+    private void populateInventory(User user) {
+        grid_inventory_container.removeAllViews();
+        if (user.getUserItems() == null) return;
+
+        for (UserItem inventoryItem : user.getUserItems().values()) {
+            /*
+            // Kreiraj View za prikaz predmeta u inventaru
+            // ...
+
+            // Postavi OnClickListener na taj View
+            view.setOnClickListener(v -> {
+                // Prikaži AlertDialog kao što smo ranije definisali
+                showEquipDialog(user, inventoryItem);
+            });
+
+            grid_inventory_container.addView(view);*/
+        }
+    }
+
+
+    private void showEquipDialog(User user, UserItem itemToEquip) {
+        Item baseItem = GameData.getAllItems().get(itemToEquip.getItemId());
+        if (baseItem == null) return;
+
+        new AlertDialog.Builder(getContext())
+                .setTitle("Activate " + baseItem.getName() + "?")
+                .setMessage(baseItem.getDescription())
+                .setPositiveButton("Activate", (dialog, which) -> {
+                    equipItem(user, itemToEquip);
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void equipItem(User user, UserItem itemToEquip) {
+        if (user.getUserItems() == null) user.setUserItems(new HashMap<>());
+        if (user.getEquipped() == null) user.setEquipped(new HashMap<>());
+
+        UserItem inventoryVersion = user.getUserItems().get(itemToEquip.getItemId());
+        if (inventoryVersion != null) {
+            if (inventoryVersion.getQuantity() > 1) {
+                inventoryVersion.setQuantity(inventoryVersion.getQuantity() - 1);
+            } else {
+                user.getUserItems().remove(itemToEquip.getItemId());
+            }
+        }
+
+        UserItem equippedVersion;
+        if (user.getEquipped().containsKey(itemToEquip.getItemId())) {
+            equippedVersion = user.getEquipped().get(itemToEquip.getItemId());
+            equippedVersion.setQuantity(equippedVersion.getQuantity() + 1);
+        } else {
+            equippedVersion = new UserItem();
+            Item baseItem = GameData.getAllItems().get(itemToEquip.getItemId());
+            if (baseItem == null) return;
+
+            equippedVersion.setItemId(itemToEquip.getItemId());
+            equippedVersion.setQuantity(1);
+            equippedVersion.setLifespan(baseItem.getLifespan());
+            equippedVersion.setBonusType(baseItem.getBonusType());
+            equippedVersion.setCurrentBonus(baseItem.getBonusValue());
+
+            user.getEquipped().put(itemToEquip.getItemId(), equippedVersion);
+        }
+
+        viewModel.updateUser(user);
+
+        Toast.makeText(getContext(), itemToEquip.getItemId() + " activated!", Toast.LENGTH_SHORT).show();
+    }
+
+    private int dpToPx(int dp) {
+        float density = getResources().getDisplayMetrics().density;
+        return Math.round((float) dp * density);
     }
 }

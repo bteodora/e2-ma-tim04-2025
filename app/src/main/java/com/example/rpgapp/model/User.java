@@ -15,7 +15,7 @@ public class User {
     private List<String> badges;
     private Map<String, UserItem> userItems;
     private Map<String, UserWeapon> userWeapons;
-    private Map<String, String> equipped;
+    private Map<String, UserItem> equipped;
 
     private int powerPoints;
     private long coins;
@@ -138,11 +138,11 @@ public class User {
         this.userWeapons = userWeapons;
     }
 
-    public Map<String, String> getEquipped() {
+    public Map<String, UserItem> getEquipped() {
         return equipped;
     }
 
-    public void setEquipped(Map<String, String> equipped) {
+    public void setEquipped(Map<String, UserItem> equipped) {
         this.equipped = equipped;
     }
 
