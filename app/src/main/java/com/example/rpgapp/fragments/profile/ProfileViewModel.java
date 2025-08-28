@@ -65,8 +65,6 @@ public class ProfileViewModel extends AndroidViewModel {
         });
     }
 
-    // U ProfileViewModel.java
-
     public void updateUser(User user) {
         if (user != null) {
             userRepository.updateUser(user);

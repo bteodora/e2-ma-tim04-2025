@@ -174,7 +174,6 @@ public class UserRepository {
                 user.setRegistrationTimestamp(cursor.getLong(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_REGISTRATION_TIMESTAMP)));
 
                 Type badgeListType = new TypeToken<List<String>>(){}.getType();
-                Type equippedMapType = new TypeToken<Map<String, String>>(){}.getType();
                 Type userItemMapType = new TypeToken<Map<String, UserItem>>(){}.getType();
                 Type userWeaponMapType = new TypeToken<Map<String, UserWeapon>>(){}.getType();
 
@@ -185,7 +184,7 @@ public class UserRepository {
 
                 String equippedJson = cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_EQUIPPED_ITEMS_JSON));
                 if (equippedJson != null) {
-                    user.setEquipped(gson.fromJson(equippedJson, equippedMapType));
+                    user.setEquipped(gson.fromJson(equippedJson, userItemMapType));
                 }
 
                 String userItemsJson = cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_ITEMS_JSON));

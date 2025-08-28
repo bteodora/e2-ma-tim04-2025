@@ -24,7 +24,7 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            tools:src="@drawable/default_avatar" /> <!-- Placeholder slika -->
+            tools:src="@drawable/default_avatar" />
 
         <TextView
             android:id="@+id/textViewProfileUsername"
@@ -263,7 +263,7 @@
             android:id="@+id/grid_equipped_container"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:columnCount="4"
+            android:columnCount="2"
             android:layout_marginTop="8dp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
@@ -305,7 +305,7 @@
                 android:id="@+id/grid_inventory_container"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:columnCount="4"
+                android:columnCount="2"
                 android:layout_marginTop="8dp"/>
         </LinearLayout>
 

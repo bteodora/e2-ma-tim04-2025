@@ -19,13 +19,54 @@ public class User {
 
     private int powerPoints;
     private long coins;
-    private int lastBossReward;
-
     @Exclude
     private String userId;
 
+    private List<String> friendIds;
+    private List<String> friendRequests;
+
     private long registrationTimestamp;
 
+    private void reduceLifespan() {
+        userItems.entrySet().removeIf(entry -> {
+            UserItem item = entry.getValue();
+            if (item.bonusType != BonusType.PERMANENT_PP) {
+                item.lifespan--;
+                return item.lifespan == 0;
+            }
+            return false;
+        });
+    }
+
+
+    private void checkIfLevelIncreased() {
+        if (xp>=getRequiredXpForNextLevel()){
+            level++;
+            if(level == 2){
+                title = "Intermediate";
+            } else if (level == 3) {
+                title = "Professional";
+            }
+        }
+    }
+
+    public int getRequiredXpForNextLevel() {
+        if (level == 1) {
+            return 200;
+        }
+
+        int xp = 200;
+        for (int i = 2; i <= level; i++) {
+            xp = (int) Math.ceil((xp * 2.5) / 100.0) * 100;
+        }
+
+        return xp;
+    }
+
+    public void addXp(int xp){
+        this.xp = this.xp + xp;
+        checkIfLevelIncreased();
+    }
 
     public int calculatePrizeFormula() {
         return (int) (200 * Math.pow(1.2, level - 1));
@@ -61,16 +102,22 @@ public class User {
         this.userItems = null;
         this.userWeapons = null;
         this.equipped = null;
-        this.lastBossReward = 200;
     }
 
-    public int getLastBossReward() {
-        //calculatePreviosPrizeFormula();
-        return lastBossReward;
+    public List<String> getFriendIds() {
+        return friendIds;
     }
 
-    public void setLastBossReward(int lastBossReward) {
-        this.lastBossReward = lastBossReward;
+    public void setFriendIds(List<String> friendIds) {
+        this.friendIds = friendIds;
+    }
+
+    public List<String> getFriendRequests() {
+        return friendRequests;
+    }
+
+    public void setFriendRequests(List<String> friendRequests) {
+        this.friendRequests = friendRequests;
     }
 
     public String getUsername() { return username; }

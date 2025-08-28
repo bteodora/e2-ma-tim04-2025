@@ -132,11 +132,7 @@ public class ProfileFragment extends Fragment {
     }
 
 
-    // U ProfileFragment.java
 
-    /**
-     * Prikazuje oružje koje korisnik poseduje u svom kontejneru.
-     */
     private void populateWeapons(User user) {
         layout_weapons_container.removeAllViews();
         if (user.getUserWeapons() == null || user.getUserWeapons().isEmpty()) {
@@ -176,21 +172,16 @@ public class ProfileFragment extends Fragment {
                 handleWeaponUpgrade(user, userWeapon, baseWeapon, upgradePrice);
             });
 
-            // 6. Dodaj gotov prikaz u glavni kontejner
             layout_weapons_container.addView(weaponView);
         }
     }
 
-    /**
-     * Logika koja se izvršava kada korisnik klikne na "Upgrade" dugme.
-     */
     private void handleWeaponUpgrade(User user, UserWeapon userWeapon, Weapon baseWeapon, int price) {
         if (user.getCoins() < price) {
             Toast.makeText(getContext(), "Not enough coins to upgrade!", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // Prikaži dijalog za potvrdu
         new AlertDialog.Builder(getContext())
                 .setTitle("Upgrade " + baseWeapon.getName() + "?")
                 .setMessage("This will cost " + price + " coins.")
@@ -207,33 +198,83 @@ public class ProfileFragment extends Fragment {
                 .show();
     }
 
-
     private void populateEquipped(User user) {
         grid_equipped_container.removeAllViews();
         if (user.getEquipped() == null) return;
-
+        LayoutInflater inflater = LayoutInflater.from(getContext());
         for (UserItem equippedItem : user.getEquipped().values()) {
+            View itemView = inflater.inflate(R.layout.grid_item_equipment, grid_equipped_container, false);
 
-            // grid_equipped_container.addView(...);
+            GridLayout.LayoutParams params = new GridLayout.LayoutParams();
+            params.width = 0;
+            params.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
+            itemView.setLayoutParams(params);
+
+
+            ImageView itemIcon = itemView.findViewById(R.id.imageViewItemIcon);
+            TextView itemName = itemView.findViewById(R.id.textViewItemName);
+            TextView itemQuantity = itemView.findViewById(R.id.textViewItemQuantity);
+            Button itemActionButton = itemView.findViewById(R.id.buttonItemAction);
+
+            Item baseItem = GameData.getAllItems().get(equippedItem.getItemId());
+            if (baseItem == null) continue;
+            itemName.setText(baseItem.getName());
+
+
+            if (equippedItem.getQuantity() > 1) {
+                itemQuantity.setText(String.valueOf(equippedItem.getQuantity()));
+                itemQuantity.setVisibility(View.VISIBLE);
+            } else {
+                itemQuantity.setVisibility(View.GONE);
+            }
+            itemActionButton.setVisibility(View.GONE);
+
+            grid_equipped_container.addView(itemView);
         }
     }
 
     private void populateInventory(User user) {
         grid_inventory_container.removeAllViews();
-        if (user.getUserItems() == null) return;
+        if (user.getUserItems() == null || user.getUserItems().isEmpty()) {
+            return;
+        }
+
+        LayoutInflater inflater = LayoutInflater.from(getContext());
 
         for (UserItem inventoryItem : user.getUserItems().values()) {
-            /*
-            // Kreiraj View za prikaz predmeta u inventaru
-            // ...
+            View itemView = inflater.inflate(R.layout.grid_item_equipment, grid_inventory_container, false);
 
-            // Postavi OnClickListener na taj View
-            view.setOnClickListener(v -> {
-                // Prikaži AlertDialog kao što smo ranije definisali
+            GridLayout.LayoutParams params = new GridLayout.LayoutParams();
+
+            params.width = 0;
+            params.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
+
+            itemView.setLayoutParams(params);
+
+            ImageView itemIcon = itemView.findViewById(R.id.imageViewItemIcon);
+            TextView itemName = itemView.findViewById(R.id.textViewItemName);
+            TextView itemQuantity = itemView.findViewById(R.id.textViewItemQuantity);
+            Button itemActionButton = itemView.findViewById(R.id.buttonItemAction);
+
+            Item baseItem = GameData.getAllItems().get(inventoryItem.getItemId());
+            if (baseItem == null) continue;
+
+            itemName.setText(baseItem.getName());
+            // TODO: Postavi pravu sliku item-a
+
+            if (inventoryItem.getQuantity() > 0) {
+                itemQuantity.setText(String.valueOf(inventoryItem.getQuantity()));
+                itemQuantity.setVisibility(View.VISIBLE);
+            } else {
+                itemQuantity.setVisibility(View.GONE);
+            }
+
+            itemActionButton.setText("Equip");
+            itemActionButton.setOnClickListener(v -> {
                 showEquipDialog(user, inventoryItem);
             });
 
-            grid_inventory_container.addView(view);*/
+            grid_inventory_container.addView(itemView);
         }
     }
 
