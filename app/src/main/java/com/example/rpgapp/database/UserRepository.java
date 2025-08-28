@@ -176,6 +176,7 @@ public class UserRepository {
                 Type badgeListType = new TypeToken<List<String>>(){}.getType();
                 Type userItemMapType = new TypeToken<Map<String, UserItem>>(){}.getType();
                 Type userWeaponMapType = new TypeToken<Map<String, UserWeapon>>(){}.getType();
+                Type frirendsListType = new TypeToken<List<String>>(){}.getType();
 
                 String badgesJson = cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_BADGES_JSON));
                 if (badgesJson != null) {
@@ -196,6 +197,17 @@ public class UserRepository {
                 if (userWeaponsJson != null) {
                     user.setUserWeapons(gson.fromJson(userWeaponsJson, userWeaponMapType)); 
                 }
+
+                String friendsJson = cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_FRIENDS_JSON));
+                if(friendsJson!=null){
+                    user.setFriendIds(gson.fromJson(friendsJson, frirendsListType));
+                }
+
+                String friendRequestsJson = cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_FRIENDS_JSON));
+                if(friendRequestsJson!=null){
+                    user.setFriendIds(gson.fromJson(friendRequestsJson, frirendsListType));
+                }
+
                 cursor.close();
             }
         } finally {

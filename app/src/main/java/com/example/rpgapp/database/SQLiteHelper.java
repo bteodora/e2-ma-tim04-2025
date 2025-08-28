@@ -13,9 +13,7 @@ public class SQLiteHelper extends SQLiteOpenHelper {
     public static final String COLUMN_DESCRIPTION = "description";
     public static final String COLUMN_IMAGE = "image";
 
-    //Dajemo ime bazi
     private static final String DATABASE_NAME = "rpgapp_final.db";
-    //i pocetnu verziju baze. Obicno krece od 1
     private static final int DATABASE_VERSION = 2;
 
     private static final String DB_CREATE = "create table "
@@ -42,6 +40,8 @@ public class SQLiteHelper extends SQLiteOpenHelper {
     public static final String COLUMN_EQUIPPED_ITEMS_JSON = "equipped_items_json";
     public static final String COLUMN_WEAPONS_JSON = "weapons_json";
     public static final String COLUMN_ITEMS_JSON = "items_json";
+    public static final String COLUMN_FRIENDS_JSON = "friends_json";
+    public static final String COLUMN_FRIEND_REQUESTS_JSON = "friend_requests_json";
 
     private static final String DB_CREATE_USERS = "create table "
             + TABLE_USERS + "("
@@ -57,7 +57,9 @@ public class SQLiteHelper extends SQLiteOpenHelper {
             + COLUMN_BADGES_JSON + " text, "
             + COLUMN_EQUIPPED_ITEMS_JSON + " text, "
             + COLUMN_WEAPONS_JSON + " text,"
-            + COLUMN_ITEMS_JSON + " text"
+            + COLUMN_ITEMS_JSON + " text,"
+            + COLUMN_FRIENDS_JSON + " text,"
+            + COLUMN_FRIEND_REQUESTS_JSON+ " text"
             + ")";
 
 
