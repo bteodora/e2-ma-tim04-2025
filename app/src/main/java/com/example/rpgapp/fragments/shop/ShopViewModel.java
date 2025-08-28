@@ -33,7 +33,7 @@ public class ShopViewModel extends AndroidViewModel {
         super(application);
         // Pretpostavka da EquipmentRepository nema zavisnosti
         equipmentRepository = new EquipmentRepository();
-        userRepository = new UserRepository(application);
+        userRepository = UserRepository.getInstance(application);
         authRepository = new AuthRepository(application);
 
         loadInitialData();

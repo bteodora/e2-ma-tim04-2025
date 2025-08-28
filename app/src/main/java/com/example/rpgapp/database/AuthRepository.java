@@ -23,7 +23,7 @@ public class AuthRepository {
 
     public AuthRepository(Context context){
         this.context = context;
-        userRepository = new UserRepository(context);
+        userRepository = UserRepository.getInstance(context);
     }
 
 
