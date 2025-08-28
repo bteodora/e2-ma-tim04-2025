@@ -41,7 +41,8 @@ public class ProfileFragment extends Fragment {
     private TextView textViewProfileUsername, textViewProfileTitle, textViewProfileLevel, textViewProfileXp, textViewProfileCoins, textViewProfilePP, textViewBadgesCount;
     private LinearLayout layout_coins, layout_power_points, layout_inventory_section, layout_weapons_container;
     private GridLayout grid_equipped_container, grid_inventory_container;
-    private Button buttonViewStatistics, buttonChangePassword;
+    private Button buttonViewStatistics, buttonChangePassword, buttonAddFriend, buttonInviteToAlliance;
+    private LinearLayout layout_own_profile_actions, layout_other_user_actions;
     private ImageView imageViewQrCode;
 
     @Override
@@ -82,6 +83,11 @@ public class ProfileFragment extends Fragment {
         buttonViewStatistics = view.findViewById(R.id.buttonViewStatistics);
         buttonChangePassword = view.findViewById(R.id.buttonChangePassword);
 
+        layout_own_profile_actions = view.findViewById(R.id.layout_own_profile_actions);
+        layout_other_user_actions = view.findViewById(R.id.layout_other_user_actions);
+        buttonAddFriend = view.findViewById(R.id.buttonAddFriend);
+        buttonInviteToAlliance = view.findViewById(R.id.buttonInviteToAlliance);
+
         buttonChangePassword.setOnClickListener(v -> {
             NavHostFragment.findNavController(ProfileFragment.this)
                     .navigate(R.id.action_profileFragment_to_changePasswordFragment);
@@ -104,6 +110,8 @@ public class ProfileFragment extends Fragment {
                 layout_coins.setVisibility(visibility);
                 layout_power_points.setVisibility(visibility);
                 layout_inventory_section.setVisibility(visibility);
+                layout_own_profile_actions.setVisibility(isMyProfile ? View.VISIBLE : View.GONE);
+                layout_other_user_actions.setVisibility(isMyProfile ? View.GONE : View.VISIBLE);
             }
         });
 
