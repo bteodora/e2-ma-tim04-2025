@@ -15,7 +15,18 @@ import java.util.List;
 
 public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder> {
 
-    private List<User> userList = new ArrayList<>();
+    private static List<User> userList = new ArrayList<>();
+    private OnUserClickListener listener; // <<-- DODATO
+
+    // Interfejs za obradu klika
+    public interface OnUserClickListener {
+        void onUserClick(String userId);
+    }
+
+    // Konstruktor koji prihvata listener
+    public UserAdapter(OnUserClickListener listener) { // <<-- MODIFIKOVANO
+        this.listener = listener;
+    }
 
     public void setUsers(List<User> users) {
         this.userList.clear();
@@ -27,7 +38,7 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder
     @Override
     public UserViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.list_item_user, parent, false);
-        return new UserViewHolder(view);
+        return new UserViewHolder(view, listener); // <<-- MODIFIKOVANO
     }
 
     @Override
@@ -46,21 +57,27 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder
         private TextView username, levelAndTitle;
         private Button actionButton;
 
-        public UserViewHolder(@NonNull View itemView) {
+        // Prosleđujemo listener i u ViewHolder
+        public UserViewHolder(@NonNull View itemView, OnUserClickListener listener) { // <<-- MODIFIKOVANO
             super(itemView);
             avatar = itemView.findViewById(R.id.imageViewUserAvatar);
             username = itemView.findViewById(R.id.textViewUserName);
             levelAndTitle = itemView.findViewById(R.id.textViewUserLevel);
             actionButton = itemView.findViewById(R.id.buttonUserAction);
+
+            // Postavljamo OnClickListener na celu karticu
+            itemView.setOnClickListener(v -> {
+                int position = getAdapterPosition();
+                if (position != RecyclerView.NO_POSITION && listener != null) {
+                    listener.onUserClick(userList.get(position).getUserId());
+                }
+            });
         }
 
         public void bind(User user) {
             username.setText(user.getUsername());
             String levelInfo = "Level " + user.getLevel() + " - " + user.getTitle();
             levelAndTitle.setText(levelInfo);
-
-            // TODO: Postavi pravu sliku avatara na osnovu user.getAvatarId()
-            // TODO: Implementiraj logiku za actionButton (npr. "Add Friend", "Pending", "Friends")
         }
     }
 }

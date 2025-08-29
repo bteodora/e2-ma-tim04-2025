@@ -58,7 +58,9 @@ public class ProfileFragment extends Fragment {
         bindViews(view);
         observeViewModel();
 
-        viewModel.loadUserProfile(null);
+        String userId = ProfileFragmentArgs.fromBundle(getArguments()).getUserId();
+
+        viewModel.loadUserProfile(userId);
     }
 
     private void bindViews(View view) {
@@ -138,8 +140,6 @@ public class ProfileFragment extends Fragment {
 
         // TODO: QR kod, bedževi
     }
-
-
 
     private void populateWeapons(User user) {
         layout_weapons_container.removeAllViews();
@@ -285,7 +285,6 @@ public class ProfileFragment extends Fragment {
             grid_inventory_container.addView(itemView);
         }
     }
-
 
     private void showEquipDialog(User user, UserItem itemToEquip) {
         Item baseItem = GameData.getAllItems().get(itemToEquip.getItemId());

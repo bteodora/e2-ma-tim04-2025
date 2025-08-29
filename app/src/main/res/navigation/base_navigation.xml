@@ -25,16 +25,30 @@
 
 
     <fragment
-        android:id="@+id/nav_profile_new"
+        android:id="@+id/myProfileFragment"
         android:name="com.example.rpgapp.fragments.profile.ProfileFragment"
         android:label="Profile"
-        tools:layout="@layout/fragment_profile"
-        app:popUpTo="@+id/nav_products"
-        app:popUpToInclusive="true"
-        >
+        tools:layout="@layout/fragment_profile">
+        <argument
+            android:name="userId"
+            app:argType="string"
+            app:nullable="true"
+            android:defaultValue="@null" />
         <action
             android:id="@+id/action_profileFragment_to_changePasswordFragment"
             app:destination="@id/nav_password" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/friendProfileFragment"
+        android:name="com.example.rpgapp.fragments.profile.ProfileFragment"
+        android:label="Friend Profile"
+        tools:layout="@layout/fragment_profile">
+        <argument
+            android:name="userId"
+            app:argType="string"
+            app:nullable="true"
+            android:defaultValue="@null" />
     </fragment>
 
     <fragment
@@ -67,7 +81,11 @@
         android:name="com.example.rpgapp.fragments.friends.FriendsFragment"
         android:label="Settings"
         tools:layout="@layout/fragment_friends"
-        />
+        >
+        <action
+            android:id="@+id/action_friendsFragment_to_friendProfileFragment"
+            app:destination="@id/friendProfileFragment" />
+    </fragment>
 
     <fragment
         android:id="@+id/nav_language"

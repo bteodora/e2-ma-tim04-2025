@@ -16,6 +16,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.rpgapp.R;
 import com.example.rpgapp.adapters.UserAdapter;
 import java.util.List; // Import List
+import androidx.navigation.fragment.NavHostFragment;
 
 public class FriendsFragment extends Fragment {
     // Promenjen TAG da bi se lakše filtriralo
@@ -70,10 +71,19 @@ public class FriendsFragment extends Fragment {
     }
 
     private void setupRecyclerView() {
-        userAdapter = new UserAdapter();
+        // Kreiramo adapter i prosleđujemo mu implementaciju listener-a
+        userAdapter = new UserAdapter(userId -> {
+            Log.d("RPGApp_Debug", "Kliknuto na korisnika sa ID: " + userId);
+
+            FriendsFragmentDirections.ActionFriendsFragmentToFriendProfileFragment action =
+                    FriendsFragmentDirections.actionFriendsFragmentToFriendProfileFragment();
+            action.setUserId(userId);
+
+            NavHostFragment.findNavController(this).navigate(action);
+        });
+
         recyclerViewUsers.setLayoutManager(new LinearLayoutManager(getContext()));
         recyclerViewUsers.setAdapter(userAdapter);
-        Log.d(TAG, "FriendsFragment: RecyclerView setup complete");
     }
 
 

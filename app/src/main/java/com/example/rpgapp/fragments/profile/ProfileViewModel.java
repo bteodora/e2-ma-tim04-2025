@@ -38,15 +38,20 @@ public class ProfileViewModel extends AndroidViewModel {
 
     public void loadUserProfile(@Nullable String userId) {
         FirebaseUser currentUser = authRepository.getCurrentUser();
+        String loggedInUserId = (currentUser != null) ? currentUser.getUid() : null;
 
-        if (currentUser == null && userId == null) {
-            errorMessage.postValue("Niko nije ulogovan!");
+        // Ako nemamo ni prosleđen ID, ni ulogovanog korisnika, ne možemo ništa.
+        if (userId == null && loggedInUserId == null) {
+            errorMessage.postValue("Korisnik nije specificiran i niko nije ulogovan.");
             return;
         }
 
-        String profileIdToLoad = (userId == null) ? currentUser.getUid() : userId;
+        // Određujemo koji profil treba učitati. Ako je userId null, učitavamo ulogovanog korisnika.
+        String profileIdToLoad = (userId != null) ? userId : loggedInUserId;
 
-        isMyProfile.postValue(profileIdToLoad.equals(currentUser.getUid()));
+        // Proveravamo da li je to naš profil.
+        // isMyProfile je true ako je ID koji učitavamo jednak ID-ju ulogovanog korisnika.
+        isMyProfile.postValue(profileIdToLoad.equals(loggedInUserId));
 
         userRepository.getUserById(profileIdToLoad, new UserRepository.UserCallback() {
             @Override
@@ -60,7 +65,8 @@ public class ProfileViewModel extends AndroidViewModel {
 
             @Override
             public void onError(Exception e) {
-                errorMessage.postValue(e.getMessage());
+                errorMessage.postValue("Greška pri učitavanju profila.");
+                Log.e(TAG, "Error loading user profile", e);
             }
         });
     }
