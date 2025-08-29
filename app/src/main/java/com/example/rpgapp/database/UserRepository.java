@@ -68,10 +68,6 @@ public class UserRepository {
                 .addOnFailureListener(e -> Log.e(TAG, "Greška pri preuzimanju korisnika sa Firebase-a.", e));
     }
 
-    public User getLoggedInUser() {
-        return this.loggedInUser;
-    }
-
     public LiveData<User> getLoggedInUserLiveData() {
         return loggedInUserLiveData;
     }
