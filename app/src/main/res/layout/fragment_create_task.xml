@@ -1,0 +1,84 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- Naziv zadatka -->
+    <EditText
+        android:id="@+id/editTaskTitle"
+        android:hint="Task Title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <!-- Opis zadatka -->
+    <EditText
+        android:id="@+id/editTaskDescription"
+        android:hint="Description"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"/>
+
+    <!-- Spinner za kategoriju -->
+    <Spinner
+        android:id="@+id/spinnerCategory"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"/>
+
+    <!-- Spinner za učestalost -->
+    <Spinner
+        android:id="@+id/spinnerFrequency"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"/>
+
+    <!-- Težina zadatka -->
+    <Spinner
+        android:id="@+id/spinnerDifficulty"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"/>
+
+    <!-- Bitnost zadatka -->
+    <Spinner
+        android:id="@+id/spinnerImportance"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"/>
+
+    <!-- Datum i vreme izvršenja -->
+    <Button
+        android:id="@+id/btnPickDateTime"
+        android:text="Pick Date &amp; Time"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"/>
+
+
+    <!-- Interval ponavljanja -->
+    <EditText
+        android:id="@+id/editRepeatInterval"
+        android:hint="Repeat Interval (number)"
+        android:inputType="number"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:visibility="gone"/>
+
+    <!-- Jedinica ponavljanja -->
+    <Spinner
+        android:id="@+id/spinnerRepeatUnit"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:visibility="gone"/>
+
+    <!-- Dugme za kreiranje zadatka -->
+    <Button
+        android:id="@+id/btnCreateTask"
+        android:text="Create Task"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"/>
+</LinearLayout>

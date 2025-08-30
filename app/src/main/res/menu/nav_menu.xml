@@ -41,5 +41,17 @@
             android:id="@+id/nav_friends"
             android:icon="@drawable/ic_face"
             android:title="Friends - Teodora" />
+        <item
+            android:id="@+id/nav_tasks"
+            android:title="Tasks"
+            android:icon="@drawable/ic_face"
+            android:orderInCategory="100" />
+
+        <item
+            android:id="@+id/nav_create_task"
+            android:title="Create Task"
+            android:icon="@drawable/ic_new"
+            android:orderInCategory="400"/>
+
     </group>
 </menu>
