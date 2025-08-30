@@ -29,6 +29,7 @@ public class ProfileViewModel extends AndroidViewModel {
 
     private MediatorLiveData<FriendshipStatus> friendshipStatus = new MediatorLiveData<>();
     private LiveData<User> loggedInUserLiveData;
+    private String currentProfileId;
 
 
     public ProfileViewModel(@NonNull Application application) {
@@ -70,24 +71,35 @@ public class ProfileViewModel extends AndroidViewModel {
 
     public void sendFriendRequest() {
         User otherUser = displayedUser.getValue();
-
         if (otherUser == null) {
             errorMessage.postValue("Cannot send request, user data is not loaded.");
             return;
         }
-
-        userRepository.sendFriendRequest(otherUser.getUserId(), new UserRepository.RequestCallback() {
-            @Override
-            public void onSuccess() {
-                friendshipStatus.postValue(FriendshipStatus.PENDING_SENT);
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                errorMessage.postValue("Failed to send friend request. Please try again.");
-                Log.e(TAG, "Error sending friend request", e);
+        userRepository.sendFriendRequest(otherUser.getUserId(), (status, e) -> {
+            switch (status) {
+                case SUCCESS:
+                    // Ako je uspešno, ažuriraj UI da prikaže "Pending"
+                    friendshipStatus.postValue(FriendshipStatus.PENDING_SENT);
+                    // Možeš dodati i neku successMessage ako želiš
+                    break;
+                case ALREADY_FRIENDS:
+                    errorMessage.postValue("You are already friends.");
+                    break;
+                case REQUEST_ALREADY_SENT:
+                    break;
+                case CANNOT_ADD_SELF:
+                    errorMessage.postValue("You cannot add yourself.");
+                    break;
+                case FAILURE:
+                    errorMessage.postValue("Failed to send request. Please try again.");
+                    Log.e(TAG, "Error sending friend request", e);
+                    break;
             }
         });
+    }
+
+    public void refresh() {
+        loadUserProfile(currentProfileId);
     }
 
     public LiveData<User> getDisplayedUser() { return displayedUser; }
@@ -96,22 +108,17 @@ public class ProfileViewModel extends AndroidViewModel {
 
 
     public void loadUserProfile(@Nullable String userId) {
+        this.currentProfileId = userId;
         FirebaseUser currentUser = authRepository.getCurrentUser();
         String loggedInUserId = (currentUser != null) ? currentUser.getUid() : null;
 
-        // Ako nemamo ni prosleđen ID, ni ulogovanog korisnika, ne možemo ništa.
         if (userId == null && loggedInUserId == null) {
             errorMessage.postValue("Korisnik nije specificiran i niko nije ulogovan.");
             return;
         }
 
-        // Određujemo koji profil treba učitati. Ako je userId null, učitavamo ulogovanog korisnika.
         String profileIdToLoad = (userId != null) ? userId : loggedInUserId;
-
-        // Proveravamo da li je to naš profil.
-        // isMyProfile je true ako je ID koji učitavamo jednak ID-ju ulogovanog korisnika.
         isMyProfile.postValue(profileIdToLoad.equals(loggedInUserId));
-
         userRepository.getUserById(profileIdToLoad, new UserRepository.UserCallback() {
             @Override
             public void onUserLoaded(User user) {

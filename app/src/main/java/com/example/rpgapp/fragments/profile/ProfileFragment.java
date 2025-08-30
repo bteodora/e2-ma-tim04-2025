@@ -1,6 +1,8 @@
 package com.example.rpgapp.fragments.profile;
 
 import android.app.AlertDialog;
+import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -17,6 +19,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.rpgapp.R;
@@ -26,6 +29,10 @@ import com.example.rpgapp.model.UserItem;
 import com.example.rpgapp.model.UserWeapon;
 import com.example.rpgapp.model.Weapon;
 import com.example.rpgapp.tools.GameData;
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.WriterException;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.qrcode.QRCodeWriter;
 
 import java.text.NumberFormat;
 import java.util.HashMap;
@@ -61,6 +68,15 @@ public class ProfileFragment extends Fragment {
         String userId = ProfileFragmentArgs.fromBundle(getArguments()).getUserId();
 
         viewModel.loadUserProfile(userId);
+        NavController navController = NavHostFragment.findNavController(this);
+        navController.getCurrentBackStackEntry().getSavedStateHandle().getLiveData("needs_refresh", false)
+                .observe(getViewLifecycleOwner(), needsRefresh -> {
+                    if (needsRefresh) {
+                        Log.d("ProfileFragment", "Primljen signal za refresh! Osvežavam podatke.");
+                        viewModel.refresh();
+                        navController.getCurrentBackStackEntry().getSavedStateHandle().set("needs_refresh", false);
+                    }
+                });
     }
 
     private void bindViews(View view) {
@@ -100,12 +116,7 @@ public class ProfileFragment extends Fragment {
         viewModel.getDisplayedUser().observe(getViewLifecycleOwner(), user -> {
             if (user != null) {
                 populateUI(user);
-            }
-        });
-
-        viewModel.getDisplayedUser().observe(getViewLifecycleOwner(), user -> {
-            if (user != null) {
-                populateUI(user);
+                generateAndShowQrCode(user.getUserId());
             }
         });
 
@@ -167,6 +178,27 @@ public class ProfileFragment extends Fragment {
                     break;
             }
         });
+    }
+
+    private void generateAndShowQrCode(String userId) {
+        QRCodeWriter writer = new QRCodeWriter();
+        try {
+            BitMatrix bitMatrix = writer.encode(userId, BarcodeFormat.QR_CODE, 512, 512);
+            int width = bitMatrix.getWidth();
+            int height = bitMatrix.getHeight();
+            Bitmap bmp = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
+
+            for (int x = 0; x < width; x++) {
+                for (int y = 0; y < height; y++) {
+                    bmp.setPixel(x, y, bitMatrix.get(x, y) ? Color.BLACK : Color.WHITE);
+                }
+            }
+
+            imageViewQrCode.setImageBitmap(bmp);
+
+        } catch (WriterException e) {
+            e.printStackTrace();
+        }
     }
 
     private void populateUI(User user) {

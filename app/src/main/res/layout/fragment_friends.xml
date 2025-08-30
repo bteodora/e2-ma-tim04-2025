@@ -6,12 +6,19 @@
     tools:context=".fragments.friends.FriendsFragment"
     android:orientation="vertical">
 
+    <Button
+        android:id="@+id/buttonScanQr"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Scan QR Code to Add Friend" />
+
     <SearchView
         android:id="@+id/searchViewUsers"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:queryHint="Search for users..."
         android:iconifiedByDefault="false" />
+
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerViewUsers"

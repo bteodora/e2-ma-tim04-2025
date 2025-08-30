@@ -6,9 +6,11 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
+import androidx.annotation.Nullable;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
+import com.example.rpgapp.model.SendRequestStatus;
 import com.example.rpgapp.model.User;
 import com.example.rpgapp.model.UserItem;
 import com.example.rpgapp.model.UserWeapon;
@@ -125,14 +127,16 @@ public class UserRepository {
         void onUsersFound(List<User> users);
         void onError(Exception e);
     }
-
+    public interface RequestCallback {
+        void onSuccess();
+        void onFailure(Exception e);
+    }
     public interface FriendsCallback {
         void onFriendsLoaded(List<User> friends);
         void onError(Exception e);
     }
-    public interface RequestCallback {
-        void onSuccess();
-        void onFailure(Exception e);
+    public interface SendRequestCallback {
+        void onComplete(SendRequestStatus status, @Nullable Exception e);
     }
 
     public User getLoggedInUser(){
@@ -140,36 +144,49 @@ public class UserRepository {
     }
 
 
-    public void sendFriendRequest(String targetUserId, RequestCallback callback) {
+    public void sendFriendRequest(String targetUserId, SendRequestCallback callback) {
         if (loggedInUser == null) {
-            callback.onFailure(new Exception("Niko nije ulogovan."));
+            callback.onComplete(SendRequestStatus.FAILURE, new Exception("User not logged in."));
             return;
         }
 
         String currentUserId = loggedInUser.getUserId();
 
+        if (currentUserId.equals(targetUserId)) {
+            callback.onComplete(SendRequestStatus.CANNOT_ADD_SELF, null);
+            return;
+        }
+
+        if (loggedInUser.getFriendIds() != null && loggedInUser.getFriendIds().contains(targetUserId)) {
+            callback.onComplete(SendRequestStatus.ALREADY_FRIENDS, null);
+            return;
+        }
+
         DocumentReference targetUserDocRef = db.collection("users").document(targetUserId);
 
         db.runTransaction((Transaction.Function<Void>) transaction -> {
             DocumentSnapshot snapshot = transaction.get(targetUserDocRef);
-
             List<String> friendRequests = (List<String>) snapshot.get("friendRequests");
 
             if (friendRequests == null) {
                 friendRequests = new ArrayList<>();
             }
 
-            if (!friendRequests.contains(currentUserId)) {
-                friendRequests.add(currentUserId);
-                transaction.update(targetUserDocRef, "friendRequests", friendRequests);
+            if (friendRequests.contains(currentUserId)) {
+                return null;
             }
+
+            friendRequests.add(currentUserId);
+            transaction.update(targetUserDocRef, "friendRequests", friendRequests);
             return null;
+
         }).addOnSuccessListener(aVoid -> {
-            Log.d(TAG, "Zahtev za prijateljstvo uspešno poslat korisniku " + targetUserId);
-            callback.onSuccess();
+            Log.d(TAG, "Transakcija za slanje zahteva uspešna.");
+            callback.onComplete(SendRequestStatus.SUCCESS, null);
+
         }).addOnFailureListener(e -> {
             Log.e(TAG, "Greška pri slanju zahteva za prijateljstvo.", e);
-            callback.onFailure(e);
+            callback.onComplete(SendRequestStatus.FAILURE, e);
         });
     }
 
@@ -207,6 +224,7 @@ public class UserRepository {
             });
         }
     }
+
 
     public void acceptFriendRequest(String newFriendId, RequestCallback callback) {
         String myId = loggedInUser.getUserId();

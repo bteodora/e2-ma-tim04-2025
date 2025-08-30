@@ -97,4 +97,8 @@ public class FriendsViewModel extends AndroidViewModel {
             }
         });
     }
+
+    public void sendFriendRequest(String targetUserId, UserRepository.SendRequestCallback callback) {
+        userRepository.sendFriendRequest(targetUserId, callback);
+    }
 }
