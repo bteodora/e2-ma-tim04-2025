@@ -14,6 +14,7 @@ import com.example.rpgapp.model.UserItem;
 import com.example.rpgapp.model.UserWeapon;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.Transaction;
@@ -53,19 +54,54 @@ public class UserRepository {
     }
 
     public void setLoggedInUser(String userId) {
+        db.collection("users").document(userId)
+                .addSnapshotListener((snapshot, e) -> {
+                    // LOG 1: DA LI SE LISTENER UOPŠTE AKTIVIRA?
+                    Log.d("RPG_REACTIVE_DEBUG", "!!! Snapshot Listener je AKTIVIRAN !!!");
+
+                    if (e != null) {
+                        Log.w(TAG, "Listen failed.", e);
+                        return;
+                    }
+
+                    if (snapshot != null && snapshot.exists()) {
+                        User freshUser = snapshot.toObject(User.class);
+                        if (freshUser != null) {
+                            freshUser.setUserId(userId);
+                            this.loggedInUser = freshUser;
+
+                            // --- ISPRAVLJEN DEO ---
+                            // Prvo proverimo da li je lista null, pre nego što je koristimo.
+                            List<String> requests = freshUser.getFriendRequests();
+                            int requestCount = (requests != null) ? requests.size() : 0; // Ako je null, broj je 0
+
+                            // LOG 2: DA LI SE LIVE DATA AŽURIRA? (Sada je bezbedan)
+                            Log.d("RPG_REACTIVE_DEBUG", "Listener: Ažuriram LiveData sa novim podacima. Broj zahteva: " + requestCount);
+                            // ---------------------
+
+                            this.loggedInUserLiveData.postValue(this.loggedInUser);
+                            cacheUserToSQLite(this.loggedInUser);
+                        }
+                    }
+                });
+    }
+
+    public void refreshLoggedInUser() {
+        if (loggedInUser == null) return;
+
+        String userId = loggedInUser.getUserId();
         db.collection("users").document(userId).get()
                 .addOnSuccessListener(documentSnapshot -> {
                     if (documentSnapshot.exists()) {
-                        User user = documentSnapshot.toObject(User.class);
-                        if (user != null) {
-                            user.setUserId(userId);
-                            this.loggedInUser = user;
+                        User freshUser = documentSnapshot.toObject(User.class);
+                        if (freshUser != null) {
+                            freshUser.setUserId(userId);
+                            this.loggedInUser = freshUser;
                             this.loggedInUserLiveData.postValue(this.loggedInUser);
-                            cacheUserToSQLite(user);
+                            Log.d("RPG_REACTIVE_DEBUG", "RUČNO OSVEŽAVANJE USPELO!");
                         }
                     }
-                })
-                .addOnFailureListener(e -> Log.e(TAG, "Greška pri preuzimanju korisnika sa Firebase-a.", e));
+                });
     }
 
     public LiveData<User> getLoggedInUserLiveData() {
@@ -97,6 +133,10 @@ public class UserRepository {
     public interface RequestCallback {
         void onSuccess();
         void onFailure(Exception e);
+    }
+
+    public User getLoggedInUser(){
+        return loggedInUser;
     }
 
 
@@ -131,6 +171,65 @@ public class UserRepository {
             Log.e(TAG, "Greška pri slanju zahteva za prijateljstvo.", e);
             callback.onFailure(e);
         });
+    }
+
+    public void getRequestingUsers(List<String> requestIds, FriendsCallback callback) {
+        if (requestIds == null || requestIds.isEmpty()) {
+            callback.onFriendsLoaded(new ArrayList<>());
+            return;
+        }
+
+        List<User> requestingUsers = new ArrayList<>();
+        final int[] tasksCompleted = {0};
+        int totalTasks = requestIds.size();
+
+        for (String userId : requestIds) {
+            getUserById(userId, new UserCallback() {
+                @Override
+                public void onUserLoaded(User user) {
+                    if (user != null) {
+                        requestingUsers.add(user);
+                    }
+                    tasksCompleted[0]++;
+                    if (tasksCompleted[0] == totalTasks) {
+                        callback.onFriendsLoaded(requestingUsers);
+                    }
+                }
+
+                @Override
+                public void onError(Exception e) {
+                    Log.e(TAG, "Greška pri učitavanju korisnika " + userId, e);
+                    tasksCompleted[0]++;
+                    if (tasksCompleted[0] == totalTasks) {
+                        callback.onFriendsLoaded(requestingUsers); // Vrati one koje si uspeo da učitaš
+                    }
+                }
+            });
+        }
+    }
+
+    public void acceptFriendRequest(String newFriendId, RequestCallback callback) {
+        String myId = loggedInUser.getUserId();
+
+        DocumentReference myDoc = db.collection("users").document(myId);
+        DocumentReference friendDoc = db.collection("users").document(newFriendId);
+
+        db.runTransaction((Transaction.Function<Void>) transaction -> {
+                    transaction.update(myDoc, "friendRequests", FieldValue.arrayRemove(newFriendId));
+                    transaction.update(myDoc, "friendIds", FieldValue.arrayUnion(newFriendId));
+                    transaction.update(friendDoc, "friendIds", FieldValue.arrayUnion(myId));
+                    return null;
+                }).addOnSuccessListener(aVoid -> callback.onSuccess())
+                .addOnFailureListener(e -> callback.onFailure(e));
+    }
+
+    public void declineFriendRequest(String requesterId, RequestCallback callback) {
+        String myId = loggedInUser.getUserId();
+        DocumentReference myDoc = db.collection("users").document(myId);
+
+        myDoc.update("friendRequests", FieldValue.arrayRemove(requesterId))
+                .addOnSuccessListener(aVoid -> callback.onSuccess())
+                .addOnFailureListener(e -> callback.onFailure(e));
     }
     public void getFriendsProfiles(User currentUser, FriendsCallback callback) {
         if (currentUser.getFriendIds() == null || currentUser.getFriendIds().isEmpty()) {

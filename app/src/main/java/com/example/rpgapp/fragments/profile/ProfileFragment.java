@@ -103,6 +103,12 @@ public class ProfileFragment extends Fragment {
             }
         });
 
+        viewModel.getDisplayedUser().observe(getViewLifecycleOwner(), user -> {
+            if (user != null) {
+                populateUI(user);
+            }
+        });
+
         viewModel.getIsMyProfile().observe(getViewLifecycleOwner(), isMyProfile -> {
             if (isMyProfile != null) {
                 int visibility = isMyProfile ? View.VISIBLE : View.GONE;
@@ -120,6 +126,45 @@ public class ProfileFragment extends Fragment {
         viewModel.getErrorMessage().observe(getViewLifecycleOwner(), error -> {
             if (error != null && !error.isEmpty()) {
                 Toast.makeText(getContext(), error, Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        viewModel.getFriendshipStatus().observe(getViewLifecycleOwner(), status -> {
+            if (status == null) return;
+
+            layout_other_user_actions.setVisibility(View.GONE);
+
+            switch (status) {
+                case MY_PROFILE:
+                    break;
+
+                case NOT_FRIENDS:
+                    layout_other_user_actions.setVisibility(View.VISIBLE);
+                    buttonAddFriend.setText("Add Friend");
+                    buttonAddFriend.setEnabled(true);
+                    buttonAddFriend.setOnClickListener(v -> {
+                        viewModel.sendFriendRequest();
+                    });
+                    break;
+
+                case PENDING_SENT:
+                    layout_other_user_actions.setVisibility(View.VISIBLE);
+                    buttonAddFriend.setText("Pending");
+                    buttonAddFriend.setEnabled(false);
+                    break;
+
+                case PENDING_RECEIVED:
+                    layout_other_user_actions.setVisibility(View.VISIBLE);
+                    buttonAddFriend.setText("Accept Request");
+                    buttonAddFriend.setEnabled(true);
+                    // TODO: Kasnije ćemo dodati OnClickListener
+                    break;
+
+                case FRIENDS:
+                    layout_other_user_actions.setVisibility(View.VISIBLE);
+                    buttonAddFriend.setText("Friends");
+                    buttonAddFriend.setEnabled(false);
+                    break;
             }
         });
     }

@@ -15,22 +15,31 @@ import java.util.List;
 
 public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder> {
 
-    private static List<User> userList = new ArrayList<>();
-    private OnUserClickListener listener; // <<-- DODATO
+    private List<User> userList = new ArrayList<>();
+    private OnUserClickListener cardClickListener;
+    private OnActionButtonClickListener actionButtonClickListener;
+    private String actionButtonText = null;
 
-    // Interfejs za obradu klika
     public interface OnUserClickListener {
         void onUserClick(String userId);
     }
 
-    // Konstruktor koji prihvata listener
-    public UserAdapter(OnUserClickListener listener) { // <<-- MODIFIKOVANO
-        this.listener = listener;
+    public interface OnActionButtonClickListener {
+        void onActionButtonClick(User user);
     }
 
-    public void setUsers(List<User> users) {
+    public void setOnActionButtonClickListener(OnActionButtonClickListener listener) {
+        this.actionButtonClickListener = listener;
+    }
+
+    public UserAdapter(OnUserClickListener listener) {
+        this.cardClickListener = listener;
+    }
+
+    public void setUsers(List<User> users, String buttonText) {
         this.userList.clear();
         this.userList.addAll(users);
+        this.actionButtonText = buttonText;
         notifyDataSetChanged();
     }
 
@@ -38,13 +47,13 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder
     @Override
     public UserViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.list_item_user, parent, false);
-        return new UserViewHolder(view, listener); // <<-- MODIFIKOVANO
+        return new UserViewHolder(view, cardClickListener, userList);
     }
 
     @Override
     public void onBindViewHolder(@NonNull UserViewHolder holder, int position) {
         User user = userList.get(position);
-        holder.bind(user);
+        holder.bind(user, actionButtonText, actionButtonClickListener);
     }
 
     @Override
@@ -57,15 +66,13 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder
         private TextView username, levelAndTitle;
         private Button actionButton;
 
-        // Prosleđujemo listener i u ViewHolder
-        public UserViewHolder(@NonNull View itemView, OnUserClickListener listener) { // <<-- MODIFIKOVANO
+        public UserViewHolder(@NonNull View itemView, OnUserClickListener listener, List<User> userList) {
             super(itemView);
             avatar = itemView.findViewById(R.id.imageViewUserAvatar);
             username = itemView.findViewById(R.id.textViewUserName);
             levelAndTitle = itemView.findViewById(R.id.textViewUserLevel);
             actionButton = itemView.findViewById(R.id.buttonUserAction);
 
-            // Postavljamo OnClickListener na celu karticu
             itemView.setOnClickListener(v -> {
                 int position = getAdapterPosition();
                 if (position != RecyclerView.NO_POSITION && listener != null) {
@@ -74,10 +81,20 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder
             });
         }
 
-        public void bind(User user) {
+        public void bind(User user, String buttonText, OnActionButtonClickListener actionListener) {
             username.setText(user.getUsername());
             String levelInfo = "Level " + user.getLevel() + " - " + user.getTitle();
             levelAndTitle.setText(levelInfo);
+            // TODO: Postavi avatar
+
+            if (buttonText != null && !buttonText.isEmpty() && actionListener != null) {
+                actionButton.setVisibility(View.VISIBLE);
+                actionButton.setText(buttonText);
+                actionButton.setOnClickListener(v -> actionListener.onActionButtonClick(user));
+            } else {
+                actionButton.setVisibility(View.GONE);
+                actionButton.setOnClickListener(null);
+            }
         }
     }
 }

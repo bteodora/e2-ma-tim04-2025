@@ -115,10 +115,9 @@ public class FriendsFragment extends Fragment {
                 return;
             }
             Log.d(TAG, "FriendsFragment_Observer: Primljeno " + users.size() + " korisnika. Prosleđujem adapteru.");
-            userAdapter.setUsers(users);
+            userAdapter.setUsers(users, null);
         });
 
-        // ... observer za greške ostaje isti ...
         Log.d(TAG, "FriendsFragment: Observers are set up.");
     }
 }

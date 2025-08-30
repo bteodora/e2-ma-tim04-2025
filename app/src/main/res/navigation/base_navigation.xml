@@ -22,6 +22,18 @@
         app:popUpToInclusive="false"
         />
 
+    <fragment
+        android:id="@+id/requestsFragment"
+        android:name="com.example.rpgapp.fragments.requests.RequestsFragment"
+        android:label="Friend Requests"
+        tools:layout="@layout/fragment_requests">
+
+        <action
+            android:id="@+id/action_requestsFragment_to_friendProfileFragment"
+            app:destination="@id/friendProfileFragment" />
+
+    </fragment>
+
 
 
     <fragment

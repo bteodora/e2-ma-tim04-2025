@@ -41,5 +41,10 @@
             android:id="@+id/nav_friends"
             android:icon="@drawable/ic_face"
             android:title="Friends - Teodora" />
+
+        <item
+            android:id="@+id/requestsFragment"
+            android:icon="@drawable/ic_face"
+            android:title="Friend requests - Teodora" />
     </group>
 </menu>

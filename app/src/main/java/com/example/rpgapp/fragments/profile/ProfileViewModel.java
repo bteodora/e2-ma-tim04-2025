@@ -8,10 +8,12 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.example.rpgapp.database.AuthRepository;
 import com.example.rpgapp.database.UserRepository;
+import com.example.rpgapp.model.FriendshipStatus;
 import com.example.rpgapp.model.User;
 import com.google.firebase.auth.FirebaseUser;
 
@@ -25,10 +27,67 @@ public class ProfileViewModel extends AndroidViewModel {
     private MutableLiveData<Boolean> isMyProfile = new MutableLiveData<>();
     private MutableLiveData<String> errorMessage = new MutableLiveData<>();
 
+    private MediatorLiveData<FriendshipStatus> friendshipStatus = new MediatorLiveData<>();
+    private LiveData<User> loggedInUserLiveData;
+
+
     public ProfileViewModel(@NonNull Application application) {
         super(application);
         authRepository = new AuthRepository(application);
         userRepository = UserRepository.getInstance(application);
+        this.loggedInUserLiveData = userRepository.getLoggedInUserLiveData();
+
+        friendshipStatus.addSource(loggedInUserLiveData, loggedInUser -> {
+            calculateFriendshipStatus(loggedInUser, displayedUser.getValue());
+        });
+
+        friendshipStatus.addSource(displayedUser, profileUser -> {
+            calculateFriendshipStatus(loggedInUserLiveData.getValue(), profileUser);
+        });
+    }
+
+    public LiveData<FriendshipStatus> getFriendshipStatus() {
+        return friendshipStatus;
+    }
+
+    private void calculateFriendshipStatus(User me, User other) {
+        if (me == null || other == null) {
+            return;
+        }
+
+        if (me.getUserId().equals(other.getUserId())) {
+            friendshipStatus.setValue(FriendshipStatus.MY_PROFILE);
+        } else if (me.getFriendIds() != null && me.getFriendIds().contains(other.getUserId())) {
+            friendshipStatus.setValue(FriendshipStatus.FRIENDS);
+        } else if (me.getFriendRequests() != null && me.getFriendRequests().contains(other.getUserId())) {
+            friendshipStatus.setValue(FriendshipStatus.PENDING_RECEIVED);
+        } else if (other.getFriendRequests() != null && other.getFriendRequests().contains(me.getUserId())) {
+            friendshipStatus.setValue(FriendshipStatus.PENDING_SENT);
+        } else {
+            friendshipStatus.setValue(FriendshipStatus.NOT_FRIENDS);
+        }
+    }
+
+    public void sendFriendRequest() {
+        User otherUser = displayedUser.getValue();
+
+        if (otherUser == null) {
+            errorMessage.postValue("Cannot send request, user data is not loaded.");
+            return;
+        }
+
+        userRepository.sendFriendRequest(otherUser.getUserId(), new UserRepository.RequestCallback() {
+            @Override
+            public void onSuccess() {
+                friendshipStatus.postValue(FriendshipStatus.PENDING_SENT);
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                errorMessage.postValue("Failed to send friend request. Please try again.");
+                Log.e(TAG, "Error sending friend request", e);
+            }
+        });
     }
 
     public LiveData<User> getDisplayedUser() { return displayedUser; }
