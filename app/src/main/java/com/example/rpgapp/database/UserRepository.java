@@ -388,6 +388,7 @@ public class UserRepository {
             values.put(SQLiteHelper.COLUMN_POWER_POINTS, user.getPowerPoints());
             values.put(SQLiteHelper.COLUMN_COINS, user.getCoins());
             values.put(SQLiteHelper.COLUMN_REGISTRATION_TIMESTAMP, user.getRegistrationTimestamp());
+            values.put(SQLiteHelper.COLUMN_ALLIANCE_ID, user.getAllianceId());
 
             if (user.getBadges() != null) {
                 values.put(SQLiteHelper.COLUMN_BADGES_JSON, gson.toJson(user.getBadges()));
@@ -409,6 +410,10 @@ public class UserRepository {
 
             if(user.getFriendRequests()!=null){
                 values.put(SQLiteHelper.COLUMN_FRIEND_REQUESTS_JSON, gson.toJson(user.getFriendRequests()));
+            }
+
+            if (user.getAllianceInvites() != null) {
+                values.put(SQLiteHelper.COLUMN_ALLIANCE_INVITES_JSON, gson.toJson(user.getAllianceInvites()));
             }
 
             database.insert(SQLiteHelper.TABLE_USERS, null, values);
@@ -436,11 +441,13 @@ public class UserRepository {
                 user.setPowerPoints(cursor.getInt(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_POWER_POINTS)));
                 user.setCoins(cursor.getLong(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_COINS)));
                 user.setRegistrationTimestamp(cursor.getLong(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_REGISTRATION_TIMESTAMP)));
+                user.setAllianceId(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_ALLIANCE_ID)));
 
                 Type badgeListType = new TypeToken<List<String>>(){}.getType();
                 Type userItemMapType = new TypeToken<Map<String, UserItem>>(){}.getType();
                 Type userWeaponMapType = new TypeToken<Map<String, UserWeapon>>(){}.getType();
                 Type frirendsListType = new TypeToken<List<String>>(){}.getType();
+                Type listStringType = new TypeToken<List<String>>(){}.getType();
 
                 String badgesJson = cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_BADGES_JSON));
                 if (badgesJson != null) {
@@ -469,70 +476,12 @@ public class UserRepository {
 
                 String friendRequestsJson = cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_FRIEND_REQUESTS_JSON));
                 if(friendRequestsJson!=null){
-                    user.setFriendIds(gson.fromJson(friendRequestsJson, frirendsListType));
+                    user.setFriendRequests(gson.fromJson(friendRequestsJson, frirendsListType));
                 }
 
-                cursor.close();
-            }
-        } finally {
-            if (database != null) database.close();
-        }
-        return user;
-    }
-
-    private User getUserFromSQLiteByUsername(String username) {
-        SQLiteDatabase database = null;
-        User user = null;
-        try {
-            database = dbHelper.getReadableDatabase();
-            Cursor cursor = database.query(SQLiteHelper.TABLE_USERS, null, SQLiteHelper.COLUMN_USERNAME + " = ?", new String[]{username}, null, null, null);
-            if (cursor != null && cursor.moveToFirst()) {
-                user = new User();
-                Gson gson = new Gson();
-
-                user.setUserId(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_USER_ID)));
-                user.setUsername(username);
-                user.setAvatarId(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_AVATAR_ID)));
-                user.setLevel(cursor.getInt(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_LEVEL)));
-                user.setTitle(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_TITLE_USER)));
-                user.setXp(cursor.getLong(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_XP)));
-                user.setPowerPoints(cursor.getInt(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_POWER_POINTS)));
-                user.setCoins(cursor.getLong(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_COINS)));
-                user.setRegistrationTimestamp(cursor.getLong(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_REGISTRATION_TIMESTAMP)));
-
-                Type badgeListType = new TypeToken<List<String>>(){}.getType();
-                Type userItemMapType = new TypeToken<Map<String, UserItem>>(){}.getType();
-                Type userWeaponMapType = new TypeToken<Map<String, UserWeapon>>(){}.getType();
-                Type frirendsListType = new TypeToken<List<String>>(){}.getType();
-
-                String badgesJson = cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_BADGES_JSON));
-                if (badgesJson != null) {
-                    user.setBadges(gson.fromJson(badgesJson, badgeListType));
-                }
-
-                String equippedJson = cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_EQUIPPED_ITEMS_JSON));
-                if (equippedJson != null) {
-                    user.setEquipped(gson.fromJson(equippedJson, userItemMapType));
-                }
-
-                String userItemsJson = cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_ITEMS_JSON));
-                if (userItemsJson != null) {
-                    user.setUserItems(gson.fromJson(userItemsJson, userItemMapType));
-                }
-
-                String userWeaponsJson = cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_WEAPONS_JSON));
-                if (userWeaponsJson != null) {
-                    user.setUserWeapons(gson.fromJson(userWeaponsJson, userWeaponMapType));
-                }
-
-                String friendsJson = cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_FRIENDS_JSON));
-                if(friendsJson!=null){
-                    user.setFriendIds(gson.fromJson(friendsJson, frirendsListType));
-                }
-
-                String friendRequestsJson = cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_FRIEND_REQUESTS_JSON));
-                if(friendRequestsJson!=null){
-                    user.setFriendIds(gson.fromJson(friendRequestsJson, frirendsListType));
+                String allianceInvitesJson = cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_ALLIANCE_INVITES_JSON));
+                if (allianceInvitesJson != null) {
+                    user.setAllianceInvites(gson.fromJson(allianceInvitesJson, listStringType));
                 }
 
                 cursor.close();

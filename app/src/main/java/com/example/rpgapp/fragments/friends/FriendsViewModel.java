@@ -7,6 +7,8 @@ import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
+
+import com.example.rpgapp.database.AllianceRepository;
 import com.example.rpgapp.database.UserRepository;
 import com.example.rpgapp.model.User;
 import java.util.ArrayList;
@@ -17,16 +19,21 @@ public class FriendsViewModel extends AndroidViewModel {
     private UserRepository userRepository;
 
     // displayedUsers će sada biti MediatorLiveData da bi mogao da reaguje na druge LiveData izvore
-    private MediatorLiveData<List<User>> displayedUsers = new MediatorLiveData<>();
+    public MediatorLiveData<List<User>> displayedUsers = new MediatorLiveData<>();
     private MutableLiveData<String> errorMessage = new MutableLiveData<>();
     private MutableLiveData<Boolean> isLoading = new MutableLiveData<>();
     private LiveData<User> currentUserLiveData;
+    private AllianceRepository allianceRepository;
+
+    private MutableLiveData<Boolean> allianceCreationStatus = new MutableLiveData<>();
+    public LiveData<Boolean> getAllianceCreationStatus() { return allianceCreationStatus; }
 
     public FriendsViewModel(@NonNull Application application) {
         super(application);
         Log.d(TAG, "FriendsViewModel: Constructor START");
         //userRepository = new UserRepository(application);
         userRepository = UserRepository.getInstance(application);
+        allianceRepository = AllianceRepository.getInstance(application);
         this.currentUserLiveData = userRepository.getLoggedInUserLiveData();
 
         // KLJUČNA PROMENA: Odmah dodajemo currentUserLiveData kao izvor
@@ -96,6 +103,25 @@ public class FriendsViewModel extends AndroidViewModel {
                 isLoading.postValue(false);
             }
         });
+    }
+
+    public void createAlliance(String name, List<String> invitedFriendIds) {
+        allianceRepository.createAlliance(name, invitedFriendIds, new UserRepository.RequestCallback() {
+            @Override
+            public void onSuccess() {
+                allianceCreationStatus.postValue(true);
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                Log.e("FriendsViewModel", "Alliance creation failed", e);
+                allianceCreationStatus.postValue(false);
+            }
+        });
+    }
+
+    public void resetAllianceCreationStatus() {
+        allianceCreationStatus.setValue(null);
     }
 
     public void sendFriendRequest(String targetUserId, UserRepository.SendRequestCallback callback) {

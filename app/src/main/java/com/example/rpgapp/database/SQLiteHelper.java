@@ -14,7 +14,7 @@ public class SQLiteHelper extends SQLiteOpenHelper {
     public static final String COLUMN_IMAGE = "image";
 
     private static final String DATABASE_NAME = "rpgapp_final.db";
-    private static final int DATABASE_VERSION = 4;
+    private static final int DATABASE_VERSION = 5;
 
     private static final String DB_CREATE = "create table "
             + TABLE_PRODUCTS + "("
@@ -25,7 +25,6 @@ public class SQLiteHelper extends SQLiteOpenHelper {
             + ")";
 
     //--------------- USER ---------------------
-    //TODO dodati za ostale klase isto ovako:
     public static final String TABLE_USERS = "USERS";
     public static final String COLUMN_USER_ID = "_id";
     public static final String COLUMN_USERNAME = "username";
@@ -42,6 +41,33 @@ public class SQLiteHelper extends SQLiteOpenHelper {
     public static final String COLUMN_ITEMS_JSON = "items_json";
     public static final String COLUMN_FRIENDS_JSON = "friends_json";
     public static final String COLUMN_FRIEND_REQUESTS_JSON = "friend_requests_json";
+    public static final String COLUMN_ALLIANCE_ID = "alliance_id";
+    public static final String COLUMN_ALLIANCE_INVITES_JSON = "alliance_invites_json";
+
+    //--------------- ALLIANCE ---------------------
+    public static final String TABLE_ALLIANCES = "ALLIANCES";
+    public static final String COLUMN_ALLIANCE_PK_ID = "_id";
+    public static final String COLUMN_ALLIANCE_DOC_ID = "alliance_doc_id";
+    public static final String COLUMN_ALLIANCE_NAME = "name";
+    public static final String COLUMN_LEADER_ID = "leader_id";
+    public static final String COLUMN_LEADER_USERNAME = "leader_username";
+    public static final String COLUMN_MEMBER_IDS_JSON = "member_ids_json";
+    public static final String COLUMN_PENDING_INVITE_IDS_JSON = "pending_invite_ids_json";
+    public static final String COLUMN_MISSION_STARTED = "mission_started";
+    public static final String COLUMN_CREATED_AT = "created_at";
+
+    private static final String DB_CREATE_ALLIANCES = "create table "
+            + TABLE_ALLIANCES + "("
+            + COLUMN_ALLIANCE_PK_ID + " integer primary key autoincrement, "
+            + COLUMN_ALLIANCE_DOC_ID + " text unique not null, "
+            + COLUMN_ALLIANCE_NAME + " text, "
+            + COLUMN_LEADER_ID + " text, "
+            + COLUMN_LEADER_USERNAME + " text, "
+            + COLUMN_MEMBER_IDS_JSON + " text, "
+            + COLUMN_PENDING_INVITE_IDS_JSON + " text, "
+            + COLUMN_MISSION_STARTED + " integer, "
+            + COLUMN_CREATED_AT + " integer"
+            + ")";
 
     private static final String DB_CREATE_USERS = "create table "
             + TABLE_USERS + "("
@@ -75,6 +101,7 @@ public class SQLiteHelper extends SQLiteOpenHelper {
         Log.i("REZ_DB", "ON CREATE SQLITE HELPER");
         db.execSQL(DB_CREATE);
         db.execSQL(DB_CREATE_USERS);
+        db.execSQL(DB_CREATE_ALLIANCES);
     }
 
     //kada zelimo da izmenimo tabele, moramo pozvati drop table za sve tabele koje imamo
@@ -83,7 +110,8 @@ public class SQLiteHelper extends SQLiteOpenHelper {
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         Log.i("REZ_DB", "ON UPGRADE SQLITE HELPER");
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_PRODUCTS);
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_USERS); //
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_USERS);
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_ALLIANCES);
         onCreate(db);
     }
 

@@ -12,6 +12,7 @@ import com.example.rpgapp.R;
 import com.example.rpgapp.model.User;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map; // <-- VAŽAN IMPORT
 
 public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder> {
 
@@ -19,6 +20,11 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder
     private OnUserClickListener cardClickListener;
     private OnActionButtonClickListener actionButtonClickListener;
     private String actionButtonText = null;
+
+    // --- DODAJ OVAJ ATRIBUT ---
+    // Mapa koja čuva stanje selekcije, null ako selekcija nije aktivna
+    private Map<String, Boolean> selectionMap = null;
+    // -------------------------
 
     public interface OnUserClickListener {
         void onUserClick(String userId);
@@ -32,6 +38,10 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder
         this.actionButtonClickListener = listener;
     }
 
+    public void setSelectionMap(Map<String, Boolean> selectionMap) {
+        this.selectionMap = selectionMap;
+    }
+
     public UserAdapter(OnUserClickListener listener) {
         this.cardClickListener = listener;
     }
@@ -41,6 +51,10 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder
         this.userList.addAll(users);
         this.actionButtonText = buttonText;
         notifyDataSetChanged();
+    }
+
+    public User getUserAt(int position) {
+        return userList.get(position);
     }
 
     @NonNull
@@ -53,7 +67,7 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder
     @Override
     public void onBindViewHolder(@NonNull UserViewHolder holder, int position) {
         User user = userList.get(position);
-        holder.bind(user, actionButtonText, actionButtonClickListener);
+        holder.bind(user, actionButtonText, actionButtonClickListener, selectionMap);
     }
 
     @Override
@@ -81,7 +95,7 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder
             });
         }
 
-        public void bind(User user, String buttonText, OnActionButtonClickListener actionListener) {
+        public void bind(User user, String buttonText, OnActionButtonClickListener actionListener, Map<String, Boolean> selectionMap) {
             username.setText(user.getUsername());
             String levelInfo = "Level " + user.getLevel() + " - " + user.getTitle();
             levelAndTitle.setText(levelInfo);
@@ -94,6 +108,17 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder
             } else {
                 actionButton.setVisibility(View.GONE);
                 actionButton.setOnClickListener(null);
+            }
+
+            if (selectionMap != null) {
+                boolean isSelected = selectionMap.containsKey(user.getUserId()) && Boolean.TRUE.equals(selectionMap.get(user.getUserId()));
+                if (isSelected) {
+                    itemView.setBackgroundColor(itemView.getContext().getResources().getColor(R.color.selected_item_background));
+                } else {
+                    itemView.setBackgroundColor(itemView.getContext().getResources().getColor(android.R.color.transparent));
+                }
+            } else {
+                itemView.setBackgroundColor(itemView.getContext().getResources().getColor(android.R.color.transparent));
             }
         }
     }
