@@ -53,46 +53,13 @@ public class FriendsFragment extends Fragment {
                 String scannedUserId = result.getContents();
                 Log.d("FriendsFragment", "Skeniran je userId: " + scannedUserId);
 
-                viewModel.sendFriendRequest(scannedUserId, (status, e) -> {
-                    String message = "";
-                    boolean shouldNavigate = false;
+                FriendsFragmentDirections.ActionFriendsFragmentToFriendProfileFragment action =
+                        FriendsFragmentDirections.actionFriendsFragmentToFriendProfileFragment();
+                action.setUserId(scannedUserId);
 
-                    switch (status) {
-                        case SUCCESS:
-                            message = "Friend request sent!";
-                            shouldNavigate = true;
-                            break;
-                        case ALREADY_FRIENDS:
-                            message = "You are already friends!";
-                            shouldNavigate = true;
-                            break;
-                        case REQUEST_ALREADY_SENT:
-                            message = "Request was already sent.";
-                            shouldNavigate = true;
-                            break;
-                        case CANNOT_ADD_SELF:
-                            message = "You cannot add yourself as a friend.";
-                            break;
-                        case FAILURE:
-                            message = "Error: " + (e != null ? e.getMessage() : "Unknown error");
-                            break;
-                    }
+                action.setAutoSendRequest(true);
 
-                    Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
-
-                    if (shouldNavigate) {
-                        NavController navController = NavHostFragment.findNavController(FriendsFragment.this);
-
-                        if (status == SendRequestStatus.SUCCESS) {
-                            navController.getCurrentBackStackEntry().getSavedStateHandle().set("needs_refresh", true);
-                        }
-
-                        FriendsFragmentDirections.ActionFriendsFragmentToFriendProfileFragment action =
-                                FriendsFragmentDirections.actionFriendsFragmentToFriendProfileFragment();
-                        action.setUserId(scannedUserId);
-                        navController.navigate(action);
-                    }
-                });
+                NavHostFragment.findNavController(FriendsFragment.this).navigate(action);
             });
 
     @Override
@@ -111,29 +78,19 @@ public class FriendsFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        viewModel = new ViewModelProvider(this).get(FriendsViewModel.class);
 
         searchViewUsers = view.findViewById(R.id.searchViewUsers);
         recyclerViewUsers = view.findViewById(R.id.recyclerViewUsers);
-
-        viewModel = new ViewModelProvider(this).get(FriendsViewModel.class);
 
         view.findViewById(R.id.buttonScanQr).setOnClickListener(v -> {
             startScanner();
         });
 
-        viewModel.getCurrentUserLiveDataForDebug().observe(getViewLifecycleOwner(), user -> {
-            if (user != null) {
-                Log.d(TAG, "Korisnik je stigao u Fragment: " + user.getUsername());
-            } else {
-                Log.d(TAG, "Korisnik je NULL u Fragmentu.");
-            }
-        });
 
         setupRecyclerView();
         setupSearchView();
         observeViewModel();
-
-        Log.d(TAG, "FriendsFragment: onViewCreated END");
     }
 
     private void startScanner() {

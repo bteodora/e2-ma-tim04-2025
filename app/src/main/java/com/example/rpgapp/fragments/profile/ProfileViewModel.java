@@ -30,6 +30,10 @@ public class ProfileViewModel extends AndroidViewModel {
     private MediatorLiveData<FriendshipStatus> friendshipStatus = new MediatorLiveData<>();
     private LiveData<User> loggedInUserLiveData;
     private String currentProfileId;
+    private boolean autoSendPending = false;
+    public void setAutoSendFlag() {
+        this.autoSendPending = true;
+    }
 
 
     public ProfileViewModel(@NonNull Application application) {
@@ -49,6 +53,14 @@ public class ProfileViewModel extends AndroidViewModel {
 
     public LiveData<FriendshipStatus> getFriendshipStatus() {
         return friendshipStatus;
+    }
+
+    public void executeAutoSendIfNeeded(FriendshipStatus status) {
+        if (autoSendPending && status == FriendshipStatus.NOT_FRIENDS) {
+            Log.d("ProfileViewModel", "Automatsko slanje zahteva pokrenuto...");
+            autoSendPending = false;
+            sendFriendRequest();
+        }
     }
 
     private void calculateFriendshipStatus(User me, User other) {

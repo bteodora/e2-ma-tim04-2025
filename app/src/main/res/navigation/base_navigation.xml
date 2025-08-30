@@ -27,6 +27,10 @@
         android:name="com.example.rpgapp.fragments.requests.RequestsFragment"
         android:label="Friend Requests"
         tools:layout="@layout/fragment_requests">
+        <argument
+            android:name="autoSendRequest"
+            app:argType="boolean"
+            android:defaultValue="false" />
 
         <action
             android:id="@+id/action_requestsFragment_to_friendProfileFragment"
@@ -46,6 +50,10 @@
             app:argType="string"
             app:nullable="true"
             android:defaultValue="@null" />
+        <argument
+            android:name="autoSendRequest"
+            app:argType="boolean"
+            android:defaultValue="false" />
         <action
             android:id="@+id/action_profileFragment_to_changePasswordFragment"
             app:destination="@id/nav_password" />
@@ -61,6 +69,10 @@
             app:argType="string"
             app:nullable="true"
             android:defaultValue="@null" />
+        <argument
+            android:name="autoSendRequest"
+            app:argType="boolean"
+            android:defaultValue="false" />
     </fragment>
 
     <fragment

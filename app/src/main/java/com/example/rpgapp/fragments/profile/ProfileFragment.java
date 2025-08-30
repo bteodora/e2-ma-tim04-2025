@@ -65,18 +65,15 @@ public class ProfileFragment extends Fragment {
         bindViews(view);
         observeViewModel();
 
-        String userId = ProfileFragmentArgs.fromBundle(getArguments()).getUserId();
+        ProfileFragmentArgs args = ProfileFragmentArgs.fromBundle(getArguments());
+        String userId = args.getUserId();
+        boolean autoSend = args.getAutoSendRequest();
 
         viewModel.loadUserProfile(userId);
-        NavController navController = NavHostFragment.findNavController(this);
-        navController.getCurrentBackStackEntry().getSavedStateHandle().getLiveData("needs_refresh", false)
-                .observe(getViewLifecycleOwner(), needsRefresh -> {
-                    if (needsRefresh) {
-                        Log.d("ProfileFragment", "Primljen signal za refresh! Osvežavam podatke.");
-                        viewModel.refresh();
-                        navController.getCurrentBackStackEntry().getSavedStateHandle().set("needs_refresh", false);
-                    }
-                });
+
+        if (autoSend) {
+            viewModel.setAutoSendFlag();
+        }
     }
 
     private void bindViews(View view) {
@@ -142,6 +139,7 @@ public class ProfileFragment extends Fragment {
 
         viewModel.getFriendshipStatus().observe(getViewLifecycleOwner(), status -> {
             if (status == null) return;
+            viewModel.executeAutoSendIfNeeded(status);
 
             layout_other_user_actions.setVisibility(View.GONE);
 
