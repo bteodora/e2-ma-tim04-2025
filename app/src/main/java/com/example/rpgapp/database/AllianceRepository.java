@@ -207,4 +207,30 @@ public class AllianceRepository {
                 .addOnFailureListener(e -> callback.onFailure(e));
     }
 
+    public void disbandAlliance(String allianceId, List<String> memberIds, UserRepository.RequestCallback callback) {
+        WriteBatch batch = db.batch();
+        DocumentReference allianceDoc = db.collection("alliances").document(allianceId);
+        batch.delete(allianceDoc);
+
+        for (String memberId : memberIds) {
+            DocumentReference userDoc = db.collection("users").document(memberId);
+            batch.update(userDoc, "allianceId", null);
+        }
+
+        batch.commit().addOnSuccessListener(aVoid -> callback.onSuccess())
+                .addOnFailureListener(e -> callback.onFailure(e));
+    }
+
+    public void leaveAlliance(String allianceId, String userId, UserRepository.RequestCallback callback) {
+        WriteBatch batch = db.batch();
+        DocumentReference allianceDoc = db.collection("alliances").document(allianceId);
+        batch.update(allianceDoc, "memberIds", FieldValue.arrayRemove(userId));
+
+        DocumentReference userDoc = db.collection("users").document(userId);
+        batch.update(userDoc, "allianceId", null);
+
+        batch.commit().addOnSuccessListener(aVoid -> callback.onSuccess())
+                .addOnFailureListener(e -> callback.onFailure(e));
+    }
+
 }
