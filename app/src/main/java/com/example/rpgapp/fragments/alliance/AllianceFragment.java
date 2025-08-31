@@ -4,19 +4,25 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.viewpager2.widget.ViewPager2;
 import com.example.rpgapp.R;
+import com.example.rpgapp.adapters.AlliancePagerAdapter;
+import com.google.android.material.tabs.TabLayout;
+import com.google.android.material.tabs.TabLayoutMediator;
 
 public class AllianceFragment extends Fragment {
-
     private AllianceViewModel viewModel;
-    private TextView textViewAllianceName;
-    private TextView textViewLeaderName;
-    // ... ostali UI elementi ...
+    private TabLayout tabLayout;
+    private ViewPager2 viewPager;
+    private AlliancePagerAdapter pagerAdapter;
+    private TextView notInAllianceText;
+    private LinearLayout allianceContentLayout;
 
     @Nullable
     @Override
@@ -28,11 +34,28 @@ public class AllianceFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        // Inicijalizuj ViewModel u glavnom fragmentu
         viewModel = new ViewModelProvider(this).get(AllianceViewModel.class);
 
-        textViewAllianceName = view.findViewById(R.id.textViewAllianceName);
-        textViewLeaderName = view.findViewById(R.id.textViewLeaderName);
-        // ... poveži ostale view-ove ...
+        tabLayout = view.findViewById(R.id.tabLayout);
+        viewPager = view.findViewById(R.id.viewPager);
+        notInAllianceText = view.findViewById(R.id.textViewNotInAlliance);
+        allianceContentLayout = view.findViewById(R.id.layout_alliance_content);
+
+        pagerAdapter = new AlliancePagerAdapter(this);
+        viewPager.setAdapter(pagerAdapter);
+
+        new TabLayoutMediator(tabLayout, viewPager, (tab, position) -> {
+            switch (position) {
+                case 0:
+                    tab.setText("Overview");
+                    break;
+                case 1:
+                    tab.setText("Chat");
+                    break;
+                    // TODO dodati i za misiju
+            }
+        }).attach();
 
         observeViewModel();
     }
@@ -40,14 +63,13 @@ public class AllianceFragment extends Fragment {
     private void observeViewModel() {
         viewModel.getCurrentAlliance().observe(getViewLifecycleOwner(), alliance -> {
             if (alliance != null) {
-                // Imamo podatke, popuni UI
-                textViewAllianceName.setText(alliance.getName());
-                textViewLeaderName.setText(alliance.getLeaderUsername());
-                // TODO: Popuni RecyclerView sa članovima
+                // Korisnik je u savezu, prikaži tabove
+                allianceContentLayout.setVisibility(View.VISIBLE);
+                notInAllianceText.setVisibility(View.GONE);
             } else {
                 // Korisnik nije u savezu, prikaži poruku
-                textViewAllianceName.setText("You are not in an alliance.");
-                // TODO: Sakrij ostatak UI-ja
+                allianceContentLayout.setVisibility(View.GONE);
+                notInAllianceText.setVisibility(View.VISIBLE);
             }
         });
     }

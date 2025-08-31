@@ -74,4 +74,59 @@ public class AllianceRepository {
     }
 
     // TODO: Ovde ćemo kasnije dodati ostale metode (get allianceById, acceptInvite, sendMessage, itd.)
+    public interface AllianceCallback {
+        void onAllianceLoaded(Alliance alliance);
+    }
+    public void listenToAlliance(String allianceId, AllianceCallback callback) {
+        db.collection("alliances").document(allianceId)
+                .addSnapshotListener((snapshot, e) -> {
+                    if (e != null) {
+                        Log.w(TAG, "Listen failed.", e);
+                        return;
+                    }
+
+                    if (snapshot != null && snapshot.exists()) {
+                        Alliance alliance = snapshot.toObject(Alliance.class);
+                        callback.onAllianceLoaded(alliance);
+                    } else {
+                        Log.d(TAG, "Current data: null");
+                        callback.onAllianceLoaded(null);
+                    }
+                });
+    }
+    public void getMemberProfiles(List<String> memberIds, UserRepository.FriendsCallback callback) {
+        if (memberIds == null || memberIds.isEmpty()) {
+            callback.onFriendsLoaded(new ArrayList<>());
+            return;
+        }
+
+        List<User> members = new ArrayList<>();
+        final int[] tasksCompleted = {0};
+        int totalTasks = memberIds.size();
+
+        for (String userId : memberIds) {
+            userRepository.getUserById(userId, new UserRepository.UserCallback() {
+                @Override
+                public void onUserLoaded(User user) {
+                    if (user != null) {
+                        members.add(user);
+                    }
+                    tasksCompleted[0]++;
+                    if (tasksCompleted[0] == totalTasks) {
+                        callback.onFriendsLoaded(members);
+                    }
+                }
+
+                @Override
+                public void onError(Exception e) {
+                    Log.e(TAG, "Greška pri učitavanju profila člana " + userId, e);
+                    tasksCompleted[0]++;
+                    if (tasksCompleted[0] == totalTasks) {
+                        callback.onFriendsLoaded(members);
+                    }
+                }
+            });
+        }
+    }
+
 }
