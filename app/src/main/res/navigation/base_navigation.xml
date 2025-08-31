@@ -147,5 +147,28 @@
             app:destination="@id/nav_register" />
     </fragment>
 
+    <fragment
+        android:id="@+id/nav_tasks"
+        android:name="com.example.rpgapp.fragments.task.TaskListFragment"
+        android:label="Tasks"
+        tools:layout="@layout/fragment_task_list" >
+
+        <action
+            android:id="@+id/action_taskList_to_taskPage"
+            app:destination="@id/nav_task_page" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/nav_task_page"
+        android:name="com.example.rpgapp.fragments.task.TaskPageFragment"
+        android:label="Task Page"
+        tools:layout="@layout/fragment_task_page" />
+
+    <fragment
+        android:id="@+id/nav_create_task"
+        android:name="com.example.rpgapp.fragments.task.CreateTaskFragment"
+        android:label="Create Task"
+        tools:layout="@layout/fragment_create_task" />
+
 
 </navigation>

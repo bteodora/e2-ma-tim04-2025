@@ -14,7 +14,7 @@ public class SQLiteHelper extends SQLiteOpenHelper {
     public static final String COLUMN_IMAGE = "image";
 
     private static final String DATABASE_NAME = "rpgapp_final.db";
-    private static final int DATABASE_VERSION = 5;
+    private static final int DATABASE_VERSION = 6; 
 
     private static final String DB_CREATE = "create table "
             + TABLE_PRODUCTS + "("
@@ -88,31 +88,65 @@ public class SQLiteHelper extends SQLiteOpenHelper {
             + COLUMN_FRIEND_REQUESTS_JSON+ " text"
             + ")";
 
+    //--------------- TASK ---------------------
+    public static final String TABLE_TASKS = "TASKS";
+    public static final String COLUMN_TASK_ID = "task_id";
+    public static final String COLUMN_CATEGORY = "category";
+    public static final String COLUMN_COLOR = "color";
+    public static final String COLUMN_FREQUENCY = "frequency";
+    public static final String COLUMN_INTERVAL = "interval";
+    public static final String COLUMN_INTERVAL_UNIT = "interval_unit";
+    public static final String COLUMN_START_DATE = "start_date";
+    public static final String COLUMN_END_DATE = "end_date";
+    public static final String COLUMN_TIME = "time";
+    public static final String COLUMN_TITLE_TASK = "title";
+    public static final String COLUMN_DESCRIPTION_TASK = "description";
+    public static final String COLUMN_DIFFICULTY_XP = "difficulty_xp";
+    public static final String COLUMN_IMPORTANCE_XP = "importance_xp";
+    public static final String COLUMN_TOTAL_XP = "total_xp";
+    public static final String COLUMN_STATUS = "status";
+    public static final String COLUMN_DUE_DATE = "dueDate";
 
-    //Potrebno je dodati konstruktor zbog pravilne inicijalizacije
+    private static final String DB_CREATE_TASKS = "CREATE TABLE " + TABLE_TASKS + "("
+            + COLUMN_TASK_ID + " TEXT PRIMARY KEY, "
+            + COLUMN_TITLE_TASK + " TEXT, "
+            + COLUMN_DESCRIPTION_TASK + " TEXT, "
+            + COLUMN_CATEGORY + " TEXT, "
+            + COLUMN_COLOR + " TEXT, "
+            + COLUMN_FREQUENCY + " TEXT, "
+            + COLUMN_INTERVAL + " INTEGER, "
+            + COLUMN_INTERVAL_UNIT + " TEXT, "
+            + COLUMN_START_DATE + " TEXT, "
+            + COLUMN_END_DATE + " TEXT, "
+            + COLUMN_TIME + " TEXT, "
+            + COLUMN_DIFFICULTY_XP + " INTEGER, "
+            + COLUMN_IMPORTANCE_XP + " INTEGER, "
+            + COLUMN_TOTAL_XP + " INTEGER, "
+            + COLUMN_STATUS + " TEXT,"
+            + COLUMN_DUE_DATE + " TEXT"
+            + ")";
+
+
     public SQLiteHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
 
-    //Prilikom kreiranja baze potrebno je da pozovemo odgovarajuce metode biblioteke
-    //prilikom kreiranja moramo pozvati db.execSQL za svaku tabelu koju imamo
     @Override
     public void onCreate(SQLiteDatabase db) {
         Log.i("REZ_DB", "ON CREATE SQLITE HELPER");
         db.execSQL(DB_CREATE);
         db.execSQL(DB_CREATE_USERS);
-        db.execSQL(DB_CREATE_ALLIANCES);
+        db.execSQL(DB_CREATE_ALLIANCES); 
+        db.execSQL(DB_CREATE_TASKS);
     }
 
-    //kada zelimo da izmenimo tabele, moramo pozvati drop table za sve tabele koje imamo
-    //  moramo voditi računa o podacima, pa ćemo onda raditi ovde migracije po potrebi
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         Log.i("REZ_DB", "ON UPGRADE SQLITE HELPER");
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_PRODUCTS);
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_USERS);
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_ALLIANCES);
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_ALLIANCES); 
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_TASKS);
         onCreate(db);
     }
-
 }
