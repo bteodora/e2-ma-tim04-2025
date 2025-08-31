@@ -4,6 +4,7 @@ import android.content.Context;
 import android.util.Log;
 import androidx.annotation.Nullable;
 import com.example.rpgapp.model.Alliance;
+import com.example.rpgapp.model.Notification;
 import com.example.rpgapp.model.User;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FieldValue;
@@ -127,6 +128,83 @@ public class AllianceRepository {
                 }
             });
         }
+    }
+    public void getAllianceById(String allianceId, AllianceCallback callback) {
+        db.collection("alliances").document(allianceId).get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        callback.onAllianceLoaded(documentSnapshot.toObject(Alliance.class));
+                    } else {
+                        callback.onAllianceLoaded(null);
+                    }
+                });
+    }
+
+    public void acceptAllianceInvite(String newAllianceId, UserRepository.RequestCallback callback) {
+        User currentUser = userRepository.getLoggedInUser();
+        if (currentUser == null) {
+            callback.onFailure(new Exception("User not logged in."));
+            return;
+        }
+
+        // TODO: Provera da li je misija u starom savezu aktivna pre nego što se ovo pozove!
+
+        WriteBatch batch = db.batch();
+        String currentUserId = currentUser.getUserId();
+
+        DocumentReference userDoc = db.collection("users").document(currentUserId);
+        batch.update(userDoc, "allianceId", newAllianceId);
+        batch.update(userDoc, "allianceInvites", FieldValue.arrayRemove(newAllianceId));
+
+        DocumentReference newAllianceDoc = db.collection("alliances").document(newAllianceId);
+        batch.update(newAllianceDoc, "pendingInviteIds", FieldValue.arrayRemove(currentUserId));
+        batch.update(newAllianceDoc, "memberIds", FieldValue.arrayUnion(currentUserId));
+
+        String oldAllianceId = currentUser.getAllianceId();
+        if (oldAllianceId != null && !oldAllianceId.isEmpty()) {
+            DocumentReference oldAllianceDoc = db.collection("alliances").document(oldAllianceId);
+            batch.update(oldAllianceDoc, "memberIds", FieldValue.arrayRemove(currentUserId));
+        }
+
+        db.collection("alliances").document(newAllianceId).get()
+                .addOnSuccessListener(allianceDoc -> {
+                    if (allianceDoc.exists()) {
+                        String leaderId = allianceDoc.getString("leaderId");
+                        String allianceName = allianceDoc.getString("name");
+
+                        String title = "New Member!";
+                        String message = currentUser.getUsername() + " has joined your alliance '" + allianceName + "'.";
+                        Notification notification = new Notification(leaderId, title, message);
+
+                        DocumentReference notificationRef = db.collection("notifications").document(); // Novi ID
+                        batch.set(notificationRef, notification);
+
+                        batch.commit().addOnSuccessListener(aVoid -> {
+                            userRepository.refreshLoggedInUser();
+                            callback.onSuccess();
+                        }).addOnFailureListener(e -> callback.onFailure(e));
+                    } else {
+                        callback.onFailure(new Exception("Alliance not found."));
+                    }
+                })
+                .addOnFailureListener(e -> callback.onFailure(e));
+    }
+
+    public void declineAllianceInvite(String allianceId, UserRepository.RequestCallback callback) {
+        User currentUser = userRepository.getLoggedInUser();
+        if (currentUser == null) {
+            callback.onFailure(new Exception("User not logged in."));
+            return;
+        }
+
+        DocumentReference userDoc = db.collection("users").document(currentUser.getUserId());
+
+        userDoc.update("allianceInvites", FieldValue.arrayRemove(allianceId))
+                .addOnSuccessListener(aVoid -> {
+                    userRepository.refreshLoggedInUser();
+                    callback.onSuccess();
+                })
+                .addOnFailureListener(e -> callback.onFailure(e));
     }
 
 }

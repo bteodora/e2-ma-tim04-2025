@@ -10,6 +10,8 @@ import androidx.annotation.Nullable;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
+import com.example.rpgapp.model.Alliance;
+import com.example.rpgapp.model.Notification;
 import com.example.rpgapp.model.SendRequestStatus;
 import com.example.rpgapp.model.User;
 import com.example.rpgapp.model.UserItem;
@@ -18,6 +20,7 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.Transaction;
 import com.google.gson.Gson;
@@ -38,6 +41,8 @@ public class UserRepository {
     private User loggedInUser = null;
     private MutableLiveData<User> loggedInUserLiveData = new MutableLiveData<>();
     private Context context;
+    private ListenerRegistration allianceInviteListener;
+    private ListenerRegistration allianceListener;
 
     private UserRepository(Context context) {
         this.context = context.getApplicationContext();
@@ -58,8 +63,6 @@ public class UserRepository {
     public void setLoggedInUser(String userId) {
         db.collection("users").document(userId)
                 .addSnapshotListener((snapshot, e) -> {
-                    // LOG 1: DA LI SE LISTENER UOPŠTE AKTIVIRA?
-                    Log.d("RPG_REACTIVE_DEBUG", "!!! Snapshot Listener je AKTIVIRAN !!!");
 
                     if (e != null) {
                         Log.w(TAG, "Listen failed.", e);
@@ -71,16 +74,8 @@ public class UserRepository {
                         if (freshUser != null) {
                             freshUser.setUserId(userId);
                             this.loggedInUser = freshUser;
-
-                            // --- ISPRAVLJEN DEO ---
-                            // Prvo proverimo da li je lista null, pre nego što je koristimo.
                             List<String> requests = freshUser.getFriendRequests();
-                            int requestCount = (requests != null) ? requests.size() : 0; // Ako je null, broj je 0
-
-                            // LOG 2: DA LI SE LIVE DATA AŽURIRA? (Sada je bezbedan)
-                            Log.d("RPG_REACTIVE_DEBUG", "Listener: Ažuriram LiveData sa novim podacima. Broj zahteva: " + requestCount);
-                            // ---------------------
-
+                            int requestCount = (requests != null) ? requests.size() : 0;
                             this.loggedInUserLiveData.postValue(this.loggedInUser);
                             cacheUserToSQLite(this.loggedInUser);
                         }
@@ -104,6 +99,64 @@ public class UserRepository {
                         }
                     }
                 });
+    }
+
+    public void startListeningForNotifications(String userId, NotificationListener listener) {
+        if (notificationsListener != null) {
+            notificationsListener.remove();
+        }
+
+        notificationsListener = db.collection("notifications")
+                .whereEqualTo("recipientId", userId)
+                .whereEqualTo("read", false) // Slušaj samo za nepročitane
+                .addSnapshotListener((snapshots, e) -> {
+                    if (e != null || snapshots == null) {
+                        return;
+                    }
+                    for (DocumentSnapshot doc : snapshots.getDocuments()) {
+                        Notification notification = doc.toObject(Notification.class);
+                        if (notification != null) {
+                            listener.onNotificationReceived(notification);
+                            doc.getReference().update("read", true);
+                        }
+                    }
+                });
+    }
+
+    public void startListeningForAllianceInvites(String userId, AllianceInviteListener listener) {
+        if (allianceInviteListener != null) {
+            allianceInviteListener.remove();
+        }
+
+        DocumentReference userDoc = db.collection("users").document(userId);
+
+        allianceInviteListener = userDoc.addSnapshotListener((snapshot, e) -> {
+            if (e != null || snapshot == null || !snapshot.exists()) {
+                return;
+            }
+
+            User user = snapshot.toObject(User.class);
+            if (user == null || user.getAllianceInvites() == null || user.getAllianceInvites().isEmpty()) {
+                return;
+            }
+
+            String allianceIdToShow = user.getAllianceInvites().get(0);
+
+            listener.onNewAllianceInvite(allianceIdToShow);
+        });
+    }
+
+    public void stopListeningForNotifications() {
+        if (notificationsListener != null) {
+            notificationsListener.remove();
+            notificationsListener = null;
+        }
+    }
+    public void stopListeningForAllianceInvites() {
+        if (allianceInviteListener != null) {
+            allianceInviteListener.remove();
+            allianceInviteListener = null;
+        }
     }
 
     public LiveData<User> getLoggedInUserLiveData() {
@@ -135,12 +188,44 @@ public class UserRepository {
         void onFriendsLoaded(List<User> friends);
         void onError(Exception e);
     }
+    public interface AllianceInviteListener {
+        void onNewAllianceInvite(String allianceId);
+    }
+    public interface AllianceUpdatesListener {
+        void onMemberJoined(String newMemberUsername);
+    }
+    public interface NotificationListener {
+        void onNotificationReceived(Notification notification);
+    }
+    private AllianceUpdatesListener updatesListener;
+    private ListenerRegistration notificationsListener;
     public interface SendRequestCallback {
         void onComplete(SendRequestStatus status, @Nullable Exception e);
     }
 
     public User getLoggedInUser(){
         return loggedInUser;
+    }
+
+    public void startListeningForAllianceUpdates(String allianceId, AllianceUpdatesListener listener) {
+        if (allianceListener != null) {
+            allianceListener.remove();
+        }
+        this.updatesListener = listener;
+
+        db.collection("alliances").document(allianceId)
+                .addSnapshotListener((snapshot, e) -> {
+                    if (e != null || snapshot == null || !snapshot.exists()) {
+                        return; // Ignoriši greške
+                    }
+
+                    Alliance newAllianceState = snapshot.toObject(Alliance.class);
+
+                    // TODO: Implementiraj logiku za poređenje stare i nove liste članova
+                    // da bismo pronašli ko se tačno pridružio.
+
+                    Log.d(TAG, "Detektovana promena na savezu!");
+                });
     }
 
 
@@ -501,4 +586,5 @@ public class UserRepository {
             if (database != null) database.close();
         }
     }
+
 }
