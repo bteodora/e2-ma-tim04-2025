@@ -4,7 +4,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.widget.Toast;
-
 import com.example.rpgapp.activities.ConfirmAllianceSwitchActivity;
 import com.example.rpgapp.activities.HomeActivity;
 import com.example.rpgapp.database.AllianceRepository;
@@ -36,15 +35,25 @@ public class AllianceInviteActionReceiver extends BroadcastReceiver {
                 String oldAllianceId = currentUser.getAllianceId();
 
                 allianceRepository.getAllianceById(oldAllianceId, oldAlliance -> {
-                    if (oldAlliance != null && oldAlliance.isMissionStarted()) {
-                        notificationHelper.cancelAllianceNotification();
-                        Toast.makeText(context, "Cannot accept invite: A mission is active in your current alliance.", Toast.LENGTH_LONG).show();
-                    } else {
-                        notificationHelper.cancelAllianceNotification();
-                        Intent confirmIntent = new Intent(context, ConfirmAllianceSwitchActivity.class);
-                        confirmIntent.putExtra(ConfirmAllianceSwitchActivity.EXTRA_NEW_ALLIANCE_ID, allianceId);
-                        confirmIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        context.startActivity(confirmIntent);
+                    if (oldAlliance != null) {
+                        boolean isLeader = currentUser.getUserId().equals(oldAlliance.getLeaderId());
+
+                        if (isLeader) {
+                            notificationHelper.cancelAllianceNotification();
+                            Toast.makeText(context, "As a leader, you must first disband your current alliance.", Toast.LENGTH_LONG).show();
+                            return;
+                        }
+
+                        if (oldAlliance.isMissionStarted()) {
+                            notificationHelper.cancelAllianceNotification();
+                            Toast.makeText(context, "Cannot accept invite: A mission is active in your current alliance.", Toast.LENGTH_LONG).show();
+                        } else {
+                            notificationHelper.cancelAllianceNotification();
+                            Intent confirmIntent = new Intent(context, ConfirmAllianceSwitchActivity.class);
+                            confirmIntent.putExtra(ConfirmAllianceSwitchActivity.EXTRA_NEW_ALLIANCE_ID, allianceId);
+                            confirmIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            context.startActivity(confirmIntent);
+                        }
                     }
                 });
 
