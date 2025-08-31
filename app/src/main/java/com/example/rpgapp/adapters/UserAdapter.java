@@ -1,5 +1,6 @@
 package com.example.rpgapp.adapters;
 
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,9 +11,10 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.rpgapp.R;
 import com.example.rpgapp.model.User;
+import com.google.android.material.card.MaterialCardView; // <-- VAŽAN IMPORT
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map; // <-- VAŽAN IMPORT
+import java.util.Map;
 
 public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder> {
 
@@ -20,11 +22,7 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder
     private OnUserClickListener cardClickListener;
     private OnActionButtonClickListener actionButtonClickListener;
     private String actionButtonText = null;
-
-    // --- DODAJ OVAJ ATRIBUT ---
-    // Mapa koja čuva stanje selekcije, null ako selekcija nije aktivna
     private Map<String, Boolean> selectionMap = null;
-    // -------------------------
 
     public interface OnUserClickListener {
         void onUserClick(String userId);
@@ -75,10 +73,12 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder
         return userList.size();
     }
 
+
     static class UserViewHolder extends RecyclerView.ViewHolder {
         private ImageView avatar;
         private TextView username, levelAndTitle;
         private Button actionButton;
+        private View selectionOverlay;
 
         public UserViewHolder(@NonNull View itemView, OnUserClickListener listener, List<User> userList) {
             super(itemView);
@@ -86,6 +86,7 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder
             username = itemView.findViewById(R.id.textViewUserName);
             levelAndTitle = itemView.findViewById(R.id.textViewUserLevel);
             actionButton = itemView.findViewById(R.id.buttonUserAction);
+            selectionOverlay = itemView.findViewById(R.id.selection_overlay);
 
             itemView.setOnClickListener(v -> {
                 int position = getAdapterPosition();
@@ -112,13 +113,9 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder
 
             if (selectionMap != null) {
                 boolean isSelected = selectionMap.containsKey(user.getUserId()) && Boolean.TRUE.equals(selectionMap.get(user.getUserId()));
-                if (isSelected) {
-                    itemView.setBackgroundColor(itemView.getContext().getResources().getColor(R.color.selected_item_background));
-                } else {
-                    itemView.setBackgroundColor(itemView.getContext().getResources().getColor(android.R.color.transparent));
-                }
+                selectionOverlay.setVisibility(isSelected ? View.VISIBLE : View.GONE);
             } else {
-                itemView.setBackgroundColor(itemView.getContext().getResources().getColor(android.R.color.transparent));
+                selectionOverlay.setVisibility(View.GONE);
             }
         }
     }
