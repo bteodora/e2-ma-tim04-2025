@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-
     <!-- Sve tvoje permisije ostaju iste -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -12,7 +12,6 @@
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:allowBackup="true"
@@ -29,23 +28,30 @@
             android:name=".recievers.AllianceInviteActionReceiver"
             android:enabled="true"
             android:exported="false" />
+        <activity
+            android:name=".activities.ConfirmAllianceSwitchActivity"
+            android:exported="false"
+            android:theme="@style/Theme.AppCompat.Translucent" />
 
         <activity
             android:name=".activities.AuthActvity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
         <receiver android:name=".recievers.SyncReceiver" />
+
         <service android:name=".services.SyncService" />
         <service
             android:name=".services.ForegroundService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
+
         <provider
             android:name=".database.DBContentProvider"
             android:authorities="com.example.rpgapp"
@@ -74,16 +80,14 @@
                 android:name="android.app.lib_name"
                 android:value="" />
         </activity>
-
         <activity
             android:name=".activities.SplashScreenActivity"
             android:exported="false"
-        android:label="Shop App">
-        <meta-data
-            android:name="android.app.lib_name"
-            android:value="" />
-    </activity>
+            android:label="Shop App">
+            <meta-data
+                android:name="android.app.lib_name"
+                android:value="" />
+        </activity>
+    </application>
 
-</application>
-
-    </manifest>
+</manifest>

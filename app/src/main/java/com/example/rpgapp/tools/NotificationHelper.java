@@ -31,7 +31,6 @@ public class NotificationHelper {
         createNotificationChannel();
     }
 
-    // U NotificationHelper.java
 
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -57,6 +56,7 @@ public class NotificationHelper {
             notificationManager.createNotificationChannel(generalChannel);
         }
     }
+
 
     public void showAllianceInviteNotification(String allianceId, String inviterUsername, String allianceName) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -87,11 +87,14 @@ public class NotificationHelper {
         );
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, ALLIANCE_CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_settings)
+                .setSmallIcon(R.drawable.ic_action_person)
                 .setContentTitle("Alliance Invitation")
                 .setContentText(inviterUsername + " invited you to join " + allianceName)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setOngoing(true)
+                .addAction(R.drawable.ic_action_new, "Accept", acceptPendingIntent)
+                .addAction(R.drawable.ic_action_warning, "Decline", declinePendingIntent)
+
                 .setAutoCancel(false);
 
         NotificationManagerCompat notificationManager = NotificationManagerCompat.from(context);

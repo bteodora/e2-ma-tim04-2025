@@ -26,6 +26,8 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -239,8 +241,15 @@ public class HomeActivity extends AppCompatActivity implements SharedPreferences
         sharedPreferences.registerOnSharedPreferenceChangeListener(this);
 
         addMenu();
+        handleIntent(getIntent());
 
 //        Util.initDB(this);
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        handleIntent(intent);
     }
 
     private void startListeningForInvites() {
@@ -414,6 +423,20 @@ public class HomeActivity extends AppCompatActivity implements SharedPreferences
         sharedPreferences.unregisterOnSharedPreferenceChangeListener(this);
         super.onDestroy();
 
+    }
+
+    private void handleIntent(Intent intent) {
+        if (intent != null && "ALLIANCE".equals(intent.getStringExtra("NAVIGATE_TO"))) {
+            Log.d("HomeActivity", "Primljen nalog za navigaciju na Alliance ekran. Odlažem izvršavanje.");
+
+            new Handler(Looper.getMainLooper()).post(() -> {
+                if (navController != null) {
+                    Log.d("HomeActivity", "Izvršavam odloženu navigaciju.");
+                    navController.navigate(R.id.allianceFragment);
+                }
+            });
+            intent.removeExtra("NAVIGATE_TO");
+        }
     }
 
     @Override
