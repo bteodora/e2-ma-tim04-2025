@@ -21,6 +21,11 @@
         app:popUpTo="@+id/nav_products"
         app:popUpToInclusive="false"
         />
+    <fragment
+        android:id="@+id/allianceFragment"
+        android:name="com.example.rpgapp.fragments.alliance.AllianceFragment"
+        android:label="My Alliance"
+        tools:layout="@layout/fragment_alliance" />
 
     <fragment
         android:id="@+id/requestsFragment"
