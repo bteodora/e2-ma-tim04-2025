@@ -4,34 +4,29 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/base_navigation"
-    app:startDestination="@+id/nav_products"
-    >
+    app:startDestination="@id/nav_products">
+
     <fragment
         android:id="@+id/nav_products"
         android:name="com.example.rpgapp.fragments.products.ProductsPageFragment"
         android:label="Products"
-        tools:layout="@layout/fragment_products_page"
-        />
+        tools:layout="@layout/fragment_products_page" />
 
     <fragment
         android:id="@+id/nav_new"
         android:name="com.example.rpgapp.fragments.new_product.NewProductFragment"
         android:label="New product"
         tools:layout="@layout/fragment_new_product"
-        app:popUpTo="@+id/nav_products"
-        app:popUpToInclusive="false"
-        />
-
-
+        app:popUpTo="@id/nav_products"
+        app:popUpToInclusive="false" />
 
     <fragment
         android:id="@+id/nav_profile_new"
         android:name="com.example.rpgapp.fragments.profile.ProfileFragment"
         android:label="Profile"
         tools:layout="@layout/fragment_profile"
-        app:popUpTo="@+id/nav_products"
-        app:popUpToInclusive="true"
-        >
+        app:popUpTo="@id/nav_products"
+        app:popUpToInclusive="true">
         <action
             android:id="@+id/action_profileFragment_to_changePasswordFragment"
             app:destination="@id/nav_password" />
@@ -42,41 +37,36 @@
         android:name="com.example.rpgapp.fragments.login2.LoginFragment"
         android:label="Login"
         tools:layout="@layout/fragment_login2"
-        app:popUpTo="@+id/nav_products"
-        app:popUpToInclusive="true"
-        />
+        app:popUpTo="@id/nav_products"
+        app:popUpToInclusive="true" />
 
     <fragment
         android:id="@+id/nav_settings"
         android:name="com.example.rpgapp.fragments.SettingsFragment"
         android:label="Settings"
         tools:layout="@layout/fragment_settings"
-        app:popUpTo="@+id/nav_products"
-        app:popUpToInclusive="true"
-        />
+        app:popUpTo="@id/nav_products"
+        app:popUpToInclusive="true" />
 
     <fragment
         android:id="@+id/nav_shop"
         android:name="com.example.rpgapp.fragments.shop.ShopFragment"
-        android:label="Settings"
-        tools:layout="@layout/fragment_shop"
-        />
+        android:label="Shop"
+        tools:layout="@layout/fragment_shop" />
 
     <fragment
         android:id="@+id/nav_friends"
         android:name="com.example.rpgapp.fragments.friends.FriendsFragment"
-        android:label="Settings"
-        tools:layout="@layout/fragment_friends"
-        />
+        android:label="Friends"
+        tools:layout="@layout/fragment_friends" />
 
     <fragment
         android:id="@+id/nav_language"
         android:name="com.example.rpgapp.fragments.LanguageFragment"
         android:label="Language"
         tools:layout="@layout/fragment_language"
-        app:popUpTo="@+id/nav_products"
-        app:popUpToInclusive="true"
-        />
+        app:popUpTo="@id/nav_products"
+        app:popUpToInclusive="true" />
 
     <fragment
         android:id="@+id/nav_register"
@@ -87,35 +77,18 @@
     <fragment
         android:id="@+id/nav_password"
         android:name="com.example.rpgapp.fragments.profile.ChangePasswordFragment"
-        android:label="Register"
+        android:label="Change Password"
         tools:layout="@layout/fragment_change_password" />
 
     <fragment
         android:id="@+id/nav_login"
         android:name="com.example.rpgapp.fragments.login.LoginFragment"
         android:label="Login"
-        tools:layout="@layout/fragment_login" >
+        tools:layout="@layout/fragment_login">
         <action
             android:id="@+id/action_loginFragment_to_registerFragment"
             app:destination="@id/nav_register" />
     </fragment>
-
-    <fragment
-        android:id="@+id/nav_tasks"
-        android:name="com.example.rpgapp.fragments.task.TaskListFragment"
-        android:label="Tasks"
-        tools:layout="@layout/fragment_task_list" >
-
-        <action
-            android:id="@+id/action_taskList_to_taskPage"
-            app:destination="@id/nav_task_page" />
-    </fragment>
-
-    <fragment
-        android:id="@+id/nav_task_page"
-        android:name="com.example.rpgapp.fragments.task.TaskPageFragment"
-        android:label="Task Page"
-        tools:layout="@layout/fragment_task_page" />
 
     <fragment
         android:id="@+id/nav_create_task"
@@ -123,5 +96,50 @@
         android:label="Create Task"
         tools:layout="@layout/fragment_create_task" />
 
+    <fragment
+        android:id="@+id/nav_task_calendar"
+        android:name="com.example.rpgapp.fragments.task.TaskCalendarFragment"
+        android:label="Task Calendar"
+        tools:layout="@layout/fragment_task_calendar">
+        <action
+            android:id="@+id/action_taskCalendar_to_taskPage"
+            app:destination="@id/nav_task_page" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/nav_tasks"
+        android:name="com.example.rpgapp.fragments.task.TaskListFragment"
+        android:label="Tasks"
+        tools:layout="@layout/fragment_task_list">
+        <action
+            android:id="@+id/action_taskList_to_taskPage"
+            app:destination="@id/nav_task_page" />
+        <action
+            android:id="@+id/action_taskList_to_taskCalendar"
+            app:destination="@id/nav_task_calendar" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/nav_edit_task"
+        android:name="com.example.rpgapp.fragments.task.EditTaskFragment"
+        android:label="Edit Task"
+        tools:layout="@layout/fragment_task_edit">
+        <argument
+            android:name="taskId"
+            app:argType="string" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/nav_task_page"
+        android:name="com.example.rpgapp.fragments.task.TaskPageFragment"
+        android:label="Task Page"
+        tools:layout="@layout/fragment_task_page">
+        <argument
+            android:name="taskId"
+            app:argType="string" />
+        <action
+            android:id="@+id/action_taskPage_to_editTask"
+            app:destination="@id/nav_edit_task" />
+    </fragment>
 
 </navigation>

@@ -13,8 +13,11 @@ import com.example.rpgapp.model.Task;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.UUID;
 
 public class TaskRepository {
 
@@ -30,6 +33,7 @@ public class TaskRepository {
         this.context = context.getApplicationContext();
         dbHelper = new SQLiteHelper(this.context);
     }
+    public static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
 
     public static TaskRepository getInstance(Context context) {
         if (INSTANCE == null) {
@@ -108,6 +112,9 @@ public class TaskRepository {
             values.put(SQLiteHelper.COLUMN_IMPORTANCE_XP, task.getImportanceXp());
             values.put(SQLiteHelper.COLUMN_TOTAL_XP, task.getTotalXp());
             values.put(SQLiteHelper.COLUMN_DUE_DATE, task.getDueDate());
+            values.put(SQLiteHelper.COLUMN_START_DATE, task.getStartDate());
+            values.put(SQLiteHelper.COLUMN_END_DATE, task.getEndDate());
+
 
             database.insertWithOnConflict(SQLiteHelper.TABLE_TASKS, null, values, SQLiteDatabase.CONFLICT_REPLACE);
         } finally {
@@ -162,8 +169,93 @@ public class TaskRepository {
         task.setImportanceXp(cursor.getInt(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_IMPORTANCE_XP)));
         task.setTotalXp(cursor.getInt(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_TOTAL_XP)));
         task.setDueDate(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_DUE_DATE)));
+        task.setStartDate(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_START_DATE)));
+        task.setEndDate(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_END_DATE)));
 
         return task;
     }
+    public void addTask(Task task) {
+        if (task.getTaskId() == null) task.setTaskId(UUID.randomUUID().toString());
+
+        // Firestore
+        db.collection("tasks").document(task.getTaskId()).set(task);
+
+        // SQLite
+        cacheTaskToSQLite(task);
+
+        // Osveži LiveData
+        loadTasksFromSQLite();
+    }
+
+    public void deleteFutureRecurringTasks(Task task) {
+        if (!task.isRecurring()) return;
+
+        long now = System.currentTimeMillis();
+        List<Task> currentTasks = allTasksLiveData.getValue();
+        if (currentTasks == null) return;
+
+        List<Task> updatedTasks = new ArrayList<>(currentTasks);
+        List<Task> tasksToDelete = new ArrayList<>();
+
+        for (Task t : updatedTasks) {
+            if (t.getRecurringId() != null && t.getRecurringId().equals(task.getRecurringId())) {
+                try {
+                    long taskTime = t.getDueDate() != null
+                            ? dateFormat.parse(t.getDueDate()).getTime()
+                            : dateFormat.parse(t.getStartDate()).getTime();
+
+                    if (taskTime >= now) {
+                        tasksToDelete.add(t);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        for (Task t : tasksToDelete) {
+            deleteTaskFromSQLite(t.getTaskId());
+            db.collection("tasks").document(t.getTaskId()).delete();
+            updatedTasks.remove(t);
+        }
+
+        allTasksLiveData.setValue(updatedTasks);
+    }
+
+
+    public void updateFutureRecurringTasks(Task task) {
+        if (!task.isRecurring()) return;
+
+        long now = System.currentTimeMillis();
+        List<Task> currentTasks = allTasksLiveData.getValue();
+        if (currentTasks == null) return;
+
+        List<Task> updatedTasks = new ArrayList<>(currentTasks);
+
+        for (Task t : updatedTasks) {
+            if (t.getRecurringId() != null && t.getRecurringId().equals(task.getRecurringId())) {
+                try {
+                    long taskTime = t.getDueDate() != null
+                            ? dateFormat.parse(t.getDueDate()).getTime()
+                            : dateFormat.parse(t.getStartDate()).getTime();
+
+                    if (taskTime >= now) {
+                        t.setTitle(task.getTitle());
+                        t.setDescription(task.getDescription());
+                        t.setStatus(task.getStatus());
+                        t.setCategory(task.getCategory());
+                        cacheTaskToSQLite(t); // sačuvaj izmene u SQLite
+                        db.collection("tasks").document(t.getTaskId()).set(t); // Firestore update
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        allTasksLiveData.setValue(updatedTasks);
+    }
+
+
 
 }

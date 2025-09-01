@@ -22,10 +22,16 @@ public class TaskAdapter extends ArrayAdapter<Task> {
     private Context context;
     private List<Task> tasks;
 
-    public TaskAdapter(@NonNull Context context, @NonNull List<Task> tasks) {
+    private OnItemClickListener listener;
+
+    public interface OnItemClickListener {
+        void onItemClick(Task task);
+    }
+    public TaskAdapter(@NonNull Context context, @NonNull List<Task> tasks, OnItemClickListener listener) {
         super(context, 0, tasks);
         this.context = context;
         this.tasks = tasks;
+        this.listener = listener;
     }
 
     @NonNull
@@ -43,10 +49,16 @@ public class TaskAdapter extends ArrayAdapter<Task> {
         TextView taskStatus = listItem.findViewById(R.id.textViewTaskStatus);
         Button actionButton = listItem.findViewById(R.id.buttonTaskAction);
 
-        taskTitle.setText(currentTask.getTitle());
+        // Postavljanje naslova sa oznakom ako je ponavljajući
+        if (currentTask.isRecurring()) {
+            taskTitle.setText(currentTask.getTitle() + " (ponavljajući)");
+        } else {
+            taskTitle.setText(currentTask.getTitle());
+        }
+
         taskCategory.setText(currentTask.getCategory());
 
-        // Postavljanje boje, ako nije null
+        // Postavljanje boje kategorije
         if (currentTask.getColor() != null && !currentTask.getColor().isEmpty()) {
             try {
                 taskCategory.setBackgroundColor(Color.parseColor(currentTask.getColor()));
@@ -64,8 +76,16 @@ public class TaskAdapter extends ArrayAdapter<Task> {
             notifyDataSetChanged();
         });
 
+        // Klik na ceo item
+        listItem.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onItemClick(currentTask);
+            }
+        });
+
         return listItem;
     }
+
 
     @Override
     public int getCount() {

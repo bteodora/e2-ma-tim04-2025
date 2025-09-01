@@ -14,7 +14,7 @@ public class SQLiteHelper extends SQLiteOpenHelper {
     public static final String COLUMN_IMAGE = "image";
 
     private static final String DATABASE_NAME = "rpgapp_final.db";
-    private static final int DATABASE_VERSION = 6;
+    private static final int DATABASE_VERSION = 7;
 
     private static final String DB_CREATE = "create table "
             + TABLE_PRODUCTS + "("
@@ -81,6 +81,8 @@ public class SQLiteHelper extends SQLiteOpenHelper {
     public static final String COLUMN_TOTAL_XP = "total_xp";
     public static final String COLUMN_STATUS = "status";
     public static final String COLUMN_DUE_DATE = "dueDate";
+    private static final String COLUMN_RECURRING = "recurring";
+    private static final String COLUMN_RECURRING_ID = "recurring_id";
 
     private static final String DB_CREATE_TASKS = "CREATE TABLE " + TABLE_TASKS + "("
             + COLUMN_TASK_ID + " TEXT PRIMARY KEY, "
@@ -98,8 +100,25 @@ public class SQLiteHelper extends SQLiteOpenHelper {
             + COLUMN_IMPORTANCE_XP + " INTEGER, "
             + COLUMN_TOTAL_XP + " INTEGER, "
             + COLUMN_STATUS + " TEXT,"
-            + COLUMN_DUE_DATE + " TEXT"
+            + COLUMN_DUE_DATE + " TEXT,"
+            + COLUMN_RECURRING + " INTEGER, "
+            + COLUMN_RECURRING_ID + " TEXT"
             + ")";
+
+    //--------------- CATEGORY ---------------------
+
+    // --------------- CATEGORY ---------------------
+    public static final String TABLE_CATEGORIES = "CATEGORIES";
+    public static final String COLUMN_CATEGORY_ID = "category_id";
+    public static final String COLUMN_CATEGORY_NAME = "name";
+    public static final String COLUMN_CATEGORY_COLOR = "color";
+
+    private static final String DB_CREATE_CATEGORIES = "CREATE TABLE " + TABLE_CATEGORIES + "("
+            + COLUMN_CATEGORY_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
+            + COLUMN_CATEGORY_NAME + " TEXT UNIQUE NOT NULL, "
+            + COLUMN_CATEGORY_COLOR + " TEXT UNIQUE NOT NULL"  // boja mora biti jedinstvena
+            + ")";
+
 
 
     //Potrebno je dodati konstruktor zbog pravilne inicijalizacije
@@ -115,6 +134,15 @@ public class SQLiteHelper extends SQLiteOpenHelper {
         db.execSQL(DB_CREATE);
         db.execSQL(DB_CREATE_USERS);
         db.execSQL(DB_CREATE_TASKS);
+        db.execSQL(DB_CREATE_CATEGORIES);
+
+        // Seed default kategorije
+        db.execSQL("INSERT INTO " + TABLE_CATEGORIES + " ("
+                + COLUMN_CATEGORY_NAME + ", " + COLUMN_CATEGORY_COLOR + ") VALUES "
+                + "('zdravlje', '#4CAF50'),"
+                + "('učenje', '#FF9800'),"
+                + "('zabava', '#2196F3'),"
+                + "('sređivanje', '#9C27B0');");
     }
 
     //kada zelimo da izmenimo tabele, moramo pozvati drop table za sve tabele koje imamo
@@ -125,6 +153,8 @@ public class SQLiteHelper extends SQLiteOpenHelper {
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_PRODUCTS);
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_USERS); //
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_TASKS);
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_CATEGORIES);
+
         onCreate(db);
     }
 

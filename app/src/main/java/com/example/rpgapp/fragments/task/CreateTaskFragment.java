@@ -17,10 +17,13 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.example.rpgapp.R;
+import com.example.rpgapp.database.CategoryRepository;
 import com.example.rpgapp.database.TaskRepository;
+import com.example.rpgapp.model.Category;
 import com.example.rpgapp.model.Task;
 
 import java.util.Calendar;
+import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -28,15 +31,17 @@ public class CreateTaskFragment extends Fragment {
 
     private EditText titleEdit, descEdit, repeatIntervalEdit;
     private Spinner categorySpinner, frequencySpinner, difficultySpinner, importanceSpinner, repeatUnitSpinner;
-    private Button createBtn, pickDateBtn;
+    private Button createBtn, pickDueDateBtn, pickStartDateBtn, pickEndDateBtn;
 
-    private String[] categories = {"zdravlje", "učenje", "zabava", "sređivanje"};
     private String[] frequencies = {"jednokratni", "ponavljajući"};
     private String[] repeatUnits = {"dan", "nedelja"};
     private String[] difficultyLevels = {"Veoma lak", "Lak", "Težak", "Ekstremno težak"};
     private String[] importanceLevels = {"Normalan", "Važan", "Ekstremno važan", "Specijalan"};
 
+    private List<Category> loadedCategories; // kategorije iz baze
+
     private int selectedYear, selectedMonth, selectedDay;
+    private String selectedDueDate, selectedStartDate, selectedEndDate;
 
     @Nullable
     @Override
@@ -55,16 +60,33 @@ public class CreateTaskFragment extends Fragment {
         repeatUnitSpinner = view.findViewById(R.id.spinnerRepeatUnit);
 
         createBtn = view.findViewById(R.id.btnCreateTask);
-        pickDateBtn = view.findViewById(R.id.btnPickDateTime);
+        pickDueDateBtn = view.findViewById(R.id.btnPickDueDate);
+        pickStartDateBtn = view.findViewById(R.id.btnPickStartDate);
+        pickEndDateBtn = view.findViewById(R.id.btnPickEndDate);
 
-        // Popunjavanje Spinner-a
-        categorySpinner.setAdapter(new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_dropdown_item, categories));
+        // Spinneri za ostale atribute
         frequencySpinner.setAdapter(new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_dropdown_item, frequencies));
         difficultySpinner.setAdapter(new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_dropdown_item, difficultyLevels));
         importanceSpinner.setAdapter(new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_dropdown_item, importanceLevels));
         repeatUnitSpinner.setAdapter(new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_dropdown_item, repeatUnits));
 
-        // Prikaz interval polja samo kada je ponavljajući zadatak
+        // Učitavanje kategorija iz baze
+        CategoryRepository.getInstance(getContext())
+                .getAllCategories()
+                .observe(getViewLifecycleOwner(), categoryList -> {
+                    if (categoryList != null && !categoryList.isEmpty()) {
+                        loadedCategories = categoryList;
+                        String[] categoryNames = new String[categoryList.size()];
+                        for (int i = 0; i < categoryList.size(); i++) {
+                            categoryNames[i] = categoryList.get(i).getName();
+                        }
+                        ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(),
+                                android.R.layout.simple_spinner_dropdown_item, categoryNames);
+                        categorySpinner.setAdapter(adapter);
+                    }
+                });
+
+        // Prikazivanje polja u zavisnosti od tipa taska
         frequencySpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
@@ -72,17 +94,25 @@ public class CreateTaskFragment extends Fragment {
                 if(freq.equalsIgnoreCase("ponavljajući")) {
                     repeatIntervalEdit.setVisibility(View.VISIBLE);
                     repeatUnitSpinner.setVisibility(View.VISIBLE);
+                    pickStartDateBtn.setVisibility(View.VISIBLE);
+                    pickEndDateBtn.setVisibility(View.VISIBLE);
+                    pickDueDateBtn.setVisibility(View.GONE);
                 } else {
                     repeatIntervalEdit.setVisibility(View.GONE);
                     repeatUnitSpinner.setVisibility(View.GONE);
+                    pickStartDateBtn.setVisibility(View.GONE);
+                    pickEndDateBtn.setVisibility(View.GONE);
+                    pickDueDateBtn.setVisibility(View.VISIBLE);
                 }
             }
             @Override
             public void onNothingSelected(AdapterView<?> parent) {}
         });
 
-        // Date picker dugme
-        pickDateBtn.setOnClickListener(v -> showDatePicker());
+        // Date pickeri
+        pickDueDateBtn.setOnClickListener(v -> showDatePicker("due"));
+        pickStartDateBtn.setOnClickListener(v -> showDatePicker("start"));
+        pickEndDateBtn.setOnClickListener(v -> showDatePicker("end"));
 
         // Dugme za kreiranje zadatka
         createBtn.setOnClickListener(v -> createTask());
@@ -90,7 +120,7 @@ public class CreateTaskFragment extends Fragment {
         return view;
     }
 
-    private void showDatePicker() {
+    private void showDatePicker(String type) {
         Calendar c = Calendar.getInstance();
         DatePickerDialog datePickerDialog = new DatePickerDialog(requireContext(),
                 (view, year, month, dayOfMonth) -> {
@@ -98,9 +128,23 @@ public class CreateTaskFragment extends Fragment {
                     selectedMonth = month;
                     selectedDay = dayOfMonth;
 
-                    String dateStr = String.format(Locale.getDefault(), "%02d/%02d/%04d",
-                            selectedDay, selectedMonth + 1, selectedYear);
-                    pickDateBtn.setText(dateStr);
+                    String dateStr = String.format(Locale.getDefault(), "%04d-%02d-%02d",
+                            selectedYear, selectedMonth + 1, selectedDay);
+
+                    switch (type) {
+                        case "due":
+                            selectedDueDate = dateStr;
+                            pickDueDateBtn.setText(dateStr);
+                            break;
+                        case "start":
+                            selectedStartDate = dateStr;
+                            pickStartDateBtn.setText(dateStr);
+                            break;
+                        case "end":
+                            selectedEndDate = dateStr;
+                            pickEndDateBtn.setText(dateStr);
+                            break;
+                    }
                 }, c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH));
         datePickerDialog.show();
     }
@@ -108,11 +152,8 @@ public class CreateTaskFragment extends Fragment {
     private void createTask() {
         String title = titleEdit.getText().toString().trim();
         String desc = descEdit.getText().toString().trim();
-        String category = categorySpinner.getSelectedItem().toString();
+        String category = categorySpinner.getSelectedItem() != null ? categorySpinner.getSelectedItem().toString() : "";
         String frequency = frequencySpinner.getSelectedItem().toString();
-        String repeatUnit = repeatUnitSpinner.getSelectedItem().toString();
-        int interval = repeatIntervalEdit.getText().toString().isEmpty() ? 1 :
-                Integer.parseInt(repeatIntervalEdit.getText().toString());
 
         if(title.isEmpty()) {
             Toast.makeText(requireContext(), "Enter task title", Toast.LENGTH_SHORT).show();
@@ -139,10 +180,6 @@ public class CreateTaskFragment extends Fragment {
             default: importanceXp = 1;
         }
 
-        // Formatiranje izabranog datuma
-        String dueDate = String.format(Locale.getDefault(), "%04d-%02d-%02d",
-                selectedYear, selectedMonth + 1, selectedDay);
-
         // Kreiranje Task objekta
         Task task = new Task();
         task.setTaskId(UUID.randomUUID().toString());
@@ -151,27 +188,52 @@ public class CreateTaskFragment extends Fragment {
         task.setCategory(category);
         task.setColor(getCategoryColor(category));
         task.setFrequency(frequency);
-        task.setInterval(interval);
-        task.setIntervalUnit(repeatUnit);
         task.setDifficultyXp(difficultyXp);
         task.setImportanceXp(importanceXp);
         task.setTotalXp(difficultyXp + importanceXp);
-        task.setDueDate(dueDate); // <--- Čuva izabrani datum
         task.setStatus("aktivan");
+        task.setRecurring(frequency.equalsIgnoreCase("ponavljajući"));
+        task.setRecurringId(task.isRecurring() ? UUID.randomUUID().toString() : null);
+
+        if(frequency.equalsIgnoreCase("jednokratni")) {
+            task.setDueDate(selectedDueDate);
+            task.setStartDate(null);
+            task.setEndDate(null);
+            task.setInterval(0);
+            task.setIntervalUnit(null);
+        } else {
+            int interval = repeatIntervalEdit.getText().toString().isEmpty() ? 1 :
+                    Integer.parseInt(repeatIntervalEdit.getText().toString());
+            task.setInterval(interval);
+            task.setIntervalUnit(repeatUnitSpinner.getSelectedItem().toString());
+            task.setStartDate(selectedStartDate != null ? selectedStartDate : "");
+            task.setEndDate(selectedEndDate != null ? selectedEndDate : "");
+            task.setDueDate(null);
+        }
+
+        if(frequency.equalsIgnoreCase("ponavljajući")) {
+            if(selectedStartDate == null || selectedStartDate.isEmpty() ||
+                    selectedEndDate == null || selectedEndDate.isEmpty()) {
+                Toast.makeText(requireContext(), "Odaberi start i end date", Toast.LENGTH_SHORT).show();
+                return;
+            }
+        }
 
         // Snimanje u bazu
-        TaskRepository.getInstance(getContext()).updateTask(task);
+        TaskRepository.getInstance(getContext()).addTask(task); // ili updateTask ako menjaš postojeći
+
         Toast.makeText(requireContext(), "Task created", Toast.LENGTH_SHORT).show();
         requireActivity().getSupportFragmentManager().popBackStack();
     }
 
-    private String getCategoryColor(String category) {
-        switch (category.toLowerCase()) {
-            case "zdravlje": return "#FF5722";
-            case "učenje": return "#3F51B5";
-            case "zabava": return "#4CAF50";
-            case "sređivanje": return "#FFC107";
-            default: return "#9E9E9E";
+    private String getCategoryColor(String categoryName) {
+        if(loadedCategories != null) {
+            for(Category cat : loadedCategories) {
+                if(cat.getName().equalsIgnoreCase(categoryName)) {
+                    return cat.getColor();
+                }
+            }
         }
+        return "#9E9E9E"; // default boja ako nema
     }
 }

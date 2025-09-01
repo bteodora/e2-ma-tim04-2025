@@ -36,5 +36,18 @@
         <item>pauziran</item>
         <item>neurađen</item>
     </string-array>
-    
+
+    <string-array name="task_difficulty_array">
+        <item>Veoma lak</item>
+        <item>Lak</item>
+        <item>Težak</item>
+        <item>Ekstremno težak</item>
+    </string-array>
+
+    <string-array name="task_importance_array">
+        <item>Normalan</item>
+        <item>Važan</item>
+        <item>Ekstremno važan</item>
+        <item>Specijalan</item>
+    </string-array>
 </resources>
