@@ -29,6 +29,7 @@ public class User {
 
     private String allianceId;
     private List<String> allianceInvites;
+    private String fcmToken;
 
     private void reduceLifespan() {
         userItems.entrySet().removeIf(entry -> {
@@ -113,6 +114,14 @@ public class User {
 
     public String getAllianceId() {
         return allianceId;
+    }
+
+    public String getFcmToken() {
+        return fcmToken;
+    }
+
+    public void setFcmToken(String fcmToken) {
+        this.fcmToken = fcmToken;
     }
 
     public void setAllianceId(String allianceId) {

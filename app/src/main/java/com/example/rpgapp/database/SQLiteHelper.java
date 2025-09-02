@@ -14,7 +14,7 @@ public class SQLiteHelper extends SQLiteOpenHelper {
     public static final String COLUMN_IMAGE = "image";
 
     private static final String DATABASE_NAME = "rpgapp_final.db";
-    private static final int DATABASE_VERSION = 6; 
+    private static final int DATABASE_VERSION = 8;
 
     private static final String DB_CREATE = "create table "
             + TABLE_PRODUCTS + "("
@@ -43,6 +43,7 @@ public class SQLiteHelper extends SQLiteOpenHelper {
     public static final String COLUMN_FRIEND_REQUESTS_JSON = "friend_requests_json";
     public static final String COLUMN_ALLIANCE_ID = "alliance_id";
     public static final String COLUMN_ALLIANCE_INVITES_JSON = "alliance_invites_json";
+    public static final String COLUMN_FCM_TOKEN = "fcm_token";
 
     //--------------- ALLIANCE ---------------------
     public static final String TABLE_ALLIANCES = "ALLIANCES";
@@ -85,7 +86,10 @@ public class SQLiteHelper extends SQLiteOpenHelper {
             + COLUMN_WEAPONS_JSON + " text,"
             + COLUMN_ITEMS_JSON + " text,"
             + COLUMN_FRIENDS_JSON + " text,"
-            + COLUMN_FRIEND_REQUESTS_JSON+ " text"
+            + COLUMN_FRIEND_REQUESTS_JSON+ " text,"
+            + COLUMN_ALLIANCE_ID + " text,"
+            + COLUMN_ALLIANCE_INVITES_JSON + " text,"
+            + COLUMN_FCM_TOKEN + " text"
             + ")";
 
     //--------------- TASK ---------------------

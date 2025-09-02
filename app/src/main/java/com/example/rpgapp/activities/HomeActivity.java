@@ -116,6 +116,11 @@ public class HomeActivity extends AppCompatActivity implements SharedPreferences
         allianceRepository = AllianceRepository.getInstance(this);
         authViewModel = new ViewModelProvider(this).get(AuthViewModel.class);
 
+        FirebaseUser currentUser = authViewModel.getCurrentUser();
+        if (currentUser != null) {
+            userRepository.setLoggedInUser(currentUser.getUid());
+        }
+
         binding.activityHomeBase.floatingActionButton.setOnClickListener(v -> {
             Log.i("ShopApp", "Floating Action Button");
             /*

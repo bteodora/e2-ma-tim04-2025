@@ -123,6 +123,13 @@ public class UserRepository {
                 });
     }
 
+    public void updateUserFcmToken(String userId, String token) {
+        db.collection("users").document(userId)
+                .update("fcmToken", token)
+                .addOnSuccessListener(aVoid -> Log.d(TAG, "FCM Token successfully updated!"))
+                .addOnFailureListener(e -> Log.w(TAG, "Error updating FCM Token", e));
+    }
+
     public void startListeningForAllianceInvites(String userId, AllianceInviteListener listener) {
         if (allianceInviteListener != null) {
             allianceInviteListener.remove();
@@ -474,6 +481,7 @@ public class UserRepository {
             values.put(SQLiteHelper.COLUMN_COINS, user.getCoins());
             values.put(SQLiteHelper.COLUMN_REGISTRATION_TIMESTAMP, user.getRegistrationTimestamp());
             values.put(SQLiteHelper.COLUMN_ALLIANCE_ID, user.getAllianceId());
+            values.put(SQLiteHelper.COLUMN_FCM_TOKEN, user.getFcmToken());
 
             if (user.getBadges() != null) {
                 values.put(SQLiteHelper.COLUMN_BADGES_JSON, gson.toJson(user.getBadges()));
@@ -527,6 +535,7 @@ public class UserRepository {
                 user.setCoins(cursor.getLong(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_COINS)));
                 user.setRegistrationTimestamp(cursor.getLong(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_REGISTRATION_TIMESTAMP)));
                 user.setAllianceId(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_ALLIANCE_ID)));
+                user.setFcmToken(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_FCM_TOKEN)));
 
                 Type badgeListType = new TypeToken<List<String>>(){}.getType();
                 Type userItemMapType = new TypeToken<Map<String, UserItem>>(){}.getType();

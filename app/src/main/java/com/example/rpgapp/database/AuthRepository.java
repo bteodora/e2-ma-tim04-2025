@@ -9,6 +9,7 @@ import com.google.firebase.auth.EmailAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.messaging.FirebaseMessaging;
 
 public class AuthRepository {
     private UserRepository userRepository;
@@ -35,23 +36,30 @@ public class AuthRepository {
                         FirebaseUser firebaseUser = mAuth.getCurrentUser();
                         if (firebaseUser != null) {
                             String userId = firebaseUser.getUid();
-                            User newUser = new User(username, avatarId);
-                            newUser.setRegistrationTimestamp(System.currentTimeMillis());
-
-                            db.collection("users").document(userId)
-                                    .set(newUser)
-                                    .addOnSuccessListener(aVoid -> {
-                                        firebaseUser.sendEmailVerification()
-                                                .addOnCompleteListener(verifyTask -> {
-                                                    if (verifyTask.isSuccessful()) {
-                                                        Log.d(TAG, "Registracija POTPUNO USPEŠNA.");
-                                                        registrationSuccess.postValue(true);
-                                                    } else {
-                                                        errorMessage.postValue("Greška pri slanju verifikacionog email-a.");
-                                                    }
-                                                });
-                                    })
-                                    .addOnFailureListener(e -> errorMessage.postValue("Greška pri čuvanju podataka korisnika."));
+                            FirebaseMessaging.getInstance().getToken().addOnCompleteListener(tokenTask -> {
+                                if (tokenTask.isSuccessful() && tokenTask.getResult() != null) {
+                                    String token = tokenTask.getResult();
+                                    User newUser = new User(username, avatarId);
+                                    newUser.setRegistrationTimestamp(System.currentTimeMillis());
+                                    newUser.setFcmToken(token);
+                                    db.collection("users").document(userId)
+                                            .set(newUser)
+                                            .addOnSuccessListener(aVoid -> {
+                                                firebaseUser.sendEmailVerification()
+                                                        .addOnCompleteListener(verifyTask -> {
+                                                            if (verifyTask.isSuccessful()) {
+                                                                Log.d(TAG, "Registracija POTPUNO USPEŠNA.");
+                                                                registrationSuccess.postValue(true);
+                                                            } else {
+                                                                errorMessage.postValue("Greška pri slanju verifikacionog email-a.");
+                                                            }
+                                                        });
+                                            })
+                                            .addOnFailureListener(e -> errorMessage.postValue("Greška pri čuvanju podataka korisnika."));
+                                } else {
+                                    Log.w(TAG, "Fetching FCM registration token failed", tokenTask.getException());
+                                }
+                            });
                         }
                     } else {
                         errorMessage.postValue(task.getException().getMessage());
@@ -66,7 +74,14 @@ public class AuthRepository {
                         FirebaseUser firebaseUser = mAuth.getCurrentUser();
                         if (firebaseUser != null) {
                             if (firebaseUser.isEmailVerified()) {
-                                userRepository.setLoggedInUser(firebaseUser.getUid());
+                                String userId = firebaseUser.getUid();
+                                FirebaseMessaging.getInstance().getToken().addOnCompleteListener(tokenTask -> {
+                                    if (tokenTask.isSuccessful() && tokenTask.getResult() != null) {
+                                        String token = tokenTask.getResult();
+                                        userRepository.updateUserFcmToken(userId, token);
+                                    }
+                                });
+                                userRepository.setLoggedInUser(userId);
                                 loggedInUser.postValue(firebaseUser);
                             } else {
                                 checkVerification(firebaseUser);
@@ -139,9 +154,6 @@ public class AuthRepository {
                 });
     }
 
-    // U AuthRepository.java
-
-    // Trebaće ti LiveData za praćenje statusa promene lozinke
     public MutableLiveData<Boolean> passwordChangedSuccess = new MutableLiveData<>();
 
     public void changePassword(String oldPassword, String newPassword) {
