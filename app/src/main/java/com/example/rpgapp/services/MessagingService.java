@@ -45,6 +45,13 @@ public class MessagingService extends FirebaseMessagingService {
                     helper.showSimpleNotification(title, body);
                 }
             }
+            else if ("NEW_CHAT_MESSAGE".equals(type)) {
+                String title = remoteMessage.getData().get("title");
+                String body = remoteMessage.getData().get("body");
+                if (title != null && body != null) {
+                    helper.showSimpleNotification(title, body);
+                }
+            }
         }
     }
 

@@ -122,3 +122,63 @@ exports.notifyLeaderOnMemberJoin = onDocumentUpdated("alliances/{allianceId}", a
   logger.log(`notifyLeaderOnMemberJoin: Poslata notifikacija vođi (${leaderId}) o novom članu.`);
   return response;
 });
+
+exports.sendChatMessageNotification = onDocumentCreated("alliances/{allianceId}/messages/{messageId}", async (event) => {
+  const messageData = event.data.data();
+  const allianceId = event.params.allianceId;
+
+  if (!messageData) {
+    logger.log("Nema podataka o poruci.");
+    return;
+  }
+
+  const senderId = messageData.senderId;
+  const senderUsername = messageData.senderUsername;
+  const messageText = messageData.text;
+
+  const db = getFirestore();
+  const allianceDoc = await db.collection("alliances").doc(allianceId).get();
+  if (!allianceDoc.exists) {
+    logger.log(`Savez sa ID-jem ${allianceId} nije pronađen.`);
+    return;
+  }
+  const allianceData = allianceDoc.data();
+  const allianceName = allianceData.name;
+  const allMemberIds = allianceData.memberIds || [];
+
+  const recipientIds = allMemberIds.filter((id) => id !== senderId);
+
+  if (recipientIds.length === 0) {
+    logger.log("Nema drugih članova kojima treba poslati notifikaciju.");
+    return;
+  }
+
+  const tokens = [];
+  for (const userId of recipientIds) {
+    const userDoc = await db.collection("users").doc(userId).get();
+    if (userDoc.exists && userDoc.data().fcmToken) {
+      tokens.push(userDoc.data().fcmToken);
+    }
+  }
+
+  if (tokens.length === 0) {
+    logger.log("Nismo pronašli FCM tokene za primaoce poruke.");
+    return;
+  }
+
+  const message = {
+    data: {
+      type: "NEW_CHAT_MESSAGE",
+      title: `New message in ${allianceName}`,
+      body: `${senderUsername}: ${messageText}`,
+    },
+    android: {
+      priority: "normal",
+    },
+    tokens: tokens,
+  };
+
+  logger.log(`Slanje CHAT notifikacije na ${tokens.length} tokena.`);
+  const messaging = getMessaging();
+  return messaging.sendEachForMulticast(message);
+});
