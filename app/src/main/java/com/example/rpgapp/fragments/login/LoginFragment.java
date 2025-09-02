@@ -1,5 +1,4 @@
-// U LoginFragment.java
-package com.example.rpgapp.fragments.login; // Proveri da li je putanja tačna
+package com.example.rpgapp.fragments.login;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -59,7 +58,6 @@ public class LoginFragment extends Fragment {
     });
     }
 
-    // U LoginFragment.java
 
     private void observeViewModel() {
         authViewModel.getLoggedInUser().observe(getViewLifecycleOwner(), user -> {
@@ -100,8 +98,6 @@ public class LoginFragment extends Fragment {
             return;
         }
 
-        // Samo onemogući dugme i pozovi ViewModel.
-        // Ne treba nam nikakav observer ovde.
         buttonLogin.setEnabled(false);
         authViewModel.login(email, password);
     }

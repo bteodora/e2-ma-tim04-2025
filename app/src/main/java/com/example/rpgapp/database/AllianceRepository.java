@@ -3,6 +3,9 @@ package com.example.rpgapp.database;
 import android.content.Context;
 import android.util.Log;
 import androidx.annotation.Nullable;
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
+
 import com.example.rpgapp.model.Alliance;
 import com.example.rpgapp.model.Message;
 import com.example.rpgapp.model.Notification;
@@ -277,6 +280,38 @@ public class AllianceRepository {
             messagesListener.remove();
             messagesListener = null;
         }
+    }
+
+    public void inviteToAlliance(String allianceId, String friendId, UserRepository.RequestCallback callback) {
+        if (allianceId == null || friendId == null) {
+            callback.onFailure(new Exception("Alliance ID or Friend ID is null."));
+            return;
+        }
+
+        DocumentReference allianceDoc = db.collection("alliances").document(allianceId);
+
+        allianceDoc.update("pendingInviteIds", FieldValue.arrayUnion(friendId))
+                .addOnSuccessListener(aVoid -> callback.onSuccess())
+                .addOnFailureListener(e -> callback.onFailure(e));
+    }
+
+    public LiveData<Alliance> getAllianceLiveData(String allianceId) {
+        MutableLiveData<Alliance> allianceLiveData = new MutableLiveData<>();
+
+        db.collection("alliances").document(allianceId)
+                .addSnapshotListener((snapshot, e) -> {
+                    if (e != null) {
+                        allianceLiveData.postValue(null);
+                        return;
+                    }
+                    if (snapshot != null && snapshot.exists()) {
+                        allianceLiveData.postValue(snapshot.toObject(Alliance.class));
+                    } else {
+                        allianceLiveData.postValue(null);
+                    }
+                });
+
+        return allianceLiveData;
     }
 
 }

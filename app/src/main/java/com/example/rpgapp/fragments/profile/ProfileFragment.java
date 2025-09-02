@@ -117,6 +117,12 @@ public class ProfileFragment extends Fragment {
             }
         });
 
+        viewModel.getSuccessMessage().observe(getViewLifecycleOwner(), message -> {
+            if (message != null) {
+                Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+            }
+        });
+
         viewModel.getIsMyProfile().observe(getViewLifecycleOwner(), isMyProfile -> {
             if (isMyProfile != null) {
                 int visibility = isMyProfile ? View.VISIBLE : View.GONE;
@@ -154,25 +160,50 @@ public class ProfileFragment extends Fragment {
                     buttonAddFriend.setOnClickListener(v -> {
                         viewModel.sendFriendRequest();
                     });
+                    buttonInviteToAlliance.setVisibility(View.GONE);
                     break;
 
                 case PENDING_SENT:
                     layout_other_user_actions.setVisibility(View.VISIBLE);
                     buttonAddFriend.setText("Pending");
                     buttonAddFriend.setEnabled(false);
+                    buttonInviteToAlliance.setVisibility(View.GONE);
                     break;
 
                 case PENDING_RECEIVED:
                     layout_other_user_actions.setVisibility(View.VISIBLE);
                     buttonAddFriend.setText("Accept Request");
                     buttonAddFriend.setEnabled(true);
-                    // TODO: Kasnije ćemo dodati OnClickListener
+                    buttonInviteToAlliance.setVisibility(View.GONE);
+                    buttonAddFriend.setOnClickListener(v -> {
+                        showAcceptDeclineDialog();
+                    });
                     break;
 
                 case FRIENDS:
                     layout_other_user_actions.setVisibility(View.VISIBLE);
+                    buttonAddFriend.setVisibility(View.VISIBLE);
                     buttonAddFriend.setText("Friends");
                     buttonAddFriend.setEnabled(false);
+                    buttonInviteToAlliance.setVisibility(View.GONE);
+                    break;
+
+                case FRIEND_CAN_BE_INVITED:
+                    layout_other_user_actions.setVisibility(View.VISIBLE);
+                    buttonAddFriend.setVisibility(View.GONE);
+                    buttonInviteToAlliance.setVisibility(View.VISIBLE);
+                    buttonInviteToAlliance.setText("Invite to Alliance");
+                    buttonInviteToAlliance.setEnabled(true);
+                    buttonInviteToAlliance.setOnClickListener(v -> {
+                        viewModel.inviteFriendToAlliance();
+                    });
+                    break;
+                case FRIEND_INVITE_PENDING:
+                    layout_other_user_actions.setVisibility(View.VISIBLE);
+                    buttonAddFriend.setVisibility(View.GONE);
+                    buttonInviteToAlliance.setVisibility(View.VISIBLE);
+                    buttonInviteToAlliance.setText("Invite Pending");
+                    buttonInviteToAlliance.setEnabled(false);
                     break;
             }
         });
@@ -212,8 +243,6 @@ public class ProfileFragment extends Fragment {
         populateWeapons(user);
         populateEquipped(user);
         populateInventory(user);
-
-        // TODO: QR kod, bedževi
     }
 
     private void populateWeapons(User user) {
@@ -409,6 +438,23 @@ public class ProfileFragment extends Fragment {
         viewModel.updateUser(user);
 
         Toast.makeText(getContext(), itemToEquip.getItemId() + " activated!", Toast.LENGTH_SHORT).show();
+    }
+
+    private void showAcceptDeclineDialog() {
+        User otherUser = viewModel.getDisplayedUser().getValue();
+        if (otherUser == null) return;
+
+        new AlertDialog.Builder(getContext())
+                .setTitle("Friend Request")
+                .setMessage("Respond to the friend request from " + otherUser.getUsername() + "?")
+                .setPositiveButton("Accept", (dialog, which) -> {
+                    viewModel.acceptFriendRequest();
+                })
+                .setNegativeButton("Decline", (dialog, which) -> {
+                    viewModel.declineFriendRequest();
+                })
+                .setNeutralButton("Cancel", null)
+                .show();
     }
 
     private int dpToPx(int dp) {

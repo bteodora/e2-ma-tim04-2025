@@ -31,8 +31,6 @@ public class RequestsViewModel extends AndroidViewModel {
         loggedInUserLiveData = userRepository.getLoggedInUserLiveData();
 
         loggedInUserLiveData.observeForever(loggedInUser -> {
-            // LOG 3: DA LI JE VIEWMODEL PRIMIO PROMENU?
-            Log.d("RPG_REACTIVE_DEBUG", ">>> ViewModel Observer je AKTIVIRAN! Pokrećem loadRequests().");
             loadRequests();
         });
     }

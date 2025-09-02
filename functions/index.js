@@ -182,3 +182,67 @@ exports.sendChatMessageNotification = onDocumentCreated("alliances/{allianceId}/
   const messaging = getMessaging();
   return messaging.sendEachForMulticast(message);
 });
+
+
+exports.sendSingleAllianceInvite = onDocumentUpdated("alliances/{allianceId}", async (event) => {
+  const beforeData = event.data.before.data();
+  const afterData = event.data.after.data();
+
+  if (!beforeData || !afterData) {
+    logger.log("sendSingleAllianceInvite: Nedostaju podaci pre ili posle promene.");
+    return;
+  }
+
+  const oldInvites = beforeData.pendingInviteIds || [];
+  const newInvites = afterData.pendingInviteIds || [];
+
+  if (newInvites.length <= oldInvites.length) {
+    return;
+  }
+
+  const newInviteId = newInvites.find((id) => !oldInvites.includes(id));
+  if (!newInviteId) {
+    logger.log("sendSingleAllianceInvite: Nije pronađen ID novopozvanog korisnika.");
+    return;
+  }
+
+  const db = getFirestore();
+  const userDoc = await db.collection("users").doc(newInviteId).get();
+  if (!userDoc.exists) {
+    logger.log(`sendSingleAllianceInvite: Korisnik ${newInviteId} ne postoji.`);
+    return;
+  }
+
+  const token = userDoc.data().fcmToken;
+  if (!token) {
+    logger.log(`sendSingleAllianceInvite: Korisnik ${newInviteId} nema FCM token.`);
+    return;
+  }
+
+  const allianceName = afterData.name;
+  const leaderUsername = afterData.leaderUsername;
+  const allianceId = event.params.allianceId;
+
+  const message = {
+    token: token,
+    notification: {
+      title: "Alliance Invitation!",
+      body: `${leaderUsername} has invited you to join '${allianceName}'!`,
+    },
+    data: {
+      type: "ALLIANCE_INVITE",
+      allianceId: allianceId,
+      leaderUsername: leaderUsername,
+      allianceName: allianceName,
+    },
+    android: { priority: "high" },
+    apns: {
+      headers: { "apns-priority": "10" },
+      payload: { aps: { "content-available": 1 } },
+    },
+  };
+
+  logger.log(`sendSingleAllianceInvite: Šaljem invite notifikaciju korisniku ${newInviteId}.`);
+  const messaging = getMessaging();
+  return messaging.send(message);
+});
