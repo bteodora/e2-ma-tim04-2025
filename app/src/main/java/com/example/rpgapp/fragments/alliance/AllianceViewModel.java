@@ -10,6 +10,7 @@ import androidx.lifecycle.Transformations;
 import com.example.rpgapp.database.AllianceRepository;
 import com.example.rpgapp.database.UserRepository;
 import com.example.rpgapp.model.Alliance;
+import com.example.rpgapp.model.Message;
 import com.example.rpgapp.model.User;
 
 import java.util.ArrayList;
@@ -26,21 +27,22 @@ public class AllianceViewModel extends AndroidViewModel {
     public LiveData<Boolean> getActionStatus() { return actionStatus; }
     public void resetActionStatus() { actionStatus.setValue(null); }
 
+    private MutableLiveData<List<Message>> messages = new MutableLiveData<>();
+    public LiveData<List<Message>> getMessages() { return messages; }
+
     public AllianceViewModel(@NonNull Application application) {
         super(application);
         allianceRepository = AllianceRepository.getInstance(application);
         userRepository = UserRepository.getInstance(application);
         loggedInUserLiveData = userRepository.getLoggedInUserLiveData();
 
-        // Slušaj promene na ulogovanom korisniku
         loggedInUserLiveData.observeForever(user -> {
             if (user != null && user.getAllianceId() != null && !user.getAllianceId().isEmpty()) {
-                // Ako je korisnik u savezu, počni da slušaš promene na tom savezu
                 allianceRepository.listenToAlliance(user.getAllianceId(), alliance -> {
                     currentAlliance.postValue(alliance);
                 });
             } else {
-                currentAlliance.postValue(null); // Korisnik nije u savezu
+                currentAlliance.postValue(null);
             }
         });
 
@@ -61,6 +63,17 @@ public class AllianceViewModel extends AndroidViewModel {
                 memberProfiles.postValue(new ArrayList<>());
             }
             return memberProfiles;
+        });
+
+        currentAlliance.observeForever(alliance -> {
+            if (alliance != null) {
+                allianceRepository.listenForMessages(alliance.getAllianceId(), messageList -> {
+                    messages.postValue(messageList);
+                });
+            } else {
+                allianceRepository.stopListeningForMessages();
+                messages.postValue(new ArrayList<>());
+            }
         });
     }
 
@@ -92,5 +105,21 @@ public class AllianceViewModel extends AndroidViewModel {
                 @Override public void onFailure(Exception e) { actionStatus.postValue(false); }
             });
         }
+    }
+
+    public void sendMessage(String text) {
+        Alliance alliance = currentAlliance.getValue();
+        if (alliance != null && text != null && !text.trim().isEmpty()) {
+            allianceRepository.sendMessage(alliance.getAllianceId(), text.trim(), new UserRepository.RequestCallback() {
+                @Override public void onSuccess() { }
+                @Override public void onFailure(Exception e) { }
+            });
+        }
+    }
+
+    @Override
+    protected void onCleared() {
+        super.onCleared();
+        allianceRepository.stopListeningForMessages();
     }
 }

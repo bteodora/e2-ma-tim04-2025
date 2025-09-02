@@ -4,11 +4,14 @@ import android.content.Context;
 import android.util.Log;
 import androidx.annotation.Nullable;
 import com.example.rpgapp.model.Alliance;
+import com.example.rpgapp.model.Message;
 import com.example.rpgapp.model.Notification;
 import com.example.rpgapp.model.User;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.ListenerRegistration;
+import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.WriteBatch;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,6 +21,7 @@ public class AllianceRepository {
     private static final String TAG = "AllianceRepository";
     private static volatile AllianceRepository INSTANCE;
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private ListenerRegistration messagesListener;
     private UserRepository userRepository;
 
     private AllianceRepository(Context context) {
@@ -74,10 +78,14 @@ public class AllianceRepository {
         });
     }
 
-    // TODO: Ovde ćemo kasnije dodati ostale metode (get allianceById, acceptInvite, sendMessage, itd.)
     public interface AllianceCallback {
         void onAllianceLoaded(Alliance alliance);
     }
+
+    public interface MessagesCallback {
+        void onMessagesReceived(List<Message> messages);
+    }
+
     public void listenToAlliance(String allianceId, AllianceCallback callback) {
         db.collection("alliances").document(allianceId)
                 .addSnapshotListener((snapshot, e) -> {
@@ -231,6 +239,44 @@ public class AllianceRepository {
 
         batch.commit().addOnSuccessListener(aVoid -> callback.onSuccess())
                 .addOnFailureListener(e -> callback.onFailure(e));
+    }
+
+    public void sendMessage(String allianceId, String text, UserRepository.RequestCallback callback) {
+        User currentUser = userRepository.getLoggedInUser();
+        if (currentUser == null) {
+            callback.onFailure(new Exception("User not logged in."));
+            return;
+        }
+
+        Message message = new Message(text, currentUser.getUserId(), currentUser.getUsername());
+
+        db.collection("alliances").document(allianceId).collection("messages")
+                .add(message)
+                .addOnSuccessListener(documentReference -> callback.onSuccess())
+                .addOnFailureListener(e -> callback.onFailure(e));
+    }
+
+    public void listenForMessages(String allianceId, MessagesCallback callback) {
+        if (messagesListener != null) {
+            messagesListener.remove();
+        }
+
+        messagesListener = db.collection("alliances").document(allianceId).collection("messages")
+                .orderBy("timestamp", Query.Direction.ASCENDING)
+                .limitToLast(50)
+                .addSnapshotListener((snapshots, e) -> {
+                    if (e != null || snapshots == null) { return; }
+
+                    List<Message> messages = snapshots.toObjects(Message.class);
+                    callback.onMessagesReceived(messages);
+                });
+    }
+
+    public void stopListeningForMessages() {
+        if (messagesListener != null) {
+            messagesListener.remove();
+            messagesListener = null;
+        }
     }
 
 }
