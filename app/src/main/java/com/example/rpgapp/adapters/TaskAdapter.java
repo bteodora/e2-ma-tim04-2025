@@ -15,6 +15,7 @@ import androidx.annotation.Nullable;
 import com.example.rpgapp.R;
 import com.example.rpgapp.model.Task;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class TaskAdapter extends ArrayAdapter<Task> {
@@ -30,7 +31,8 @@ public class TaskAdapter extends ArrayAdapter<Task> {
     public TaskAdapter(@NonNull Context context, @NonNull List<Task> tasks, OnItemClickListener listener) {
         super(context, 0, tasks);
         this.context = context;
-        this.tasks = tasks;
+//        this.tasks = tasks;
+        this.tasks = new ArrayList<>(tasks);
         this.listener = listener;
     }
 
@@ -97,4 +99,11 @@ public class TaskAdapter extends ArrayAdapter<Task> {
     public Task getItem(int position) {
         return tasks.get(position);
     }
+
+    public void setTasks(List<Task> newTasks) {
+        this.tasks.clear();
+        this.tasks.addAll(newTasks);
+        notifyDataSetChanged();
+    }
+
 }

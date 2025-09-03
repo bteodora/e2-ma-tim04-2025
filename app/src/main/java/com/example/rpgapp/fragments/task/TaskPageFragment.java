@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
 import android.widget.Toast;
@@ -15,10 +16,14 @@ import androidx.navigation.Navigation;
 
 import com.example.rpgapp.R;
 import com.example.rpgapp.database.TaskRepository;
+import com.example.rpgapp.database.UserRepository;
 import com.example.rpgapp.databinding.FragmentTaskPageBinding;
 import com.example.rpgapp.model.Task;
+import com.example.rpgapp.model.User;
 
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 public class TaskPageFragment extends Fragment {
@@ -28,13 +33,7 @@ public class TaskPageFragment extends Fragment {
     private String taskId;
     private Task currentTask;
 
-    public static TaskPageFragment newInstance(String taskId) {
-        TaskPageFragment fragment = new TaskPageFragment();
-        Bundle args = new Bundle();
-        args.putString("taskId", taskId);
-        fragment.setArguments(args);
-        return fragment;
-    }
+    private static final int MAX_DAYS_PAST = 3; // limit od 3 dana
 
     @Nullable
     @Override
@@ -50,8 +49,21 @@ public class TaskPageFragment extends Fragment {
             if (taskId != null) loadTask(taskId);
         }
 
-        binding.btnUpdateTask.setOnClickListener(v -> updateTask());
         binding.btnDeleteTask.setOnClickListener(v -> deleteTask());
+
+        binding.btnUpdateTask.setOnClickListener(v -> {
+            if (currentTask == null) return;
+
+            String status = currentTask.getStatus().toLowerCase();
+            if ("urađen".equals(status) || "neurađen".equals(status) || "otkazan".equals(status) || isTaskPast(currentTask)) {
+                Toast.makeText(requireContext(), "Ovaj zadatak se ne može menjati", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            Bundle bundle = new Bundle();
+            bundle.putString("taskId", currentTask.getTaskId());
+            Navigation.findNavController(requireView()).navigate(R.id.action_taskPage_to_editTask, bundle);
+        });
 
         return root;
     }
@@ -61,12 +73,22 @@ public class TaskPageFragment extends Fragment {
                 .observe(getViewLifecycleOwner(), task -> {
                     if (task != null) {
                         currentTask = task;
+
+                        // Provera da li zadatak treba automatski da postane "neurađen"
+                        autoMarkTaskAsUnfinished(task);
+
                         binding.taskTitle.setText(task.getTitle());
                         binding.taskDescription.setText(task.getDescription());
                         binding.taskCategory.setText("Kategorija: " + task.getCategory());
-                        binding.taskDates.setText("Due: " + task.getDueDate() +
-                                "\nStart: " + task.getStartDate() +
-                                "\nEnd: " + task.getEndDate());
+
+                        // Prikaz datuma zavisno od tipa zadatka
+                        if (task.isRecurring()) {
+                            binding.taskDates.setText("Start: " + task.getStartDate() +
+                                    "\nEnd: " + task.getEndDate());
+                        } else {
+                            binding.taskDates.setText("Due: " + task.getDueDate());
+                        }
+
                         binding.taskXp.setText("XP: " + task.getTotalXp());
 
                         setupStatusSpinner(task);
@@ -74,21 +96,24 @@ public class TaskPageFragment extends Fragment {
                 });
     }
 
-    private void setupStatusSpinner(Task task) {
-        String[] allStatuses = getResources().getStringArray(R.array.task_status_array);
-        List<String> availableStatuses = new ArrayList<>();
 
-        if ("active".equalsIgnoreCase(task.getStatus())) {
-            availableStatuses.add("active");
-            availableStatuses.add("done");
-            availableStatuses.add("cancelled");
-            if (task.isRecurring()) availableStatuses.add("paused");
-        } else if ("paused".equalsIgnoreCase(task.getStatus())) {
-            availableStatuses.add("paused");
-            availableStatuses.add("active");
-        } else {
-            // Statusi koji se više ne mogu menjati
-            availableStatuses.add(task.getStatus());
+    private void setupStatusSpinner(Task task) {
+        List<String> availableStatuses = new ArrayList<>();
+        String status = task.getStatus().toLowerCase();
+
+        switch (status) {
+            case "aktivan":
+                availableStatuses.add("aktivan");
+                availableStatuses.add("urađen");
+                availableStatuses.add("otkazan");
+                if (task.isRecurring()) availableStatuses.add("pauziran");
+                break;
+            case "pauziran":
+                availableStatuses.add("pauziran");
+                availableStatuses.add("aktivan");
+                break;
+            default: // neurađen, urađen, otkazan
+                availableStatuses.add(status);
         }
 
         ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(),
@@ -96,49 +121,145 @@ public class TaskPageFragment extends Fragment {
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         statusSpinner.setAdapter(adapter);
 
-        statusSpinner.setSelection(availableStatuses.indexOf(task.getStatus()));
+        statusSpinner.setSelection(availableStatuses.indexOf(status));
+
+        statusSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            boolean firstSelection = true;
+
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (firstSelection) {
+                    firstSelection = false;
+                    return;
+                }
+                String selectedStatus = availableStatuses.get(position);
+                updateTaskStatus(selectedStatus);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {}
+        });
     }
 
-    private void updateTask() {
-        if (currentTask == null) return;
+//    private void updateTaskStatus(String selectedStatus) {
+//        if (currentTask == null) return;
+//
+//        String currentStatus = currentTask.getStatus().toLowerCase();
+//        String selectedStatusLower = selectedStatus.toLowerCase();
+//
+//        if ("urađen".equals(currentStatus) || "neurađen".equals(currentStatus) ||
+//                "otkazan".equals(currentStatus) || isTaskPast(currentTask)) {
+//            Toast.makeText(requireContext(), "Ovaj zadatak se ne može menjati", Toast.LENGTH_SHORT).show();
+//            loadTask(currentTask.getTaskId());
+//            return;
+//        }
+//
+//        // Pravila promene statusa
+//        switch (currentStatus) {
+//            case "aktivan":
+//                if ("urađen".equals(selectedStatusLower) || "otkazan".equals(selectedStatusLower) ||
+//                        ("pauziran".equals(selectedStatusLower) && currentTask.isRecurring()) ||
+//                        "aktivan".equals(selectedStatusLower)) {
+//                    currentTask.setStatus(selectedStatusLower);
+//                } else {
+//                    Toast.makeText(requireContext(), "Nevažeća promena statusa", Toast.LENGTH_SHORT).show();
+//                    loadTask(currentTask.getTaskId());
+//                    return;
+//                }
+//                break;
+//            case "pauziran":
+//                if ("aktivan".equals(selectedStatusLower) || "pauziran".equals(selectedStatusLower)) {
+//                    currentTask.setStatus(selectedStatusLower);
+//                } else {
+//                    Toast.makeText(requireContext(), "Nevažeća promena statusa", Toast.LENGTH_SHORT).show();
+//                    loadTask(currentTask.getTaskId());
+//                    return;
+//                }
+//                break;
+//        }
+//
+//        TaskRepository.getInstance(getContext()).updateTask(currentTask);
+//        Toast.makeText(requireContext(), "Status zadatka ažuriran", Toast.LENGTH_SHORT).show();
+//        loadTask(currentTask.getTaskId());
+//    }
+private void updateTaskStatus(String selectedStatus) {
+    if (currentTask == null) return;
 
-        String selectedStatus = statusSpinner.getSelectedItem().toString();
+    String currentStatus = currentTask.getStatus().toLowerCase();
+    String selectedStatusLower = selectedStatus.toLowerCase();
 
-        // Provera da li je zadatak prošao ili je neurađen/otkazan
-        if ("undone".equalsIgnoreCase(currentTask.getStatus()) ||
-                "cancelled".equalsIgnoreCase(currentTask.getStatus()) ||
-                isTaskPast(currentTask)) {
-            Toast.makeText(requireContext(), "Ovaj zadatak se ne može menjati", Toast.LENGTH_SHORT).show();
-            return;
-        }
+    if ("urađen".equals(currentStatus) || "neurađen".equals(currentStatus) ||
+            "otkazan".equals(currentStatus) || isTaskPast(currentTask)) {
+        Toast.makeText(requireContext(), "Ovaj zadatak se ne može menjati", Toast.LENGTH_SHORT).show();
+        loadTask(currentTask.getTaskId());
+        return;
+    }
 
-        // Pravila promene statusa
-        if ("paused".equalsIgnoreCase(currentTask.getStatus()) &&
-                "active".equalsIgnoreCase(selectedStatus)) {
-            currentTask.setStatus("active");
-        } else if ("active".equalsIgnoreCase(currentTask.getStatus())) {
-            if ("done".equalsIgnoreCase(selectedStatus) ||
-                    "cancelled".equalsIgnoreCase(selectedStatus) ||
-                    ("paused".equalsIgnoreCase(selectedStatus) && currentTask.isRecurring())) {
-                currentTask.setStatus(selectedStatus);
+    // Pravila promene statusa
+    switch (currentStatus) {
+        case "aktivan":
+            if ("urađen".equals(selectedStatusLower) || "otkazan".equals(selectedStatusLower) ||
+                    ("pauziran".equals(selectedStatusLower) && currentTask.isRecurring()) ||
+                    "aktivan".equals(selectedStatusLower)) {
+                currentTask.setStatus(selectedStatusLower);
             } else {
                 Toast.makeText(requireContext(), "Nevažeća promena statusa", Toast.LENGTH_SHORT).show();
+                loadTask(currentTask.getTaskId());
                 return;
             }
-        } else {
-            Toast.makeText(requireContext(), "Nevažeća promena statusa", Toast.LENGTH_SHORT).show();
-            return;
-        }
+            break;
+        case "pauziran":
+            if ("aktivan".equals(selectedStatusLower) || "pauziran".equals(selectedStatusLower)) {
+                currentTask.setStatus(selectedStatusLower);
+            } else {
+                Toast.makeText(requireContext(), "Nevažeća promena statusa", Toast.LENGTH_SHORT).show();
+                loadTask(currentTask.getTaskId());
+                return;
+            }
+            break;
+    }
 
-        TaskRepository.getInstance(getContext()).updateTask(currentTask);
-        Toast.makeText(requireContext(), "Status zadatka ažuriran", Toast.LENGTH_SHORT).show();
-        loadTask(currentTask.getTaskId()); // osveži prikaz
+    // Ako je zadatak sada urađen, dodeli XP korisniku
+    if ("urađen".equals(selectedStatusLower)) {
+        UserRepository userRepo = UserRepository.getInstance(requireContext());
+        User currentUser = userRepo.getLoggedInUser();
+        if (currentUser != null) {
+            currentUser.addXp(currentTask.getTotalXp()); // Saberi XP
+            userRepo.updateUser(currentUser); // Snimi promene
+            Toast.makeText(requireContext(), "Osvojili ste " + currentTask.getTotalXp() + " XP!", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+
+    TaskRepository.getInstance(getContext()).updateTask(currentTask);
+    Toast.makeText(requireContext(), "Status zadatka ažuriran", Toast.LENGTH_SHORT).show();
+    loadTask(currentTask.getTaskId());
+}
+
+
+    private void autoMarkTaskAsUnfinished(Task task) {
+        if (!"aktivan".equals(task.getStatus().toLowerCase()) || task.isRecurring()) return;
+
+        try {
+            Date dueDate = TaskRepository.dateFormat.parse(task.getDueDate());
+            long diff = System.currentTimeMillis() - dueDate.getTime();
+            long daysPast = diff / (1000 * 60 * 60 * 24);
+
+            if (daysPast > MAX_DAYS_PAST) {
+                task.setStatus("neurađen");
+                TaskRepository.getInstance(getContext()).updateTask(task);
+                Toast.makeText(requireContext(), "Zadatak je automatski označen kao neurađen", Toast.LENGTH_SHORT).show();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void deleteTask() {
         if (currentTask == null) return;
 
-        if ("done".equalsIgnoreCase(currentTask.getStatus()) || isTaskPast(currentTask)) {
+        String status = currentTask.getStatus().toLowerCase();
+        if ("urađen".equals(status) || "neurađen".equals(status) || "otkazan".equals(status) || isTaskPast(currentTask)) {
             Toast.makeText(requireContext(), "Završeni zadaci se ne mogu obrisati", Toast.LENGTH_SHORT).show();
             return;
         }
