@@ -142,4 +142,11 @@
             app:destination="@id/nav_edit_task" />
     </fragment>
 
+    <fragment
+        android:id="@+id/nav_battle"
+        android:name="com.example.rpgapp.fragments.battle.BossBattleFragment"
+        android:label="Battle"
+        tools:layout="@layout/fragment_boss_battle" />
+
+
 </navigation>
