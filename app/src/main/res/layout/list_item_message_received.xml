@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingTop="4dp"
+    android:paddingBottom="4dp"
+    android:paddingStart="8dp"
+    android:paddingEnd="8dp"
+    android:clipToPadding="false">
+    <TextView
+        android:id="@+id/textViewSenderName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:textStyle="bold"
+        tools:text="Ime Pošiljaoca"/>
+    <TextView
+        android:id="@+id/textViewMessageBody"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/textViewSenderName"
+        android:layout_alignParentStart="true"
+        android:background="@drawable/bg_message_received"
+        android:padding="12dp"
+        tools:text="Ovo je poruka od nekog drugog."/>
+    <TextView
+        android:id="@+id/textViewMessageTimestamp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/textViewMessageBody"
+        android:layout_alignStart="@id/textViewMessageBody"
+        android:textSize="10sp"
+        tools:text="10:31 PM"/>
+
+</RelativeLayout >

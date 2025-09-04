@@ -14,7 +14,7 @@
             android:icon="@drawable/ic_new"
             android:orderInCategory="200"/>
 
-        <item android:id="@+id/nav_profile_new"
+        <item android:id="@+id/myProfileFragment"
             android:title="Profile - Teodora"
             android:icon="@drawable/ic_face"
             android:orderInCategory="300" />
@@ -29,6 +29,11 @@
             android:title="Register - Teodora" />
 
         <item
+            android:id="@+id/allianceFragment"
+            android:icon="@drawable/ic_settings"
+            android:title="My Alliance" />
+
+        <item
             android:id="@+id/nav_login"
             android:icon="@drawable/ic_face"
             android:title="Log in - Teodora" />
@@ -41,6 +46,11 @@
             android:id="@+id/nav_friends"
             android:icon="@drawable/ic_face"
             android:title="Friends - Teodora" />
+
+        <item
+            android:id="@+id/requestsFragment"
+            android:icon="@drawable/ic_face"
+            android:title="Friend requests - Teodora" />
         <item
             android:id="@+id/nav_tasks"
             android:title="Tasks"

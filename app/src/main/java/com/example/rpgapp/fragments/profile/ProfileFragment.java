@@ -1,6 +1,8 @@
 package com.example.rpgapp.fragments.profile;
 
 import android.app.AlertDialog;
+import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -17,6 +19,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.rpgapp.R;
@@ -26,6 +29,10 @@ import com.example.rpgapp.model.UserItem;
 import com.example.rpgapp.model.UserWeapon;
 import com.example.rpgapp.model.Weapon;
 import com.example.rpgapp.tools.GameData;
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.WriterException;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.qrcode.QRCodeWriter;
 
 import java.text.NumberFormat;
 import java.util.HashMap;
@@ -58,7 +65,15 @@ public class ProfileFragment extends Fragment {
         bindViews(view);
         observeViewModel();
 
-        viewModel.loadUserProfile(null);
+        ProfileFragmentArgs args = ProfileFragmentArgs.fromBundle(getArguments());
+        String userId = args.getUserId();
+        boolean autoSend = args.getAutoSendRequest();
+
+        viewModel.loadUserProfile(userId);
+
+        if (autoSend) {
+            viewModel.setAutoSendFlag();
+        }
     }
 
     private void bindViews(View view) {
@@ -98,6 +113,13 @@ public class ProfileFragment extends Fragment {
         viewModel.getDisplayedUser().observe(getViewLifecycleOwner(), user -> {
             if (user != null) {
                 populateUI(user);
+                generateAndShowQrCode(user.getUserId());
+            }
+        });
+
+        viewModel.getSuccessMessage().observe(getViewLifecycleOwner(), message -> {
+            if (message != null) {
+                Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -120,6 +142,92 @@ public class ProfileFragment extends Fragment {
                 Toast.makeText(getContext(), error, Toast.LENGTH_SHORT).show();
             }
         });
+
+        viewModel.getFriendshipStatus().observe(getViewLifecycleOwner(), status -> {
+            if (status == null) return;
+            viewModel.executeAutoSendIfNeeded(status);
+
+            layout_other_user_actions.setVisibility(View.GONE);
+
+            switch (status) {
+                case MY_PROFILE:
+                    break;
+
+                case NOT_FRIENDS:
+                    layout_other_user_actions.setVisibility(View.VISIBLE);
+                    buttonAddFriend.setText("Add Friend");
+                    buttonAddFriend.setEnabled(true);
+                    buttonAddFriend.setOnClickListener(v -> {
+                        viewModel.sendFriendRequest();
+                    });
+                    buttonInviteToAlliance.setVisibility(View.GONE);
+                    break;
+
+                case PENDING_SENT:
+                    layout_other_user_actions.setVisibility(View.VISIBLE);
+                    buttonAddFriend.setText("Pending");
+                    buttonAddFriend.setEnabled(false);
+                    buttonInviteToAlliance.setVisibility(View.GONE);
+                    break;
+
+                case PENDING_RECEIVED:
+                    layout_other_user_actions.setVisibility(View.VISIBLE);
+                    buttonAddFriend.setText("Accept Request");
+                    buttonAddFriend.setEnabled(true);
+                    buttonInviteToAlliance.setVisibility(View.GONE);
+                    buttonAddFriend.setOnClickListener(v -> {
+                        showAcceptDeclineDialog();
+                    });
+                    break;
+
+                case FRIENDS:
+                    layout_other_user_actions.setVisibility(View.VISIBLE);
+                    buttonAddFriend.setVisibility(View.VISIBLE);
+                    buttonAddFriend.setText("Friends");
+                    buttonAddFriend.setEnabled(false);
+                    buttonInviteToAlliance.setVisibility(View.GONE);
+                    break;
+
+                case FRIEND_CAN_BE_INVITED:
+                    layout_other_user_actions.setVisibility(View.VISIBLE);
+                    buttonAddFriend.setVisibility(View.GONE);
+                    buttonInviteToAlliance.setVisibility(View.VISIBLE);
+                    buttonInviteToAlliance.setText("Invite to Alliance");
+                    buttonInviteToAlliance.setEnabled(true);
+                    buttonInviteToAlliance.setOnClickListener(v -> {
+                        viewModel.inviteFriendToAlliance();
+                    });
+                    break;
+                case FRIEND_INVITE_PENDING:
+                    layout_other_user_actions.setVisibility(View.VISIBLE);
+                    buttonAddFriend.setVisibility(View.GONE);
+                    buttonInviteToAlliance.setVisibility(View.VISIBLE);
+                    buttonInviteToAlliance.setText("Invite Pending");
+                    buttonInviteToAlliance.setEnabled(false);
+                    break;
+            }
+        });
+    }
+
+    private void generateAndShowQrCode(String userId) {
+        QRCodeWriter writer = new QRCodeWriter();
+        try {
+            BitMatrix bitMatrix = writer.encode(userId, BarcodeFormat.QR_CODE, 512, 512);
+            int width = bitMatrix.getWidth();
+            int height = bitMatrix.getHeight();
+            Bitmap bmp = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
+
+            for (int x = 0; x < width; x++) {
+                for (int y = 0; y < height; y++) {
+                    bmp.setPixel(x, y, bitMatrix.get(x, y) ? Color.BLACK : Color.WHITE);
+                }
+            }
+
+            imageViewQrCode.setImageBitmap(bmp);
+
+        } catch (WriterException e) {
+            e.printStackTrace();
+        }
     }
 
     private void populateUI(User user) {
@@ -135,11 +243,7 @@ public class ProfileFragment extends Fragment {
         populateWeapons(user);
         populateEquipped(user);
         populateInventory(user);
-
-        // TODO: QR kod, bedževi
     }
-
-
 
     private void populateWeapons(User user) {
         layout_weapons_container.removeAllViews();
@@ -286,7 +390,6 @@ public class ProfileFragment extends Fragment {
         }
     }
 
-
     private void showEquipDialog(User user, UserItem itemToEquip) {
         Item baseItem = GameData.getAllItems().get(itemToEquip.getItemId());
         if (baseItem == null) return;
@@ -335,6 +438,23 @@ public class ProfileFragment extends Fragment {
         viewModel.updateUser(user);
 
         Toast.makeText(getContext(), itemToEquip.getItemId() + " activated!", Toast.LENGTH_SHORT).show();
+    }
+
+    private void showAcceptDeclineDialog() {
+        User otherUser = viewModel.getDisplayedUser().getValue();
+        if (otherUser == null) return;
+
+        new AlertDialog.Builder(getContext())
+                .setTitle("Friend Request")
+                .setMessage("Respond to the friend request from " + otherUser.getUsername() + "?")
+                .setPositiveButton("Accept", (dialog, which) -> {
+                    viewModel.acceptFriendRequest();
+                })
+                .setNegativeButton("Decline", (dialog, which) -> {
+                    viewModel.declineFriendRequest();
+                })
+                .setNeutralButton("Cancel", null)
+                .show();
     }
 
     private int dpToPx(int dp) {

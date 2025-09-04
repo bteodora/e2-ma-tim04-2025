@@ -4,18 +4,31 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.SearchView;
 import android.widget.Toast;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.NavController;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.rpgapp.R;
 import com.example.rpgapp.adapters.UserAdapter;
 import java.util.List; // Import List
+import androidx.navigation.fragment.NavHostFragment;
+import androidx.activity.result.ActivityResultLauncher;
+
+import com.example.rpgapp.database.UserRepository;
+import com.example.rpgapp.model.SendRequestStatus;
+import com.journeyapps.barcodescanner.ScanContract;
+import com.journeyapps.barcodescanner.ScanOptions;
+import android.content.pm.ActivityInfo;
 
 public class FriendsFragment extends Fragment {
     // Promenjen TAG da bi se lakše filtriralo
@@ -28,6 +41,27 @@ public class FriendsFragment extends Fragment {
     public FriendsFragment() {
         Log.d(TAG, "FriendsFragment: Constructor called");
     }
+
+    // U FriendsFragment.java
+
+    private final ActivityResultLauncher<ScanOptions> barcodeLauncher = registerForActivityResult(new ScanContract(),
+            result -> {
+                if (result.getContents() == null) {
+                    Toast.makeText(getContext(), "Scan cancelled", Toast.LENGTH_LONG).show();
+                    return;
+                }
+
+                String scannedUserId = result.getContents();
+                Log.d("FriendsFragment", "Skeniran je userId: " + scannedUserId);
+
+                FriendsFragmentDirections.ActionFriendsFragmentToFriendProfileFragment action =
+                        FriendsFragmentDirections.actionFriendsFragmentToFriendProfileFragment();
+                action.setUserId(scannedUserId);
+
+                action.setAutoSendRequest(true);
+
+                NavHostFragment.findNavController(FriendsFragment.this).navigate(action);
+            });
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -45,35 +79,50 @@ public class FriendsFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        Log.d(TAG, "FriendsFragment: onViewCreated START");
+        viewModel = new ViewModelProvider(this).get(FriendsViewModel.class);
 
         searchViewUsers = view.findViewById(R.id.searchViewUsers);
         recyclerViewUsers = view.findViewById(R.id.recyclerViewUsers);
-        Log.d(TAG, "FriendsFragment: Views initialized");
 
-        viewModel = new ViewModelProvider(this).get(FriendsViewModel.class);
-        Log.d(TAG, "FriendsFragment: ViewModel initialized");
+        view.findViewById(R.id.buttonScanQr).setOnClickListener(v -> {
+            startScanner();
+        });
 
-        viewModel.getCurrentUserLiveDataForDebug().observe(getViewLifecycleOwner(), user -> {
-            if (user != null) {
-                Log.d(TAG, "!!! TEST OBSERVER: Korisnik je konačno stigao u Fragment: " + user.getUsername());
-            } else {
-                Log.d(TAG, "!!! TEST OBSERVER: Korisnik je NULL u Fragmentu.");
-            }
+        Button createAllianceButton = view.findViewById(R.id.buttonCreateAlliance);
+        createAllianceButton.setOnClickListener(v -> {
+            CreateAllianceDialogFragment dialog = new CreateAllianceDialogFragment();
+            dialog.show(getParentFragmentManager(), "CreateAllianceDialog");
         });
 
         setupRecyclerView();
         setupSearchView();
         observeViewModel();
+    }
 
-        Log.d(TAG, "FriendsFragment: onViewCreated END");
+    private void startScanner() {
+        ScanOptions options = new ScanOptions();
+        options.setDesiredBarcodeFormats(ScanOptions.QR_CODE);
+        options.setPrompt("Scan a friend's QR code");
+        options.setCameraId(0);
+        options.setBeepEnabled(true);
+        options.setBarcodeImageEnabled(true);
+        // options.setOrientationLocked(true);
+        barcodeLauncher.launch(options);
     }
 
     private void setupRecyclerView() {
-        userAdapter = new UserAdapter();
+        userAdapter = new UserAdapter(userId -> {
+            Log.d("RPGApp_Debug", "Kliknuto na korisnika sa ID: " + userId);
+
+            FriendsFragmentDirections.ActionFriendsFragmentToFriendProfileFragment action =
+                    FriendsFragmentDirections.actionFriendsFragmentToFriendProfileFragment();
+            action.setUserId(userId);
+
+            NavHostFragment.findNavController(this).navigate(action);
+        });
+
         recyclerViewUsers.setLayoutManager(new LinearLayoutManager(getContext()));
         recyclerViewUsers.setAdapter(userAdapter);
-        Log.d(TAG, "FriendsFragment: RecyclerView setup complete");
     }
 
 
@@ -105,10 +154,9 @@ public class FriendsFragment extends Fragment {
                 return;
             }
             Log.d(TAG, "FriendsFragment_Observer: Primljeno " + users.size() + " korisnika. Prosleđujem adapteru.");
-            userAdapter.setUsers(users);
+            userAdapter.setUsers(users, null);
         });
 
-        // ... observer za greške ostaje isti ...
         Log.d(TAG, "FriendsFragment: Observers are set up.");
     }
 }

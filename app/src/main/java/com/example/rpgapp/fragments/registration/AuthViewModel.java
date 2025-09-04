@@ -1,5 +1,6 @@
 package com.example.rpgapp.fragments.registration;
 
+import android.app.ComponentCaller;
 import android.content.Context;
 
 import androidx.lifecycle.LiveData;
@@ -55,5 +56,9 @@ public class AuthViewModel extends AndroidViewModel {
 
     public LiveData<Boolean> getPasswordChangedSuccess() {
         return authRepository.passwordChangedSuccess;
+    }
+
+    public FirebaseUser getCurrentUser() {
+        return authRepository.getCurrentUser();
     }
 }

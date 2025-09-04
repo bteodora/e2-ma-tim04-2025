@@ -27,6 +27,10 @@ public class User {
 
     private long registrationTimestamp;
 
+    private String allianceId;
+    private List<String> allianceInvites;
+    private String fcmToken;
+
     private void reduceLifespan() {
         userItems.entrySet().removeIf(entry -> {
             UserItem item = entry.getValue();
@@ -106,6 +110,30 @@ public class User {
 
     public List<String> getFriendIds() {
         return friendIds;
+    }
+
+    public String getAllianceId() {
+        return allianceId;
+    }
+
+    public String getFcmToken() {
+        return fcmToken;
+    }
+
+    public void setFcmToken(String fcmToken) {
+        this.fcmToken = fcmToken;
+    }
+
+    public void setAllianceId(String allianceId) {
+        this.allianceId = allianceId;
+    }
+
+    public List<String> getAllianceInvites() {
+        return allianceInvites;
+    }
+
+    public void setAllianceInvites(List<String> allianceInvites) {
+        this.allianceInvites = allianceInvites;
     }
 
     public void setFriendIds(List<String> friendIds) {

@@ -26,6 +26,8 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -33,8 +35,11 @@ import android.view.MenuItem;
 import android.widget.Toast;
 
 import com.example.rpgapp.R;
+import com.example.rpgapp.database.AllianceRepository;
+import com.example.rpgapp.database.UserRepository;
 import com.example.rpgapp.databinding.ActivityHomeBinding;
 import com.example.rpgapp.fragments.registration.AuthViewModel;
+import com.example.rpgapp.model.Notification;
 import com.example.rpgapp.recievers.SyncReceiver;
 import com.example.rpgapp.services.ForegroundService;
 import com.example.rpgapp.services.SyncService;
@@ -43,9 +48,17 @@ import com.google.android.material.navigation.NavigationView;
 
 import java.util.HashSet;
 import java.util.Set;
+import android.Manifest;
+import android.content.pm.PackageManager;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.core.content.ContextCompat;
+import com.example.rpgapp.tools.NotificationHelper;
+import com.google.firebase.auth.FirebaseUser;
 
 
-public class HomeActivity extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener  {
+public class HomeActivity extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener,
+        UserRepository.AllianceInviteListener, UserRepository.NotificationListener  {
     private ActivityHomeBinding binding;
     private AppBarConfiguration mAppBarConfiguration;
     private DrawerLayout drawer;
@@ -63,6 +76,19 @@ public class HomeActivity extends AppCompatActivity implements SharedPreferences
     private SharedPreferences sharedPreferences;
     private String synctime;
     private boolean allowSync;
+    private UserRepository userRepository;
+    private AllianceRepository allianceRepository;
+    private NotificationHelper notificationHelper;
+    private AuthViewModel authViewModel;
+    private final ActivityResultLauncher<String> requestPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
+                if (isGranted) {
+                    Log.d("HomeActivity", "Notification permission granted.");
+                } else {
+                    Log.w("HomeActivity", "Notification permission denied.");
+                    Toast.makeText(this, "Notifications are disabled. You won't see alliance invites.", Toast.LENGTH_LONG).show();
+                }
+            });
 
 
     @SuppressLint("NonConstantResourceId")
@@ -84,6 +110,16 @@ public class HomeActivity extends AppCompatActivity implements SharedPreferences
         * */
         binding = ActivityHomeBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
+        notificationHelper = new NotificationHelper(this);
+        userRepository = UserRepository.getInstance(this);
+        allianceRepository = AllianceRepository.getInstance(this);
+        authViewModel = new ViewModelProvider(this).get(AuthViewModel.class);
+
+        FirebaseUser currentUser = authViewModel.getCurrentUser();
+        if (currentUser != null) {
+            userRepository.setLoggedInUser(currentUser.getUid());
+        }
 
         binding.activityHomeBase.floatingActionButton.setOnClickListener(v -> {
             Log.i("ShopApp", "Floating Action Button");
@@ -181,6 +217,10 @@ public class HomeActivity extends AppCompatActivity implements SharedPreferences
             }
         });
 
+        askForNotificationPermission();
+        startListeningForInvites();
+        startListeningForNotifications();
+
         // AppBarConfiguration odnosi se na konfiguraciju ActionBar-a (ili Toolbar-a) u Android aplikaciji
         // kako bi se omogućila navigacija koristeći Android Navigation komponentu.
         // Takođe, postavlja se bočni meni (navigation drawer) u skladu sa
@@ -206,8 +246,53 @@ public class HomeActivity extends AppCompatActivity implements SharedPreferences
         sharedPreferences.registerOnSharedPreferenceChangeListener(this);
 
         addMenu();
+        handleIntent(getIntent());
 
 //        Util.initDB(this);
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        handleIntent(intent);
+    }
+
+    private void startListeningForInvites() {
+        FirebaseUser currentUser = authViewModel.getCurrentUser();
+        if (currentUser != null) {
+            String currentUserId = currentUser.getUid();
+            userRepository.startListeningForAllianceInvites(currentUserId, this);
+        }
+    }
+    @Override
+    public void onNotificationReceived(Notification notification) {
+        notificationHelper.showSimpleNotification(notification.getTitle(), notification.getMessage());
+    }
+    private void startListeningForNotifications() {
+        if (authViewModel.getCurrentUser() != null) {
+            String currentUserId = authViewModel.getCurrentUser().getUid();
+            userRepository.startListeningForNotifications(currentUserId, this);
+        }
+    }
+    @Override
+    public void onNewAllianceInvite(String allianceId) {
+        allianceRepository.getAllianceById(allianceId, alliance -> {
+            if (alliance != null) {
+                notificationHelper.showAllianceInviteNotification(
+                        alliance.getAllianceId(),
+                        alliance.getLeaderUsername(),
+                        alliance.getName()
+                );
+            }
+        });
+    }
+    private void askForNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) !=
+                    PackageManager.PERMISSION_GRANTED) {
+                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
+            }
+        }
     }
 
     @Override
@@ -338,9 +423,25 @@ public class HomeActivity extends AppCompatActivity implements SharedPreferences
 
     @Override
     protected void onDestroy() {
+        userRepository.stopListeningForAllianceInvites();
+        userRepository.stopListeningForNotifications();
         sharedPreferences.unregisterOnSharedPreferenceChangeListener(this);
         super.onDestroy();
 
+    }
+
+    private void handleIntent(Intent intent) {
+        if (intent != null && "ALLIANCE".equals(intent.getStringExtra("NAVIGATE_TO"))) {
+            Log.d("HomeActivity", "Primljen nalog za navigaciju na Alliance ekran. Odlažem izvršavanje.");
+
+            new Handler(Looper.getMainLooper()).post(() -> {
+                if (navController != null) {
+                    Log.d("HomeActivity", "Izvršavam odloženu navigaciju.");
+                    navController.navigate(R.id.allianceFragment);
+                }
+            });
+            intent.removeExtra("NAVIGATE_TO");
+        }
     }
 
     @Override

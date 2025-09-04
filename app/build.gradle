@@ -60,6 +60,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-auth'
     implementation 'com.google.code.gson:gson:2.10.1'
     implementation 'com.applandeo:material-calendar-view:1.9.0-rc03'
-
-
+    implementation 'com.google.zxing:core:3.5.1'
+    implementation 'com.journeyapps:zxing-android-embedded:4.3.0'
+    implementation 'com.google.firebase:firebase-messaging'
 }
