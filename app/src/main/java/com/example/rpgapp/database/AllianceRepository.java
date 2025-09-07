@@ -1,6 +1,8 @@
 package com.example.rpgapp.database;
 
+import android.content.ContentValues;
 import android.content.Context;
+import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 import androidx.annotation.Nullable;
 import androidx.lifecycle.LiveData;
@@ -313,5 +315,18 @@ public class AllianceRepository {
 
         return allianceLiveData;
     }
+    public void updateAlliance(Alliance alliance, UserRepository.RequestCallback callback) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("alliances")
+                .document(alliance.getAllianceId())
+                .set(alliance)
+                .addOnSuccessListener(aVoid -> {
+                    if (callback != null) callback.onSuccess();
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onFailure(e);
+                });
+    }
+
 
 }

@@ -18,6 +18,7 @@ import com.example.rpgapp.database.AuthRepository;
 import com.example.rpgapp.database.UserRepository;
 import com.example.rpgapp.model.Alliance;
 import com.example.rpgapp.model.FriendshipStatus;
+import com.example.rpgapp.model.MissionTask;
 import com.example.rpgapp.model.User;
 import com.google.firebase.auth.FirebaseUser;
 
@@ -245,4 +246,14 @@ public class ProfileViewModel extends AndroidViewModel {
             }
         });
     }
+
+    private MutableLiveData<MissionTask> currentSpecialMission = new MutableLiveData<>();
+    public LiveData<MissionTask> getCurrentSpecialMission() {
+        return currentSpecialMission;
+    }
+
+    public void setCurrentSpecialMission(MissionTask mission) {
+        currentSpecialMission.setValue(mission);
+    }
+
 }

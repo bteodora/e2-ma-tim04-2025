@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:padding="16dp"
     android:layout_width="match_parent"
@@ -9,39 +8,51 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <TextView
-            android:text="Task Title"
-            android:id="@+id/taskTitle"
-            android:textSize="18sp"
+        <EditText
+            android:id="@+id/etTaskTitle"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content"
+            android:hint="Task Title"/>
 
-        <TextView
-            android:text="Description"
-            android:id="@+id/taskDescription"
-            android:textSize="16sp"
+        <EditText
+            android:id="@+id/etTaskDescription"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:hint="Description"
+            android:inputType="textMultiLine"
+            android:minLines="2"
             android:paddingTop="8dp"/>
-        <TextView
-            android:id="@+id/taskCategory"
+
+        <EditText
+            android:id="@+id/etTaskStartDate"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Category"/>
-        <TextView
-            android:id="@+id/taskDates"
+            android:hint="Start Date (yyyy-MM-dd)"
+            android:visibility="gone"/>
+
+        <EditText
+            android:id="@+id/etTaskEndDate"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Dates"/>
-        <TextView
-            android:id="@+id/taskXp"
+            android:hint="End Date (yyyy-MM-dd)"
+            android:visibility="gone"/>
+
+        <EditText
+            android:id="@+id/etTaskDueDate"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="XP"/>
+            android:hint="Due Date (yyyy-MM-dd)"
+            android:visibility="gone"/>
 
 
         <Spinner
-            android:id="@+id/spinnerStatus"
+            android:id="@+id/spinnerDifficulty"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="8dp"/>
+
+        <Spinner
+            android:id="@+id/spinnerImportance"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingTop="8dp"/>
@@ -52,13 +63,5 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"/>
-
-        <Button
-            android:id="@+id/btnDeleteTask"
-            android:text="Delete Task"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:backgroundTint="@android:color/holo_red_light"/>
     </LinearLayout>
 </ScrollView>

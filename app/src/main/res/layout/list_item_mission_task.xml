@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <!-- Ime zadatka -->
+    <TextView
+        android:id="@+id/textViewTaskName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Ime zadatka"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:paddingBottom="4dp" />
+
+    <!-- Progres bar -->
+    <ProgressBar
+        android:id="@+id/progressBarTask"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="20dp"
+        android:progress="0"
+        android:max="10"
+        android:progressTint="@color/purple_500"
+        android:backgroundTint="@color/gray" />
+
+    <!-- Tekstualni prikaz napretka -->
+    <TextView
+        android:id="@+id/textViewTaskProgress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="0/10 (danas 0/2)"
+        android:textSize="14sp"
+        android:paddingTop="4dp" />
+
+    <!-- Dugme za kompletiranje zadatka -->
+    <Button
+        android:id="@+id/buttonCompleteTask"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Complete"
+        android:layout_marginTop="6dp" />
+
+</LinearLayout>
