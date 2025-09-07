@@ -141,47 +141,6 @@ public class TaskPageFragment extends Fragment {
         });
     }
 
-//    private void updateTaskStatus(String selectedStatus) {
-//        if (currentTask == null) return;
-//
-//        String currentStatus = currentTask.getStatus().toLowerCase();
-//        String selectedStatusLower = selectedStatus.toLowerCase();
-//
-//        if ("urađen".equals(currentStatus) || "neurađen".equals(currentStatus) ||
-//                "otkazan".equals(currentStatus) || isTaskPast(currentTask)) {
-//            Toast.makeText(requireContext(), "Ovaj zadatak se ne može menjati", Toast.LENGTH_SHORT).show();
-//            loadTask(currentTask.getTaskId());
-//            return;
-//        }
-//
-//        // Pravila promene statusa
-//        switch (currentStatus) {
-//            case "aktivan":
-//                if ("urađen".equals(selectedStatusLower) || "otkazan".equals(selectedStatusLower) ||
-//                        ("pauziran".equals(selectedStatusLower) && currentTask.isRecurring()) ||
-//                        "aktivan".equals(selectedStatusLower)) {
-//                    currentTask.setStatus(selectedStatusLower);
-//                } else {
-//                    Toast.makeText(requireContext(), "Nevažeća promena statusa", Toast.LENGTH_SHORT).show();
-//                    loadTask(currentTask.getTaskId());
-//                    return;
-//                }
-//                break;
-//            case "pauziran":
-//                if ("aktivan".equals(selectedStatusLower) || "pauziran".equals(selectedStatusLower)) {
-//                    currentTask.setStatus(selectedStatusLower);
-//                } else {
-//                    Toast.makeText(requireContext(), "Nevažeća promena statusa", Toast.LENGTH_SHORT).show();
-//                    loadTask(currentTask.getTaskId());
-//                    return;
-//                }
-//                break;
-//        }
-//
-//        TaskRepository.getInstance(getContext()).updateTask(currentTask);
-//        Toast.makeText(requireContext(), "Status zadatka ažuriran", Toast.LENGTH_SHORT).show();
-//        loadTask(currentTask.getTaskId());
-//    }
 private void updateTaskStatus(String selectedStatus) {
     if (currentTask == null) return;
 

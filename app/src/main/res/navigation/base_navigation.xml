@@ -23,11 +23,17 @@
         app:popUpToInclusive="false" />
 
     <!-- Alliance -->
+
     <fragment
         android:id="@+id/allianceFragment"
-        android:name="com.example.rpgapp.fragments.alliance.AllianceFragment"
+        android:name="com.example.rpgapp.fragments.alliance.AllianceInfoFragment"
         android:label="My Alliance"
-        tools:layout="@layout/fragment_alliance" />
+        tools:layout="@layout/fragment_alliance_info">
+
+        <action
+            android:id="@+id/action_allianceInfo_to_specialMission"
+            app:destination="@id/specialMissionFragment" />
+    </fragment>
 
     <!-- Requests -->
     <fragment
@@ -214,5 +220,14 @@
         android:name="com.example.rpgapp.fragments.battle.BossBattleFragment"
         android:label="Battle"
         tools:layout="@layout/fragment_boss_battle" />
+
+    <!-- Specijalna misija -->
+    <fragment
+        android:id="@+id/specialMissionFragment"
+        android:name="com.example.rpgapp.fragments.alliance.SpecialMissionFragment"
+        android:label="Special Mission"
+        tools:layout="@layout/fragment_special_mission" />
+
+
 
 </navigation>

@@ -24,6 +24,7 @@ import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.rpgapp.R;
 import com.example.rpgapp.model.Item;
+import com.example.rpgapp.model.MissionTask;
 import com.example.rpgapp.model.User;
 import com.example.rpgapp.model.UserItem;
 import com.example.rpgapp.model.UserWeapon;
@@ -243,6 +244,8 @@ public class ProfileFragment extends Fragment {
         populateWeapons(user);
         populateEquipped(user);
         populateInventory(user);
+        populateBadges(user);
+
     }
 
     private void populateWeapons(User user) {
@@ -456,6 +459,19 @@ public class ProfileFragment extends Fragment {
                 .setNeutralButton("Cancel", null)
                 .show();
     }
+
+    private void populateBadges(User user) {
+        int badges = 0;
+
+        // Ako je korisnik učestvovao u specijalnoj misiji
+        MissionTask mission = viewModel.getCurrentSpecialMission().getValue();
+        if (mission != null && mission.getUserTotalProgress().containsKey(user.getUserId())) {
+            badges = mission.getUserTotalProgress().get(user.getUserId());
+        }
+
+        textViewBadgesCount.setText("Badges: " + badges);
+    }
+
 
     private int dpToPx(int dp) {
         float density = getResources().getDisplayMetrics().density;

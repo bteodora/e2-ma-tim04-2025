@@ -114,6 +114,9 @@ public class TaskRepository {
             values.put(SQLiteHelper.COLUMN_DUE_DATE, task.getDueDate());
             values.put(SQLiteHelper.COLUMN_START_DATE, task.getStartDate());
             values.put(SQLiteHelper.COLUMN_END_DATE, task.getEndDate());
+            values.put(SQLiteHelper.COLUMN_RECURRING, task.isRecurring() ? 1 : 0);
+            values.put(SQLiteHelper.COLUMN_RECURRING_ID, task.getRecurringId());
+
 
 
             database.insertWithOnConflict(SQLiteHelper.TABLE_TASKS, null, values, SQLiteDatabase.CONFLICT_REPLACE);
@@ -171,6 +174,8 @@ public class TaskRepository {
         task.setDueDate(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_DUE_DATE)));
         task.setStartDate(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_START_DATE)));
         task.setEndDate(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_END_DATE)));
+        task.setRecurring(cursor.getInt(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_RECURRING)) == 1);
+        task.setRecurringId(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_RECURRING_ID)));
 
         return task;
     }
