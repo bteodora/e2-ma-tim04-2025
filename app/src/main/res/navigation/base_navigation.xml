@@ -4,29 +4,38 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/base_navigation"
-    app:startDestination="@+id/nav_products"
-    >
+    app:startDestination="@+id/nav_products">
+
+    <!-- Products -->
     <fragment
         android:id="@+id/nav_products"
         android:name="com.example.rpgapp.fragments.products.ProductsPageFragment"
         android:label="Products"
-        tools:layout="@layout/fragment_products_page"
-        />
+        tools:layout="@layout/fragment_products_page" />
 
+    <!-- New Product -->
     <fragment
         android:id="@+id/nav_new"
         android:name="com.example.rpgapp.fragments.new_product.NewProductFragment"
         android:label="New product"
         tools:layout="@layout/fragment_new_product"
         app:popUpTo="@+id/nav_products"
-        app:popUpToInclusive="false"
-        />
+        app:popUpToInclusive="false" />
+
+    <!-- Alliance -->
+
     <fragment
         android:id="@+id/allianceFragment"
-        android:name="com.example.rpgapp.fragments.alliance.AllianceFragment"
+        android:name="com.example.rpgapp.fragments.alliance.AllianceInfoFragment"
         android:label="My Alliance"
-        tools:layout="@layout/fragment_alliance" />
+        tools:layout="@layout/fragment_alliance_info">
 
+        <action
+            android:id="@+id/action_allianceInfo_to_specialMission"
+            app:destination="@id/specialMissionFragment" />
+    </fragment>
+
+    <!-- Requests -->
     <fragment
         android:id="@+id/requestsFragment"
         android:name="com.example.rpgapp.fragments.requests.RequestsFragment"
@@ -36,15 +45,12 @@
             android:name="autoSendRequest"
             app:argType="boolean"
             android:defaultValue="false" />
-
         <action
             android:id="@+id/action_requestsFragment_to_friendProfileFragment"
             app:destination="@id/friendProfileFragment" />
-
     </fragment>
 
-
-
+    <!-- Profile (My Profile) -->
     <fragment
         android:id="@+id/myProfileFragment"
         android:name="com.example.rpgapp.fragments.profile.ProfileFragment"
@@ -64,6 +70,7 @@
             app:destination="@id/nav_password" />
     </fragment>
 
+    <!-- Friend Profile -->
     <fragment
         android:id="@+id/friendProfileFragment"
         android:name="com.example.rpgapp.fragments.profile.ProfileFragment"
@@ -80,95 +87,147 @@
             android:defaultValue="false" />
     </fragment>
 
+    <!-- Logout -->
     <fragment
         android:id="@+id/nav_logout"
         android:name="com.example.rpgapp.fragments.login2.LoginFragment"
         android:label="Login"
         tools:layout="@layout/fragment_login2"
         app:popUpTo="@+id/nav_products"
-        app:popUpToInclusive="true"
-        />
+        app:popUpToInclusive="true" />
 
+    <!-- Settings -->
     <fragment
         android:id="@+id/nav_settings"
         android:name="com.example.rpgapp.fragments.SettingsFragment"
         android:label="Settings"
         tools:layout="@layout/fragment_settings"
         app:popUpTo="@+id/nav_products"
-        app:popUpToInclusive="true"
-        />
+        app:popUpToInclusive="true" />
 
+    <!-- Shop -->
     <fragment
         android:id="@+id/nav_shop"
         android:name="com.example.rpgapp.fragments.shop.ShopFragment"
-        android:label="Settings"
-        tools:layout="@layout/fragment_shop"
-        />
+        android:label="Shop"
+        tools:layout="@layout/fragment_shop" />
 
+    <!-- Friends -->
     <fragment
         android:id="@+id/nav_friends"
         android:name="com.example.rpgapp.fragments.friends.FriendsFragment"
-        android:label="Settings"
-        tools:layout="@layout/fragment_friends"
-        >
+        android:label="Friends"
+        tools:layout="@layout/fragment_friends">
         <action
             android:id="@+id/action_friendsFragment_to_friendProfileFragment"
             app:destination="@id/friendProfileFragment" />
     </fragment>
 
+    <!-- Language -->
     <fragment
         android:id="@+id/nav_language"
         android:name="com.example.rpgapp.fragments.LanguageFragment"
         android:label="Language"
         tools:layout="@layout/fragment_language"
         app:popUpTo="@+id/nav_products"
-        app:popUpToInclusive="true"
-        />
+        app:popUpToInclusive="true" />
 
+    <!-- Register -->
     <fragment
         android:id="@+id/nav_register"
         android:name="com.example.rpgapp.fragments.registration.fragment_register"
         android:label="Register"
         tools:layout="@layout/fragment_register" />
 
+    <!-- Password -->
     <fragment
         android:id="@+id/nav_password"
         android:name="com.example.rpgapp.fragments.profile.ChangePasswordFragment"
-        android:label="Register"
+        android:label="Change Password"
         tools:layout="@layout/fragment_change_password" />
 
+    <!-- Login -->
     <fragment
         android:id="@+id/nav_login"
         android:name="com.example.rpgapp.fragments.login.LoginFragment"
         android:label="Login"
-        tools:layout="@layout/fragment_login" >
+        tools:layout="@layout/fragment_login">
         <action
             android:id="@+id/action_loginFragment_to_registerFragment"
             app:destination="@id/nav_register" />
     </fragment>
 
+    <!-- Tasks -->
     <fragment
         android:id="@+id/nav_tasks"
         android:name="com.example.rpgapp.fragments.task.TaskListFragment"
         android:label="Tasks"
-        tools:layout="@layout/fragment_task_list" >
-
+        tools:layout="@layout/fragment_task_list">
         <action
             android:id="@+id/action_taskList_to_taskPage"
             app:destination="@id/nav_task_page" />
+        <action
+            android:id="@+id/action_taskList_to_taskCalendar"
+            app:destination="@id/nav_task_calendar" />
     </fragment>
 
+    <!-- Task Page -->
     <fragment
         android:id="@+id/nav_task_page"
         android:name="com.example.rpgapp.fragments.task.TaskPageFragment"
         android:label="Task Page"
-        tools:layout="@layout/fragment_task_page" />
+        tools:layout="@layout/fragment_task_page">
+        <argument
+            android:name="taskId"
+            app:argType="string" />
+        <action
+            android:id="@+id/action_taskPage_to_editTask"
+            app:destination="@id/nav_edit_task" />
+    </fragment>
 
+    <!-- Create Task -->
     <fragment
         android:id="@+id/nav_create_task"
         android:name="com.example.rpgapp.fragments.task.CreateTaskFragment"
         android:label="Create Task"
         tools:layout="@layout/fragment_create_task" />
+
+    <!-- Edit Task -->
+    <fragment
+        android:id="@+id/nav_edit_task"
+        android:name="com.example.rpgapp.fragments.task.EditTaskFragment"
+        android:label="Edit Task"
+        tools:layout="@layout/fragment_task_edit">
+        <argument
+            android:name="taskId"
+            app:argType="string" />
+    </fragment>
+
+    <!-- Task Calendar -->
+    <fragment
+        android:id="@+id/nav_task_calendar"
+        android:name="com.example.rpgapp.fragments.task.TaskCalendarFragment"
+        android:label="Task Calendar"
+        tools:layout="@layout/fragment_task_calendar">
+        <action
+            android:id="@+id/action_taskCalendar_to_taskPage"
+            app:destination="@id/nav_task_page" />
+    </fragment>
+
+    <!-- Battle -->
+    <fragment
+        android:id="@+id/nav_battle"
+        android:name="com.example.rpgapp.fragments.battle.BossBattleFragment"
+        android:label="Battle"
+        tools:layout="@layout/fragment_boss_battle" />
+
+    <!-- Specijalna misija -->
+    <fragment
+        android:id="@+id/specialMissionFragment"
+        android:name="com.example.rpgapp.fragments.alliance.SpecialMissionFragment"
+        android:label="Special Mission"
+        tools:layout="@layout/fragment_special_mission" />
+
 
 
 </navigation>

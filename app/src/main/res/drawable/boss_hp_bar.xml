@@ -1,0 +1,21 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Pozadina trake -->
+    <item android:id="@android:id/background">
+        <shape android:shape="rectangle">
+            <solid android:color="#B71C1C"/> <!-- tamnocrvena pozadina -->
+            <corners android:radius="8dp"/>
+        </shape>
+    </item>
+
+    <!-- Prednji progres (HP) -->
+    <item android:id="@android:id/progress">
+        <clip>
+            <shape android:shape="rectangle">
+                <solid android:color="#F44336"/> <!-- svetlocrvena za HP -->
+                <corners android:radius="8dp"/>
+            </shape>
+        </clip>
+    </item>
+
+</layer-list>

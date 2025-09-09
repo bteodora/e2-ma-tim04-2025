@@ -14,7 +14,7 @@ public class SQLiteHelper extends SQLiteOpenHelper {
     public static final String COLUMN_IMAGE = "image";
 
     private static final String DATABASE_NAME = "rpgapp_final.db";
-    private static final int DATABASE_VERSION = 8;
+    private static final int DATABASE_VERSION = 9;
 
     private static final String DB_CREATE = "create table "
             + TABLE_PRODUCTS + "("
@@ -25,6 +25,7 @@ public class SQLiteHelper extends SQLiteOpenHelper {
             + ")";
 
     //--------------- USER ---------------------
+    //TODO dodati za ostale klase isto ovako:
     public static final String TABLE_USERS = "USERS";
     public static final String COLUMN_USER_ID = "_id";
     public static final String COLUMN_USERNAME = "username";
@@ -110,6 +111,8 @@ public class SQLiteHelper extends SQLiteOpenHelper {
     public static final String COLUMN_TOTAL_XP = "total_xp";
     public static final String COLUMN_STATUS = "status";
     public static final String COLUMN_DUE_DATE = "dueDate";
+    public static final String COLUMN_RECURRING = "recurring";
+    public static final String COLUMN_RECURRING_ID = "recurring_id";
 
     private static final String DB_CREATE_TASKS = "CREATE TABLE " + TABLE_TASKS + "("
             + COLUMN_TASK_ID + " TEXT PRIMARY KEY, "
@@ -127,30 +130,91 @@ public class SQLiteHelper extends SQLiteOpenHelper {
             + COLUMN_IMPORTANCE_XP + " INTEGER, "
             + COLUMN_TOTAL_XP + " INTEGER, "
             + COLUMN_STATUS + " TEXT,"
-            + COLUMN_DUE_DATE + " TEXT"
+            + COLUMN_DUE_DATE + " TEXT,"
+            + COLUMN_RECURRING + " INTEGER, "
+            + COLUMN_RECURRING_ID + " TEXT"
+            + ")";
+    //--------------- CATEGORY ---------------------
+
+    public static final String TABLE_CATEGORIES = "CATEGORIES";
+    public static final String COLUMN_CATEGORY_ID = "category_id";
+    public static final String COLUMN_CATEGORY_NAME = "name";
+    public static final String COLUMN_CATEGORY_COLOR = "color";
+
+    private static final String DB_CREATE_CATEGORIES = "CREATE TABLE " + TABLE_CATEGORIES + "("
+            + COLUMN_CATEGORY_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
+            + COLUMN_CATEGORY_NAME + " TEXT UNIQUE NOT NULL, "
+            + COLUMN_CATEGORY_COLOR + " TEXT UNIQUE NOT NULL"  // boja mora biti jedinstvena
+            + ")";
+
+    //--------------- SPECIAL MISSION ---------------------
+    public static final String TABLE_SPECIAL_MISSIONS = "SPECIAL_MISSIONS";
+    public static final String COLUMN_MISSION_ID = "mission_id";
+    public static final String COLUMN_ALLIANCE_ID_FK = "alliance_id";
+    public static final String COLUMN_BOSS_HP = "boss_hp";
+    public static final String COLUMN_MAX_BOSS_HP = "max_boss_hp";
+    public static final String COLUMN_USER_PROGRESS_JSON = "user_progress_json"; // JSON mapa userId -> progress
+    public static final String COLUMN_ALLIANCE_PROGRESS = "alliance_progress";
+    public static final String COLUMN_TASKS_JSON = "tasks_json"; // JSON lista zadataka sa napretkom
+    public static final String COLUMN_START_TIME = "start_time";
+    public static final String COLUMN_DURATION = "duration";
+    public static final String COLUMN_IS_ACTIVE = "is_active";
+
+    private static final String DB_CREATE_SPECIAL_MISSIONS = "CREATE TABLE " + TABLE_SPECIAL_MISSIONS + "("
+            + COLUMN_MISSION_ID + " TEXT PRIMARY KEY, "
+            + COLUMN_ALLIANCE_ID_FK + " TEXT NOT NULL, "
+            + COLUMN_BOSS_HP + " INTEGER, "
+            + COLUMN_MAX_BOSS_HP + " INTEGER, "
+            + COLUMN_USER_PROGRESS_JSON + " TEXT, "
+            + COLUMN_ALLIANCE_PROGRESS + " INTEGER, "
+            + COLUMN_TASKS_JSON + " TEXT, "
+            + COLUMN_START_TIME + " INTEGER, "
+            + COLUMN_DURATION + " INTEGER, "
+            + COLUMN_IS_ACTIVE + " INTEGER"
             + ")";
 
 
+
+    //Potrebno je dodati konstruktor zbog pravilne inicijalizacije
     public SQLiteHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
 
+    //Prilikom kreiranja baze potrebno je da pozovemo odgovarajuce metode biblioteke
+    //prilikom kreiranja moramo pozvati db.execSQL za svaku tabelu koju imamo
     @Override
     public void onCreate(SQLiteDatabase db) {
         Log.i("REZ_DB", "ON CREATE SQLITE HELPER");
         db.execSQL(DB_CREATE);
         db.execSQL(DB_CREATE_USERS);
-        db.execSQL(DB_CREATE_ALLIANCES); 
+        db.execSQL(DB_CREATE_ALLIANCES);
         db.execSQL(DB_CREATE_TASKS);
+        db.execSQL(DB_CREATE_CATEGORIES);
+        db.execSQL(DB_CREATE_SPECIAL_MISSIONS);
+
+
+        // Seed default kategorije
+        db.execSQL("INSERT INTO " + TABLE_CATEGORIES + " ("
+                + COLUMN_CATEGORY_NAME + ", " + COLUMN_CATEGORY_COLOR + ") VALUES "
+                + "('zdravlje', '#4CAF50'),"
+                + "('učenje', '#FF9800'),"
+                + "('zabava', '#2196F3'),"
+                + "('sređivanje', '#9C27B0');");
     }
 
+    //kada zelimo da izmenimo tabele, moramo pozvati drop table za sve tabele koje imamo
+    //  moramo voditi računa o podacima, pa ćemo onda raditi ovde migracije po potrebi
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         Log.i("REZ_DB", "ON UPGRADE SQLITE HELPER");
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_PRODUCTS);
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_USERS);
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_ALLIANCES); 
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_USERS); //
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_TASKS);
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_CATEGORIES);
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_ALLIANCES);
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_SPECIAL_MISSIONS);
+
         onCreate(db);
     }
+
 }

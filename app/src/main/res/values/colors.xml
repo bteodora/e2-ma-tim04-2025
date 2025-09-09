@@ -9,4 +9,6 @@
     <color name="blue_300">#90CAF9</color>
     <color name="selected_item_background">#E0E0E0</color>
     <color name="selection_overlay_color">#333F51B5</color>
+    <color name="purple_500">#6200EE</color>
+    <color name="gray">#B0B0B0</color>
 </resources>

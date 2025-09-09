@@ -48,13 +48,37 @@
         android:layout_marginTop="8dp"/>
 
     <!-- Datum i vreme izvršenja -->
+<!--    <Button-->
+<!--        android:id="@+id/btnPickDateTime"-->
+<!--        android:text="Pick Date &amp; Time"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:layout_marginTop="8dp"/>-->
+
+    <!-- Za jednokratni zadatak -->
     <Button
-        android:id="@+id/btnPickDateTime"
-        android:text="Pick Date &amp; Time"
+        android:id="@+id/btnPickDueDate"
+        android:text="Pick Due Date"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"/>
 
+    <!-- Za ponavljajući zadatak -->
+    <Button
+        android:id="@+id/btnPickStartDate"
+        android:text="Pick Start Date"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:visibility="gone"/>
+
+    <Button
+        android:id="@+id/btnPickEndDate"
+        android:text="Pick End Date"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:visibility="gone"/>
 
     <!-- Interval ponavljanja -->
     <EditText
