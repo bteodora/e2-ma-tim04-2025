@@ -24,6 +24,7 @@ import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.rpgapp.R;
 import com.example.rpgapp.model.Item;
+import com.example.rpgapp.model.ItemType;
 import com.example.rpgapp.model.MissionTask;
 import com.example.rpgapp.model.User;
 import com.example.rpgapp.model.UserItem;
@@ -407,41 +408,98 @@ public class ProfileFragment extends Fragment {
                 .show();
     }
 
-    private void equipItem(User user, UserItem itemToEquip) {
+    private void equipItem(User user, UserItem itemToEquipFromInventory) {
         if (user.getUserItems() == null) user.setUserItems(new HashMap<>());
         if (user.getEquipped() == null) user.setEquipped(new HashMap<>());
 
-        UserItem inventoryVersion = user.getUserItems().get(itemToEquip.getItemId());
+        Item baseItem = GameData.getAllItems().get(itemToEquipFromInventory.getItemId());
+        if (baseItem == null) {
+            Toast.makeText(getContext(), "Error: Item data not found.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (baseItem.getType() == ItemType.CLOTHING) {
+            final int MAX_EQUIPPED_CLOTHES = 2;
+            Map<String, UserItem> equippedItems = user.getEquipped();
+            String itemIdToEquip = itemToEquipFromInventory.getItemId();
+
+            if (equippedItems.containsKey(itemIdToEquip)) {
+                UserItem equippedVersion = equippedItems.get(itemIdToEquip);
+
+                if (equippedVersion.isDuplicated()) {
+                    Toast.makeText(getContext(), "Bonus for this item is already doubled.", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                equippedVersion.duplicateBonus();
+                smanjiKolicinuUInventaru(user, itemIdToEquip);
+
+                viewModel.updateUser(user);
+                Toast.makeText(getContext(), baseItem.getName() + " bonus doubled!", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            int currentEquippedClothesCount = 0;
+            for (UserItem equippedItem : equippedItems.values()) {
+                Item equippedBaseItem = GameData.getAllItems().get(equippedItem.getItemId());
+                if (equippedBaseItem != null && equippedBaseItem.getType() == ItemType.CLOTHING) {
+                    currentEquippedClothesCount++;
+                }
+            }
+
+            if (currentEquippedClothesCount >= MAX_EQUIPPED_CLOTHES) {
+                Toast.makeText(getContext(), "You can only equip " + MAX_EQUIPPED_CLOTHES + " different clothing items.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            smanjiKolicinuUInventaru(user, itemIdToEquip);
+
+            UserItem newEquippedItem = new UserItem();
+            newEquippedItem.setItemId(itemIdToEquip);
+            newEquippedItem.setQuantity(1);
+            newEquippedItem.setLifespan(baseItem.getLifespan());
+            newEquippedItem.setBonusType(baseItem.getBonusType());
+            newEquippedItem.setCurrentBonus(baseItem.getBonusValue());
+            newEquippedItem.setDuplicated(false);
+
+            equippedItems.put(itemIdToEquip, newEquippedItem);
+
+            viewModel.updateUser(user);
+            Toast.makeText(getContext(), baseItem.getName() + " equipped!", Toast.LENGTH_SHORT).show();
+
+        } else {
+            smanjiKolicinuUInventaru(user, itemToEquipFromInventory.getItemId());
+
+            UserItem equippedVersion;
+            if (user.getEquipped().containsKey(itemToEquipFromInventory.getItemId())) {
+                equippedVersion = user.getEquipped().get(itemToEquipFromInventory.getItemId());
+                equippedVersion.setQuantity(equippedVersion.getQuantity() + 1);
+            } else {
+                equippedVersion = new UserItem();
+                equippedVersion.setItemId(itemToEquipFromInventory.getItemId());
+                equippedVersion.setQuantity(1);
+                equippedVersion.setLifespan(baseItem.getLifespan());
+                equippedVersion.setBonusType(baseItem.getBonusType());
+                equippedVersion.setCurrentBonus(baseItem.getBonusValue());
+                user.getEquipped().put(itemToEquipFromInventory.getItemId(), equippedVersion);
+            }
+
+            viewModel.updateUser(user);
+            Toast.makeText(getContext(), baseItem.getName() + " activated!", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void smanjiKolicinuUInventaru(User user, String itemId) {
+        UserItem inventoryVersion = user.getUserItems().get(itemId);
         if (inventoryVersion != null) {
             if (inventoryVersion.getQuantity() > 1) {
                 inventoryVersion.setQuantity(inventoryVersion.getQuantity() - 1);
             } else {
-                user.getUserItems().remove(itemToEquip.getItemId());
+                user.getUserItems().remove(itemId);
             }
         }
-
-        UserItem equippedVersion;
-        if (user.getEquipped().containsKey(itemToEquip.getItemId())) {
-            equippedVersion = user.getEquipped().get(itemToEquip.getItemId());
-            equippedVersion.setQuantity(equippedVersion.getQuantity() + 1);
-        } else {
-            equippedVersion = new UserItem();
-            Item baseItem = GameData.getAllItems().get(itemToEquip.getItemId());
-            if (baseItem == null) return;
-
-            equippedVersion.setItemId(itemToEquip.getItemId());
-            equippedVersion.setQuantity(1);
-            equippedVersion.setLifespan(baseItem.getLifespan());
-            equippedVersion.setBonusType(baseItem.getBonusType());
-            equippedVersion.setCurrentBonus(baseItem.getBonusValue());
-
-            user.getEquipped().put(itemToEquip.getItemId(), equippedVersion);
-        }
-
-        viewModel.updateUser(user);
-
-        Toast.makeText(getContext(), itemToEquip.getItemId() + " activated!", Toast.LENGTH_SHORT).show();
     }
+
 
     private void showAcceptDeclineDialog() {
         User otherUser = viewModel.getDisplayedUser().getValue();

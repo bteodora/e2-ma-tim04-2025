@@ -25,13 +25,12 @@ public class ShopViewModel extends AndroidViewModel {
     private MutableLiveData<String> purchaseStatusLiveData = new MutableLiveData<>();
 
     private MutableLiveData<ShopScreenState> screenState = new MutableLiveData<>();
-    private User currentUser; // Čuvaćemo ga ovde
+    private User currentUser;
     private List<Item> currentShopItems;
     private MutableLiveData<String> purchaseStatus = new MutableLiveData<>();
 
     public ShopViewModel(@NonNull Application application) {
         super(application);
-        // Pretpostavka da EquipmentRepository nema zavisnosti
         equipmentRepository = new EquipmentRepository();
         userRepository = UserRepository.getInstance(application);
         authRepository = new AuthRepository(application);
@@ -42,7 +41,6 @@ public class ShopViewModel extends AndroidViewModel {
     public LiveData<ShopScreenState> getScreenState() { return screenState; }
     public LiveData<String> getPurchaseStatus() { return purchaseStatus; }
 
-    // Getteri ostaju isti
     public LiveData<User> getCurrentUser() { return currentUserLiveData; }
     public LiveData<List<Item>> getShopItems() { return shopItemsLiveData; }
 

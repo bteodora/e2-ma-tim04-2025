@@ -17,6 +17,7 @@ public class GameData {
         Item gloves = new Item();
         gloves.setId("gloves_strength");
         gloves.setName("Gloves of Strength");
+        gloves.setDescription("Increases your successful attack chance by 10%. Lasts for 2 boss fights.");
         gloves.setBonusType(BonusType.TEMPORARY_PP);
         gloves.setBonusValue(0.10);
         gloves.setLifespan(2);

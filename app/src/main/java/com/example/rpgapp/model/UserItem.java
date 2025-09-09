@@ -1,8 +1,12 @@
 package com.example.rpgapp.model;
 
+import java.math.BigDecimal;
+
 public class UserItem {
     public String itemId;
     public int lifespan;
+
+    public boolean isDuplicated;
     public double currentBonus;
     public BonusType bonusType;
     public int quantity;
@@ -47,5 +51,20 @@ public class UserItem {
 
     public void setQuantity(int quantity) {
         this.quantity = quantity;
+    }
+
+    public void duplicateBonus(){
+        if(!isDuplicated){
+            this.currentBonus = this.currentBonus*2;
+            this.isDuplicated = true;
+        }
+    }
+
+    public boolean isDuplicated() {
+        return isDuplicated;
+    }
+
+    public void setDuplicated(boolean duplicated) {
+        isDuplicated = duplicated;
     }
 }
