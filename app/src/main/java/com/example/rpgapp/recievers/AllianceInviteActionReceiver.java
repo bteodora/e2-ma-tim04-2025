@@ -10,6 +10,8 @@ import com.example.rpgapp.database.AllianceRepository;
 import com.example.rpgapp.database.UserRepository;
 import com.example.rpgapp.model.User;
 import com.example.rpgapp.tools.NotificationHelper;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 public class AllianceInviteActionReceiver extends BroadcastReceiver {
 
@@ -24,26 +26,33 @@ public class AllianceInviteActionReceiver extends BroadcastReceiver {
             return;
         }
 
+        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (firebaseUser == null) {
+            Toast.makeText(context, "Please open the app and log in to respond.", Toast.LENGTH_LONG).show();
+            new NotificationHelper(context).cancelAllianceNotification();
+            return;
+        }
+        String currentUserId = firebaseUser.getUid();
+
         AllianceRepository allianceRepository = AllianceRepository.getInstance(context);
         NotificationHelper notificationHelper = new NotificationHelper(context);
+        UserRepository userRepository = UserRepository.getInstance(context);
+
+        userRepository.setLoggedInUser(currentUserId);
 
         if (intent.getAction().equals(ACTION_ACCEPT)) {
-            UserRepository userRepository = UserRepository.getInstance(context);
             User currentUser = userRepository.getLoggedInUser();
 
             if (currentUser != null && currentUser.getAllianceId() != null) {
                 String oldAllianceId = currentUser.getAllianceId();
-
                 allianceRepository.getAllianceById(oldAllianceId, oldAlliance -> {
                     if (oldAlliance != null) {
                         boolean isLeader = currentUser.getUserId().equals(oldAlliance.getLeaderId());
-
                         if (isLeader) {
                             notificationHelper.cancelAllianceNotification();
                             Toast.makeText(context, "As a leader, you must first disband your current alliance.", Toast.LENGTH_LONG).show();
                             return;
                         }
-
                         if (oldAlliance.isMissionStarted()) {
                             notificationHelper.cancelAllianceNotification();
                             Toast.makeText(context, "Cannot accept invite: A mission is active in your current alliance.", Toast.LENGTH_LONG).show();
@@ -56,7 +65,6 @@ public class AllianceInviteActionReceiver extends BroadcastReceiver {
                         }
                     }
                 });
-
             } else {
                 allianceRepository.acceptAllianceInvite(allianceId, new UserRepository.RequestCallback() {
                     @Override
@@ -74,7 +82,6 @@ public class AllianceInviteActionReceiver extends BroadcastReceiver {
                     }
                 });
             }
-
         } else if (intent.getAction().equals(ACTION_DECLINE)) {
             UserRepository.RequestCallback declineCallback = new UserRepository.RequestCallback() {
                 @Override
