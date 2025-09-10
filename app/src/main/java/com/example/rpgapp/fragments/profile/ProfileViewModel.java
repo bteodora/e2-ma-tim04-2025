@@ -4,7 +4,7 @@ package com.example.rpgapp.fragments.profile;
 import android.app.Application;
 import android.util.Log;
 import android.widget.Toast;
-
+import com.bumptech.glide.Glide;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.lifecycle.AndroidViewModel;
@@ -12,7 +12,6 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.Transformations;
-
 import com.example.rpgapp.database.AllianceRepository;
 import com.example.rpgapp.database.AuthRepository;
 import com.example.rpgapp.database.UserRepository;

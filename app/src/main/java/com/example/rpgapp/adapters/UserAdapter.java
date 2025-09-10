@@ -1,6 +1,6 @@
 package com.example.rpgapp.adapters;
 
-import android.util.TypedValue;
+import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,9 +9,10 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.bumptech.glide.Glide;
 import com.example.rpgapp.R;
 import com.example.rpgapp.model.User;
-import com.google.android.material.card.MaterialCardView; // <-- VAŽAN IMPORT
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -73,7 +74,6 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder
         return userList.size();
     }
 
-
     static class UserViewHolder extends RecyclerView.ViewHolder {
         private ImageView avatar;
         private TextView username, levelAndTitle;
@@ -100,7 +100,22 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder
             username.setText(user.getUsername());
             String levelInfo = "Level " + user.getLevel() + " - " + user.getTitle();
             levelAndTitle.setText(levelInfo);
-            // TODO: Postavi avatar
+
+            String avatarId = user.getAvatarId();
+            if (avatarId == null || avatarId.isEmpty()) {
+                avatarId = "default_avatar";
+            }
+
+            Context context = itemView.getContext();
+            int resourceId = context.getResources().getIdentifier(avatarId, "drawable", context.getPackageName());
+            if (resourceId == 0) {
+                resourceId = R.drawable.default_avatar;
+            }
+
+            Glide.with(context)
+                    .load(resourceId)
+                    .circleCrop()
+                    .into(avatar);
 
             if (buttonText != null && !buttonText.isEmpty() && actionListener != null) {
                 actionButton.setVisibility(View.VISIBLE);

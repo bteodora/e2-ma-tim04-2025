@@ -40,19 +40,38 @@
         android:hint="Confirm Password"
         android:inputType="textPassword" />
 
-    <ImageView
-        android:id="@+id/imageViewAvatar"
-        android:layout_width="120dp"
-        android:layout_height="120dp"
-        android:layout_marginBottom="8dp"
-        android:src="@drawable/default_avatar" /> <!-- Ne zaboravi da dodaš ovu sliku -->
-
-    <Button
-        android:id="@+id/buttonChooseAvatar"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="24dp"
-        android:text="Choose Avatar" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical|center_horizontal"
+        android:layout_marginBottom="24dp">
+
+        <ImageButton
+            android:id="@+id/buttonAvatarLeft"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@android:drawable/ic_media_previous"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Previous Avatar" />
+
+        <ImageView
+            android:id="@+id/imageViewAvatar"
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:src="@drawable/default_avatar" />
+
+        <ImageButton
+            android:id="@+id/buttonAvatarRight"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@android:drawable/ic_media_next"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Next Avatar" />
+
+    </LinearLayout>
 
     <Button
         android:id="@+id/buttonRegister"

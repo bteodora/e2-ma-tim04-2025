@@ -22,6 +22,7 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
 
+import com.bumptech.glide.Glide;
 import com.example.rpgapp.R;
 import com.example.rpgapp.model.Item;
 import com.example.rpgapp.model.ItemType;
@@ -234,7 +235,7 @@ public class ProfileFragment extends Fragment {
 
     private void populateUI(User user) {
         NumberFormat numberFormat = NumberFormat.getNumberInstance(Locale.getDefault());
-
+        populateAvatar(user);
         textViewProfileUsername.setText(user.getUsername());
         textViewProfileTitle.setText(user.getTitle());
         textViewProfileLevel.setText(String.valueOf(user.getLevel()));
@@ -528,6 +529,28 @@ public class ProfileFragment extends Fragment {
         }
 
         textViewBadgesCount.setText("Badges: " + badges);
+    }
+
+    private void populateAvatar(User user) {
+        if (!isAdded()) {
+            return;
+        }
+
+        String avatarId = user.getAvatarId();
+
+        if (avatarId == null || avatarId.isEmpty()) {
+            avatarId = "default_avatar";
+        }
+
+        int resourceId = getResources().getIdentifier(avatarId, "drawable", requireContext().getPackageName());
+
+        if (resourceId == 0) {
+            resourceId = R.drawable.default_avatar;
+        }
+
+        Glide.with(requireContext())
+                .load(resourceId)
+                .into(imageViewProfileAvatar);
     }
 
 
