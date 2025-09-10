@@ -24,6 +24,7 @@ public class Task {
     private boolean recurring;       // da li je zadatak ponavljajući
     private String recurringId;      // grupa ponavljanja (isti ID za sve ponavljajuće instance)
 
+    private String userId;
     @Exclude
     private String taskId;
 
@@ -31,7 +32,7 @@ public class Task {
 
     public Task(String title, String description, String category, String color, String frequency,
                 int interval, String intervalUnit, String startDate, String endDate, String time,
-                int difficultyXp, int importanceXp, String status, String dueDate, boolean recurring, String recurringId) {
+                int difficultyXp, int importanceXp, String status, String dueDate, boolean recurring, String recurringId, String userId) {
         this.title = title;
         this.description = description;
         this.category = category;
@@ -49,6 +50,7 @@ public class Task {
         this.dueDate = dueDate;
         this.recurring = recurring;
         this.recurringId = recurringId;
+        this.userId = userId;
     }
 
     // Getter & Setter metode
@@ -120,6 +122,14 @@ public class Task {
 
     public void setRecurringId(String recurringId) {
         this.recurringId = recurringId;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 
     public boolean isOneTime() {

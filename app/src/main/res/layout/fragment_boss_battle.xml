@@ -40,23 +40,34 @@
         android:progress="50"
         android:progressDrawable="@drawable/user_pp_bar" />
 
-    <!-- Equipment icon (optional, for temporary/permanent boosts) -->
-    <ImageView
-        android:id="@+id/equipmentIcon"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
+    <!-- Dugme za izbor oružja -->
+    <Button
+        android:id="@+id/selectWeaponButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_below="@id/userPpBar"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="12dp"
+        android:text="Select Weapon"
+        android:layout_centerHorizontal="true"/>
+
+    <!-- Ikonica aktivnog oružja -->
+    <ImageView
+        android:id="@+id/activeWeaponIcon"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:layout_toRightOf="@id/selectWeaponButton"
+        android:layout_alignTop="@id/selectWeaponButton"
+        android:layout_marginLeft="12dp"
         android:src="@drawable/ic_face"
-        android:visibility="gone" />
+        android:visibility="gone"
+        android:contentDescription="Active Weapon" />
 
     <!-- Success rate text -->
     <TextView
         android:id="@+id/successRateText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/equipmentIcon"
+        android:layout_below="@id/selectWeaponButton"
         android:layout_marginTop="8dp"
         android:layout_centerHorizontal="true"
         android:text="Chance to hit: 0%"

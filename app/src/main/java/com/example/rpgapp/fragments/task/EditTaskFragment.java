@@ -15,7 +15,9 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
 import com.example.rpgapp.R;
+import com.example.rpgapp.database.CategoryRepository;
 import com.example.rpgapp.database.TaskRepository;
+import com.example.rpgapp.model.Category;
 import com.example.rpgapp.model.Task;
 
 import java.util.Calendar;
@@ -24,7 +26,7 @@ import java.util.Locale;
 public class EditTaskFragment extends Fragment {
 
     private EditText etTitle, etDescription, etStartDate, etEndDate, etDueDate;
-    private Spinner spinnerDifficulty, spinnerImportance;
+    private Spinner spinnerDifficulty, spinnerImportance, spinnerCategory;
     private Button btnUpdate;
 
     private Task currentTask;
@@ -44,6 +46,41 @@ public class EditTaskFragment extends Fragment {
 
         spinnerDifficulty = view.findViewById(R.id.spinnerDifficulty);
         spinnerImportance = view.findViewById(R.id.spinnerImportance);
+        spinnerCategory = view.findViewById(R.id.spinnerCategory);
+
+
+        // Dohvati sve kategorije iz CategoryRepository
+        CategoryRepository categoryRepo = CategoryRepository.getInstance(requireContext());
+        categoryRepo.getAllCategories().observe(getViewLifecycleOwner(), categories -> {
+            if (categories != null && !categories.isEmpty()) {
+                // Napravi niz naziva kategorija
+                String[] catNames = new String[categories.size()];
+                for (int i = 0; i < categories.size(); i++) {
+                    catNames[i] = categories.get(i).getName();
+                }
+
+                ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(),
+                        android.R.layout.simple_spinner_item, catNames);
+                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                spinnerCategory.setAdapter(adapter);
+
+//                if (currentTask != null && currentTask.getCategory() != null) {
+//                    for (int i = 0; i < catNames.length; i++) {
+//                        if (catNames[i].equals(currentTask.getCategory())) {
+//                            spinnerCategory.setSelection(i);
+//                            break;
+//                        }
+//                    }
+//                }
+                if (currentTask != null && currentTask.getCategory() != null) {
+                    int pos = adapter.getPosition(currentTask.getCategory());
+                    if (pos >= 0) spinnerCategory.setSelection(pos);
+                }
+
+            }
+        });
+
+
         btnUpdate = view.findViewById(R.id.btnUpdateTask);
 
         repository = TaskRepository.getInstance(requireContext());
@@ -75,33 +112,96 @@ public class EditTaskFragment extends Fragment {
         return view;
     }
 
-    private void loadTask(String taskId) {
-        repository.getTaskById(taskId).observe(getViewLifecycleOwner(), task -> {
-            if (task != null) {
-                currentTask = task;
+//    private void loadTask(String taskId) {
+//        repository.getTaskById(taskId).observe(getViewLifecycleOwner(), task -> {
+//            if (task != null) {
+//                currentTask = task;
+//
+//                etTitle.setText(task.getTitle());
+//                etDescription.setText(task.getDescription());
+//                spinnerDifficulty.setSelection(task.getDifficultyXp() - 1);
+//                spinnerImportance.setSelection(task.getImportanceXp() - 1);
+//
+//                if (task.isRecurring()) {
+//                    // Ponavljajući zadatak
+//                    etDueDate.setVisibility(View.GONE);
+//                    etStartDate.setVisibility(View.VISIBLE);
+//                    etEndDate.setVisibility(View.VISIBLE);
+//                    etStartDate.setText(task.getStartDate());
+//                    etEndDate.setText(task.getEndDate());
+//                } else {
+//                    // Jednokratni zadatak
+//                    etDueDate.setVisibility(View.VISIBLE);
+//                    etStartDate.setVisibility(View.GONE);
+//                    etEndDate.setVisibility(View.GONE);
+//                    etDueDate.setText(task.getDueDate());
+//                }
+//                // Spinner kategorija
+//                if (spinnerCategory.getAdapter() != null) {
+//                    for (int i = 0; i < spinnerCategory.getAdapter().getCount(); i++) {
+//                        if (spinnerCategory.getItemAtPosition(i).toString().equals(task.getCategory())) {
+//                            spinnerCategory.setSelection(i);
+//                            break;
+//                        }
+//                    }
+//                }
+//
+//            }
+//        });
+//    }
+private void loadTask(String taskId) {
+    repository.getTaskById(taskId).observe(getViewLifecycleOwner(), task -> {
+        if (task != null) {
+            currentTask = task;
 
-                etTitle.setText(task.getTitle());
-                etDescription.setText(task.getDescription());
-                spinnerDifficulty.setSelection(task.getDifficultyXp() - 1);
-                spinnerImportance.setSelection(task.getImportanceXp() - 1);
+            // Popuni osnovne podatke
+            etTitle.setText(task.getTitle());
+            etDescription.setText(task.getDescription());
 
-                if (task.isRecurring()) {
-                    // Ponavljajući zadatak
-                    etDueDate.setVisibility(View.GONE);
-                    etStartDate.setVisibility(View.VISIBLE);
-                    etEndDate.setVisibility(View.VISIBLE);
-                    etStartDate.setText(task.getStartDate());
-                    etEndDate.setText(task.getEndDate());
-                } else {
-                    // Jednokratni zadatak
-                    etDueDate.setVisibility(View.VISIBLE);
-                    etStartDate.setVisibility(View.GONE);
-                    etEndDate.setVisibility(View.GONE);
-                    etDueDate.setText(task.getDueDate());
+            // --- Spinner Difficulty ---
+            if (spinnerDifficulty.getAdapter() != null) {
+                int diffPos = task.getDifficultyXp() - 1;
+                if (diffPos >= 0 && diffPos < spinnerDifficulty.getAdapter().getCount()) {
+                    spinnerDifficulty.setSelection(diffPos);
                 }
             }
-        });
-    }
+
+            // --- Spinner Importance ---
+            if (spinnerImportance.getAdapter() != null) {
+                int impPos = task.getImportanceXp() - 1;
+                if (impPos >= 0 && impPos < spinnerImportance.getAdapter().getCount()) {
+                    spinnerImportance.setSelection(impPos);
+                }
+            }
+
+            // --- Datumi ---
+            if (task.isRecurring()) {
+                etDueDate.setVisibility(View.GONE);
+                etStartDate.setVisibility(View.VISIBLE);
+                etEndDate.setVisibility(View.VISIBLE);
+                etStartDate.setText(task.getStartDate());
+                etEndDate.setText(task.getEndDate());
+            } else {
+                etDueDate.setVisibility(View.VISIBLE);
+                etStartDate.setVisibility(View.GONE);
+                etEndDate.setVisibility(View.GONE);
+                etDueDate.setText(task.getDueDate());
+            }
+
+            // --- Spinner Category ---
+            spinnerCategory.post(() -> {
+                if (spinnerCategory.getAdapter() != null && task.getCategory() != null) {
+                    ArrayAdapter<String> adapter = (ArrayAdapter<String>) spinnerCategory.getAdapter();
+                    int pos = adapter.getPosition(task.getCategory());
+                    if (pos >= 0 && pos < adapter.getCount()) {
+                        spinnerCategory.setSelection(pos);
+                    }
+                }
+            });
+        }
+    });
+}
+
 
     private void showDatePicker(EditText targetEditText) {
         Calendar c = Calendar.getInstance();
@@ -117,17 +217,46 @@ public class EditTaskFragment extends Fragment {
     private void updateTask() {
         if (currentTask == null) return;
 
+        // Provera da li je zadatak završen ili prošao
         if ("done".equalsIgnoreCase(currentTask.getStatus()) || isTaskPast(currentTask)) {
             Toast.makeText(requireContext(), "Završeni zadaci se ne mogu menjati", Toast.LENGTH_SHORT).show();
             return;
         }
 
+        // Osnovni podaci
         currentTask.setTitle(etTitle.getText().toString().trim());
         currentTask.setDescription(etDescription.getText().toString().trim());
         currentTask.setDifficultyXp(spinnerDifficulty.getSelectedItemPosition() + 1);
         currentTask.setImportanceXp(spinnerImportance.getSelectedItemPosition() + 1);
         currentTask.setTotalXp(currentTask.getDifficultyXp() + currentTask.getImportanceXp());
 
+        // --- KATEGORIJA I BOJA ---
+        String selectedCategoryName = spinnerCategory.getSelectedItem() != null
+                ? spinnerCategory.getSelectedItem().toString() : null;
+
+        if (selectedCategoryName != null) {
+            CategoryRepository categoryRepo = CategoryRepository.getInstance(requireContext());
+            if (categoryRepo.getAllCategories().getValue() != null) {
+                Category selectedCategory = categoryRepo.getAllCategories().getValue().stream()
+                        .filter(c -> c.getName().equals(selectedCategoryName))
+                        .findFirst()
+                        .orElse(null);
+
+                if (selectedCategory != null) {
+                    currentTask.setCategory(selectedCategory.getName());
+                    currentTask.setColor(selectedCategory.getColor()); // boja kategorije
+                } else {
+                    currentTask.setCategory(selectedCategoryName);
+                    currentTask.setColor("#808080"); // default siva
+                }
+            } else {
+                // fallback ako lista kategorija još nije učitana
+                currentTask.setCategory(selectedCategoryName);
+                currentTask.setColor("#808080"); // default siva
+            }
+        }
+
+        // --- Datumi ---
         if (currentTask.isRecurring()) {
             currentTask.setStartDate(etStartDate.getText().toString().trim());
             currentTask.setEndDate(etEndDate.getText().toString().trim());
@@ -143,6 +272,7 @@ public class EditTaskFragment extends Fragment {
         Toast.makeText(requireContext(), "Zadatak izmenjen", Toast.LENGTH_SHORT).show();
         requireActivity().getSupportFragmentManager().popBackStack();
     }
+
 
     private boolean isTaskPast(Task task) {
         try {

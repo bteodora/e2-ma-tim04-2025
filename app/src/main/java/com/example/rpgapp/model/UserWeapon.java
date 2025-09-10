@@ -90,4 +90,20 @@ public class UserWeapon {
 
         this.currentBoost = newBoostDecimal.doubleValue();
     }
+
+
+    public UserWeapon(String weaponId, int level) {
+        this.weaponId = weaponId;
+        this.level = level;
+        this.currentBoost = 0;
+        this.boostType = BonusType.PERMANENT_PP;
+    }
+
+    public int getBonusPP() {
+        if(boostType == BonusType.PERMANENT_PP || boostType == BonusType.TEMPORARY_PP) {
+            return (int) currentBoost;
+        }
+        return 0;
+    }
+
 }

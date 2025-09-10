@@ -1,6 +1,7 @@
 package com.example.rpgapp.fragments.task;
 
 import android.app.AlertDialog;
+import android.content.Context;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
@@ -22,6 +23,7 @@ import com.example.rpgapp.database.CategoryRepository;
 import com.example.rpgapp.database.TaskRepository;
 import com.example.rpgapp.model.Category;
 import com.example.rpgapp.model.Task;
+import com.google.firebase.auth.FirebaseAuth;
 
 import java.text.ParseException;
 import java.util.*;
@@ -37,7 +39,20 @@ public class TaskCalendarFragment extends Fragment {
     private ExecutorService executor = Executors.newSingleThreadExecutor();
     private LinearLayout layoutLegend;
     private List<Category> categories;
+
     // Na vrhu klase, dodaj mapu boja
+
+    private String currentUserId;
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        FirebaseAuth auth = FirebaseAuth.getInstance();
+        if(auth.getCurrentUser() != null) {
+            currentUserId = auth.getCurrentUser().getUid();
+        }
+    }
+
     private final Map<String, String> colorNames = new HashMap<String, String>() {{
         put("#F44336", "Crvena");
         put("#E91E63", "Roze");
@@ -53,6 +68,10 @@ public class TaskCalendarFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
+
+        currentUserId = getActivity().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
+                .getString("userId", null);
+
         View view = inflater.inflate(R.layout.fragment_task_calendar, container, false);
 
         calendarView = view.findViewById(R.id.calendarView);
@@ -173,15 +192,19 @@ public class TaskCalendarFragment extends Fragment {
 
             if (getActivity() != null) {
                 getActivity().runOnUiThread(() -> {
-                    adapter = new TaskAdapter(getContext(), filtered, task -> {
-                        Bundle bundle = new Bundle();
-                        bundle.putString("taskId", task.getTaskId());
-                        Navigation.findNavController(requireView())
-                                .navigate(R.id.action_taskCalendar_to_taskPage, bundle);
+                    adapter = new TaskAdapter(getContext(), filtered, new TaskAdapter.OnItemClickListener() {
+                        @Override
+                        public void onItemClick(Task task, View view) {
+                            Bundle bundle = new Bundle();
+                            bundle.putString("taskId", task.getTaskId());
+                            Navigation.findNavController(requireView())
+                                    .navigate(R.id.action_taskCalendar_to_taskPage, bundle);
+                        }
                     });
                     listView.setAdapter(adapter);
                 });
             }
+
         });
     }
 
@@ -203,28 +226,54 @@ public class TaskCalendarFragment extends Fragment {
         return "#9E9E9E";
     }
 
+
     private void loadLegend() {
-        layoutLegend.removeAllViews();
-        categories = CategoryRepository.getInstance(getContext()).getAllCategories().getValue();
-        if (categories != null) {
-            for (Category category : categories) {
-                Button btn = new Button(requireContext());
-                btn.setText(category.getName());
-                btn.setBackgroundColor(Color.parseColor(category.getColor()));
-                btn.setTextColor(Color.WHITE);
-                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.WRAP_CONTENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                );
-                params.setMargins(8, 0, 8, 0);
-                btn.setLayoutParams(params);
+        // Observer se registruje jednom
+        CategoryRepository.getInstance(getContext()).getAllCategories()
+                .observe(getViewLifecycleOwner(), cats -> {
+                    categories = cats != null ? cats : new ArrayList<>();
 
-                btn.setOnClickListener(v -> showEditCategoryDialog(category));
+                    layoutLegend.removeAllViews(); // briše sve dugmiće pre dodavanja
 
-                layoutLegend.addView(btn);
-            }
-        }
+                    Set<String> addedCategoryNames = new HashSet<>();
+
+                    for (Category category : categories) {
+                        // dodaj samo ako još nije dodat
+                        if (!addedCategoryNames.contains(category.getName())) {
+                            Button btn = new Button(requireContext());
+                            btn.setText(category.getName());
+                            btn.setBackgroundColor(Color.parseColor(category.getColor()));
+                            btn.setTextColor(Color.WHITE);
+                            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                                    LinearLayout.LayoutParams.WRAP_CONTENT
+                            );
+                            params.setMargins(8, 0, 8, 0);
+                            btn.setLayoutParams(params);
+                            btn.setOnClickListener(v -> showEditCategoryDialog(category));
+
+                            layoutLegend.addView(btn);
+                            addedCategoryNames.add(category.getName());
+                        }
+                    }
+
+                    // Dugme za dodavanje nove kategorije
+                    Button btnAdd = new Button(requireContext());
+                    btnAdd.setText("+");
+                    btnAdd.setBackgroundColor(Color.DKGRAY);
+                    btnAdd.setTextColor(Color.WHITE);
+                    LinearLayout.LayoutParams paramsAdd = new LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.WRAP_CONTENT,
+                            LinearLayout.LayoutParams.WRAP_CONTENT
+                    );
+                    paramsAdd.setMargins(8, 0, 8, 0);
+                    btnAdd.setLayoutParams(paramsAdd);
+                    btnAdd.setOnClickListener(v -> showAddCategoryDialog());
+                    layoutLegend.addView(btnAdd);
+                });
     }
+
+
 
     private void showEditCategoryDialog(Category category) {
         // Svi dostupni heks kodovi
@@ -247,11 +296,12 @@ public class TaskCalendarFragment extends Fragment {
         for (String color : colors) {
             boolean exists = false;
             for (Category c : categories) {
-                if (c.getId() != category.getId() && c.getColor().equalsIgnoreCase(color)) {
+                if (c.getUserId().equals(currentUserId) && c.getColor().equalsIgnoreCase(color)) {
                     exists = true;
                     break;
                 }
             }
+
             if (!exists) {
                 availableColors.add(color);
                 availableColorNames.add(colorNames.get(color)); // dodaj ime boje
@@ -286,7 +336,7 @@ public class TaskCalendarFragment extends Fragment {
                     }
 
                     for(Category c: categories){
-                        if(c.getId() != category.getId() && c.getName().equalsIgnoreCase(newName)) {
+                        if( c.getUserId().equals(currentUserId) && c.getId() != category.getId() && c.getName().equalsIgnoreCase(newName)) {
                             Toast.makeText(requireContext(),"Naziv već postoji", Toast.LENGTH_SHORT).show();
                             return;
                         }
@@ -296,12 +346,96 @@ public class TaskCalendarFragment extends Fragment {
                     category.setColor(newColor);
                     CategoryRepository.getInstance(getContext()).updateCategory(category);
 
-                    loadLegend();
+                    //loadLegend();
                     refreshTasksColors(category);
                 })
                 .setNegativeButton("Otkaži", null)
                 .show();
     }
+
+    private void showAddCategoryDialog() {
+        // Svi dostupni heks kodovi
+        String[] colors = {"#F44336","#E91E63","#9C27B0","#3F51B5","#2196F3","#4CAF50","#FF9800","#FFEB3B"};
+
+        // Mapa hex → ime boje
+        Map<String, String> colorNames = new HashMap<>();
+        colorNames.put("#F44336", "Crvena");
+        colorNames.put("#E91E63", "Roze");
+        colorNames.put("#9C27B0", "Ljubičasta");
+        colorNames.put("#3F51B5", "Indigo");
+        colorNames.put("#2196F3", "Plava");
+        colorNames.put("#4CAF50", "Zelena");
+        colorNames.put("#FF9800", "Narandžasta");
+        colorNames.put("#FFEB3B", "Žuta");
+
+        // filtriranje već zauzetih boja
+        List<String> availableColors = new ArrayList<>();
+        List<String> availableColorNames = new ArrayList<>();
+
+
+        for (String color : colors) {
+            boolean exists = false;
+
+            if (categories != null) {
+                for (Category c : categories) {
+                    if (c.getUserId().equals(currentUserId) && c.getColor().equalsIgnoreCase(color)) {
+                        exists = true;
+                        break;
+                    }
+                }
+
+            }
+            if (!exists) {
+                availableColors.add(color);
+                availableColorNames.add(colorNames.get(color));
+            }
+        }
+
+        LinearLayout layout = new LinearLayout(requireContext());
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(16,16,16,16);
+
+        EditText editName = new EditText(requireContext());
+        editName.setHint("Naziv kategorije");
+        layout.addView(editName);
+
+        Spinner colorSpinner = new Spinner(requireContext());
+        colorSpinner.setAdapter(new ArrayAdapter<>(requireContext(),
+                android.R.layout.simple_spinner_dropdown_item,
+                availableColorNames));
+        layout.addView(colorSpinner);
+
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Dodaj novu kategoriju")
+                .setView(layout)
+                .setPositiveButton("Sačuvaj", (dialog, which) -> {
+                    String newName = editName.getText().toString().trim();
+                    if(newName.isEmpty()){
+                        Toast.makeText(requireContext(),"Unesi naziv", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    if(categories != null){
+                        for(Category c: categories){
+                            if(c.getUserId().equals(currentUserId) && c.getName().equalsIgnoreCase(newName)) {
+                                Toast.makeText(requireContext(),"Naziv već postoji", Toast.LENGTH_SHORT).show();
+                                return;
+                            }
+                        }
+                    }
+
+                    String newColor = availableColors.get(colorSpinner.getSelectedItemPosition());
+                    Category newCategory = new Category();
+                    newCategory.setName(newName);
+                    newCategory.setColor(newColor);
+                    newCategory.setUserId(currentUserId);
+
+                    CategoryRepository.getInstance(getContext()).addCategory(newCategory);
+                    //loadLegend(); // osveži legendu
+                })
+                .setNegativeButton("Otkaži", null)
+                .show();
+    }
+
 
     private void refreshTasksColors(Category updatedCategory){
         TaskRepository.getInstance(getContext()).getAllTasksLiveData()
@@ -322,6 +456,39 @@ public class TaskCalendarFragment extends Fragment {
 
     private void reloadCalendarEvents() {
         loadTasks(); // poziva tvoju metodu koja učitava sve EventDay iz TaskRepository
+    }
+    private void updateLegendButtons() {
+        layoutLegend.removeAllViews();
+        if (categories != null) {
+            for (Category category : categories) {
+                Button btn = new Button(requireContext());
+                btn.setText(category.getName());
+                btn.setBackgroundColor(Color.parseColor(category.getColor()));
+                btn.setTextColor(Color.WHITE);
+                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                );
+                params.setMargins(8, 0, 8, 0);
+                btn.setLayoutParams(params);
+                btn.setOnClickListener(v -> showEditCategoryDialog(category));
+                layoutLegend.addView(btn);
+            }
+        }
+
+        // Dugme za dodavanje nove kategorije
+        Button btnAdd = new Button(requireContext());
+        btnAdd.setText("+");
+        btnAdd.setBackgroundColor(Color.DKGRAY);
+        btnAdd.setTextColor(Color.WHITE);
+        LinearLayout.LayoutParams paramsAdd = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        paramsAdd.setMargins(8, 0, 8, 0);
+        btnAdd.setLayoutParams(paramsAdd);
+        btnAdd.setOnClickListener(v -> showAddCategoryDialog());
+        layoutLegend.addView(btnAdd);
     }
 
 }

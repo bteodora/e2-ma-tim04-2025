@@ -48,4 +48,13 @@ public class UserItem {
     public void setQuantity(int quantity) {
         this.quantity = quantity;
     }
+
+    public UserItem(String itemId, BonusType bonusType, double currentBonus) {
+        this.itemId = itemId;
+        this.bonusType = bonusType;
+        this.currentBonus = currentBonus;
+        this.lifespan = 1;
+        this.quantity = 1;
+    }
+
 }

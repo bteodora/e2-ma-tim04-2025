@@ -21,6 +21,7 @@ import com.example.rpgapp.database.CategoryRepository;
 import com.example.rpgapp.database.TaskRepository;
 import com.example.rpgapp.model.Category;
 import com.example.rpgapp.model.Task;
+import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.Calendar;
 import java.util.List;
@@ -154,6 +155,8 @@ public class CreateTaskFragment extends Fragment {
         String desc = descEdit.getText().toString().trim();
         String category = categorySpinner.getSelectedItem() != null ? categorySpinner.getSelectedItem().toString() : "";
         String frequency = frequencySpinner.getSelectedItem().toString();
+        FirebaseAuth auth = FirebaseAuth.getInstance();
+        String currentUserId = auth.getCurrentUser() != null ? auth.getCurrentUser().getUid() : null;
 
         if(title.isEmpty()) {
             Toast.makeText(requireContext(), "Enter task title", Toast.LENGTH_SHORT).show();
@@ -194,6 +197,7 @@ public class CreateTaskFragment extends Fragment {
         task.setStatus("aktivan");
         task.setRecurring(frequency.equalsIgnoreCase("ponavljajući"));
         task.setRecurringId(task.isRecurring() ? UUID.randomUUID().toString() : null);
+        task.setUserId(currentUserId);
 
         if(frequency.equalsIgnoreCase("jednokratni")) {
             task.setDueDate(selectedDueDate);

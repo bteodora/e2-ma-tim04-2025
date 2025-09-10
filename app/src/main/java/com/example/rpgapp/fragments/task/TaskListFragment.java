@@ -10,6 +10,7 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.Spinner;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -18,7 +19,9 @@ import androidx.navigation.Navigation;
 
 import com.example.rpgapp.R;
 import com.example.rpgapp.adapters.TaskAdapter;
+import com.example.rpgapp.database.CategoryRepository;
 import com.example.rpgapp.database.TaskRepository;
+import com.example.rpgapp.model.Category;
 import com.example.rpgapp.model.Task;
 
 import java.util.ArrayList;
@@ -91,9 +94,18 @@ public class TaskListFragment extends ListFragment implements AdapterView.OnItem
                         continue;
                     }
 
+                    // Postavljanje boje kategorije odmah
+                    if (task.getCategory() != null) {
+                        String color = getCategoryColor(task.getCategory());
+                        task.setColor(color);
+                    }
+
+                    // Jednokratni zadaci
                     if (task.getDueDate() != null && parseDateToMillis(task.getDueDate()) >= today) {
                         currentAndFutureTasks.add(task);
-                    } else if (task.getStartDate() != null && task.getEndDate() != null) {
+                    }
+                    // Ponavljajući zadaci
+                    else if (task.getStartDate() != null && task.getEndDate() != null) {
                         Calendar start = Calendar.getInstance();
                         Calendar end = Calendar.getInstance();
                         start.setTime(TaskRepository.dateFormat.parse(task.getStartDate()));
@@ -120,11 +132,12 @@ public class TaskListFragment extends ListFragment implements AdapterView.OnItem
 
             allTasks = currentAndFutureTasks;
 
-            adapter = new TaskAdapter(getActivity(), allTasks, task -> {
-                Log.d(TAG, "Navigating to taskId: " + task.getTaskId());
+            adapter = new TaskAdapter(getActivity(), allTasks, (task, view) -> {
+                Toast.makeText(requireContext(), "Navigating to taskId: " + task.getTaskId(), Toast.LENGTH_SHORT).show();
+
                 Bundle bundle = new Bundle();
                 bundle.putString("taskId", task.getTaskId());
-                Navigation.findNavController(requireView()).navigate(R.id.action_taskList_to_taskPage, bundle);
+                Navigation.findNavController(view).navigate(R.id.action_taskList_to_taskPage, bundle);
             });
 
             setListAdapter(adapter);
@@ -133,6 +146,7 @@ public class TaskListFragment extends ListFragment implements AdapterView.OnItem
             applyFilter(spinnerFilter.getSelectedItemPosition());
         });
     }
+
 
     private void applyFilter(int filterType) {
         if (adapter == null) return;
@@ -209,4 +223,20 @@ public class TaskListFragment extends ListFragment implements AdapterView.OnItem
         }
         return false;
     }
+
+    private String getCategoryColor(String categoryName) {
+        // Dohvati sve kategorije iz repository-ja
+        List<Category> categories = CategoryRepository.getInstance(getContext())
+                .getAllCategories().getValue();
+
+        if (categories != null) {
+            for (Category cat : categories) {
+                if (cat.getName().equalsIgnoreCase(categoryName)) {
+                    return cat.getColor(); // vrati boju kategorije
+                }
+            }
+        }
+        return "#9E9E9E"; // default siva boja ako nije pronađena
+    }
+
 }

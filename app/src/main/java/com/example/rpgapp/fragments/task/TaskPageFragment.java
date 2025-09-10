@@ -15,9 +15,11 @@ import androidx.fragment.app.Fragment;
 import androidx.navigation.Navigation;
 
 import com.example.rpgapp.R;
+import com.example.rpgapp.database.CategoryRepository;
 import com.example.rpgapp.database.TaskRepository;
 import com.example.rpgapp.database.UserRepository;
 import com.example.rpgapp.databinding.FragmentTaskPageBinding;
+import com.example.rpgapp.model.Category;
 import com.example.rpgapp.model.Task;
 import com.example.rpgapp.model.User;
 
@@ -44,13 +46,16 @@ public class TaskPageFragment extends Fragment {
 
         statusSpinner = binding.spinnerStatus;
 
+        // Dobavljanje taskId iz argumenata
         if (getArguments() != null) {
             taskId = getArguments().getString("taskId", null);
             if (taskId != null) loadTask(taskId);
         }
 
+        // Dugme za brisanje zadatka
         binding.btnDeleteTask.setOnClickListener(v -> deleteTask());
 
+        // Dugme za ažuriranje (edit) zadatka
         binding.btnUpdateTask.setOnClickListener(v -> {
             if (currentTask == null) return;
 
@@ -60,13 +65,25 @@ public class TaskPageFragment extends Fragment {
                 return;
             }
 
+            // Dohvati trenutnu listu kategorija
+            List<Category> categories = CategoryRepository.getInstance(getContext()).getAllCategories().getValue();
+
+            if (categories == null || categories.isEmpty()) {
+                Toast.makeText(requireContext(), "Prvo unesite kategoriju pre nego što ažurirate zadatak", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Navigacija ka EditTaskFragment
             Bundle bundle = new Bundle();
             bundle.putString("taskId", currentTask.getTaskId());
-            Navigation.findNavController(requireView()).navigate(R.id.action_taskPage_to_editTask, bundle);
+            Navigation.findNavController(binding.getRoot())
+                    .navigate(R.id.action_taskPage_to_editTask, bundle);
         });
+
 
         return root;
     }
+
 
     private void loadTask(String taskId) {
         TaskRepository.getInstance(getContext()).getTaskById(taskId)
