@@ -1,79 +1,68 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="8dp"
     tools:context=".fragments.friends.FriendsFragment">
 
     <!-- Kontejner za akciona dugmad -->
     <LinearLayout
         android:id="@+id/layout_actions"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:paddingStart="8dp"
-        android:paddingEnd="8dp"
-        android:paddingTop="8dp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        android:layout_marginBottom="8dp">
 
+        <!-- Korišćenje naših stilizovanih dugmadi, bez ikonica -->
         <Button
             android:id="@+id/buttonViewRequests"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton.Icon"
+            style="@style/PixelButtonStyle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Requests"
-            app:icon="@drawable/ic_action_person"
             android:layout_marginEnd="4dp"/>
 
         <Button
             android:id="@+id/buttonScanQr"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton.Icon"
+            style="@style/PixelButtonStyle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Scan QR"
-            app:icon="@drawable/ic_face"
             android:layout_marginStart="4dp"
             android:layout_marginEnd="4dp"/>
 
         <Button
             android:id="@+id/buttonCreateAlliance"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton.Icon"
+            style="@style/PixelButtonOutlinedStyle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Alliance"
-            app:icon="@drawable/ic_settings"
             android:layout_marginStart="4dp"/>
     </LinearLayout>
 
+    <!-- SearchView sada ima našu stilizovanu pozadinu (okvir) -->
     <SearchView
         android:id="@+id/searchViewUsers"
-        android:layout_width="0dp"
+        style="@style/PixelPanelBorderStyle"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"
         android:queryHint="Search for users..."
         android:iconifiedByDefault="false"
-        android:background="@drawable/border_outline"
-        app:layout_constraintTop_toBottomOf="@id/layout_actions"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        android:padding="0dp"/>
 
+    <!-- RecyclerView sada zauzima ostatak ekrana -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerViewUsers"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="0dp"
+        android:layout_weight="1"
         android:layout_marginTop="8dp"
-        app:layout_constraintTop_toBottomOf="@id/searchViewUsers"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
         tools:listitem="@layout/list_item_user" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+</LinearLayout>

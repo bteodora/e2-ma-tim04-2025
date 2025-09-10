@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView
+<!-- FrameLayout je sada glavni kontejner. Omogućava nam da stavimo
+     overlay PREKO sadržaja, a da i dalje imamo stilizovanu pozadinu. -->
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    style="@style/PixelPanelFilledStyle"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginStart="8dp"
@@ -9,50 +12,26 @@
     android:layout_marginEnd="8dp"
     android:layout_marginBottom="4dp">
 
-    <!-- KORISTIMO RelativeLayout UMESTO ConstraintLayout -->
-    <RelativeLayout
-        android:id="@+id/container_layout"
+    <!-- LinearLayout sa svim vidljivim sadržajem (avatar, tekst, dugme) -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="12dp">
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="0dp"> <!-- Uklanjamo padding odavde jer ga već ima FrameLayout -->
 
         <ImageView
             android:id="@+id/imageViewUserAvatar"
             android:layout_width="56dp"
             android:layout_height="56dp"
-            android:layout_alignParentStart="true"
-            android:layout_centerVertical="true"
             android:contentDescription="User Avatar"
             tools:src="@drawable/default_avatar" />
 
-        <View
-            android:id="@+id/selection_overlay"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_alignTop="@id/imageViewUserAvatar"
-            android:layout_alignBottom="@id/imageViewUserAvatar"
-            android:layout_alignStart="@id/imageViewUserAvatar"
-            android:layout_alignEnd="@id/buttonUserAction"
-            android:background="@color/selection_overlay_color"
-            android:visibility="gone"
-            tools:visibility="visible" />
-
-        <Button
-            android:id="@+id/buttonUserAction"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true"
-            tools:text="Add" />
-
         <LinearLayout
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:orientation="vertical"
-            android:layout_toEndOf="@id/imageViewUserAvatar"
-            android:layout_toStartOf="@id/buttonUserAction"
-            android:layout_centerVertical="true"
             android:layout_marginStart="16dp"
             android:layout_marginEnd="8dp">
 
@@ -78,5 +57,25 @@
 
         </LinearLayout>
 
-    </RelativeLayout>
-</com.google.android.material.card.MaterialCardView>
+        <Button
+            android:id="@+id/buttonUserAction"
+            style="@style/PixelButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="80dp"
+            tools:text="Add" />
+
+    </LinearLayout>
+
+    <!-- VRAĆEN SELECTION OVERLAY! -->
+    <!-- Ovaj View se nalazi "preko" svega ostalog u FrameLayout-u.
+         Kada mu se vidljivost postavi na "visible", on će prekriti ceo red. -->
+    <View
+        android:id="@+id/selection_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/selection_overlay_color"
+        android:visibility="gone"
+        tools:visibility="visible" />
+
+</FrameLayout>

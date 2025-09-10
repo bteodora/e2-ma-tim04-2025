@@ -1,70 +1,76 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Glavni kontejner je sada naš stilizovani panel -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    style="@style/PixelPanelFilledStyle"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:padding="24dp">
 
+    <!-- Jasan, centriran naslov -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Create New Alliance"
-        android:textAppearance="?attr/textAppearanceHeadline6"
         android:layout_gravity="center_horizontal"
-        android:layout_marginBottom="16dp"/>
+        android:layout_marginBottom="24dp"
+        android:text="Found a New Alliance"
+        android:textAppearance="?attr/textAppearanceHeadline6" />
 
-    <com.google.android.material.textfield.TextInputLayout
+    <!-- Uklanjamo Material TextInputLayout, koristimo običan EditText sa našim stilom -->
+    <EditText
+        android:id="@+id/editTextAllianceName"
+        style="@style/PixelPanelBorderStyle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        android:hint="Alliance Name"
+        android:inputType="textCapWords"
+        android:padding="12dp"
+        android:textColorHint="@color/textColorSecondary" />
 
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/editTextAllianceName"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Alliance Name"
-            android:inputType="textCapWords"/>
-
-    </com.google.android.material.textfield.TextInputLayout>
-
+    <!-- Podnaslov za listu prijatelja -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Invite Friends:"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="24dp"
         android:layout_marginBottom="8dp"
-        android:textAppearance="?attr/textAppearanceSubtitle1"/>
+        android:text="Invite Friends:"
+        android:textAppearance="?attr/textAppearanceSubtitle1" />
 
+    <!-- RecyclerView sada ima naš stilizovani okvir -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerViewInviteFriends"
+        style="@style/PixelPanelBorderStyle"
         android:layout_width="match_parent"
         android:layout_height="200dp"
-        android:background="@drawable/border_outline"
-        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"/>
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
 
+    <!-- Kontejner za donje dugmiće -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginTop="24dp">
+        android:layout_marginTop="24dp"
+        android:orientation="horizontal">
 
+        <!-- "Cancel" dugme je sada "outline" stila -->
         <Button
             android:id="@+id/buttonCancel"
+            style="@style/PixelButtonOutlinedStyle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
             android:layout_weight="1"
-            android:text="Cancel"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
-            android:layout_marginEnd="8dp"/>
+            android:text="Cancel" />
 
+        <!-- "Create" dugme je glavno, primarno dugme -->
         <Button
             android:id="@+id/buttonCreate"
+            style="@style/PixelButtonStyle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
             android:layout_weight="1"
-            android:text="Create"
-            android:layout_marginStart="8dp"/>
+            android:text="Create" />
     </LinearLayout>
 
 </LinearLayout>
