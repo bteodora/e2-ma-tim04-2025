@@ -1,65 +1,57 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView
+<!-- Koristimo FrameLayout kao osnovu. On nam omogućava da precizno
+     pozicioniramo elemente jedan preko drugog (ikonica, okvir, količina). -->
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
+    android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    app:cardCornerRadius="8dp"
     android:layout_margin="4dp">
 
-    <LinearLayout
+    <!-- POZADINA SLOTA -->
+    <!-- Ovo je puna pozadina koja daje boju slotu.
+         Možeš koristiti `panel_028` ili neku drugu pozadinu. -->
+    <ImageView
+        android:id="@+id/imageViewSlotBackground"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:background="@drawable/panel_028"
+        android:backgroundTint="@color/panelColor"/>
+
+    <!-- IKONICA PREDMETA -->
+    <!-- Ikonica se nalazi u centru, sa malim paddingom. -->
+    <ImageView
+        android:id="@+id/imageViewItemIcon"
         android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="12dp"
+        android:scaleType="fitCenter"
+        android:contentDescription="Item Icon"
+        tools:src="@mipmap/ic_launcher"/>
+
+    <!-- OKVIR (BORDER) -->
+    <!-- Okvir se stavlja PREKO svega ostalog i daje slotu definiciju. -->
+    <ImageView
+        android:id="@+id/imageViewSlotBorder"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/panel_border028"
+        android:backgroundTint="@color/panelBorderColor"/>
+
+    <!-- BROJAČ KOLIČINE (QUANTITY) -->
+    <!-- Postavljen na dno, u centru. Nema svoju pozadinu,
+         već se oslanja na pozadinu okvira. -->
+    <TextView
+        android:id="@+id/textViewItemQuantity"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="8dp"
-        android:gravity="center_horizontal">
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="2dp"
+        android:textColor="@color/textColorPrimary"
+        android:textStyle="bold"
+        android:textSize="14sp"
+        android:visibility="gone"
+        tools:text="3"
+        tools:visibility="visible"/>
 
-        <FrameLayout
-            android:layout_width="64dp"
-            android:layout_height="64dp">
-
-            <ImageView
-                android:id="@+id/imageViewItemIcon"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:scaleType="centerCrop"
-                tools:src="@mipmap/ic_launcher"
-                android:contentDescription="Item Icon"/>
-
-
-            <TextView
-                android:id="@+id/textViewItemQuantity"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:layout_gravity="bottom|end"
-                android:background="@android:color/holo_red_light"
-                android:gravity="center"
-                android:textColor="@android:color/white"
-                android:textStyle="bold"
-                android:visibility="gone"
-                tools:text="3"
-                tools:visibility="visible"/>
-        </FrameLayout>
-
-        <TextView
-            android:id="@+id/textViewItemName"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:maxLines="1"
-            android:ellipsize="end"
-            android:textAppearance="?attr/textAppearanceCaption"
-            tools:text="Health Potion"/>
-
-        <Button
-            android:id="@+id/buttonItemAction"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:textSize="12sp"
-            tools:text="Equip"/>
-
-    </LinearLayout>
-</com.google.android.material.card.MaterialCardView>
+</FrameLayout>

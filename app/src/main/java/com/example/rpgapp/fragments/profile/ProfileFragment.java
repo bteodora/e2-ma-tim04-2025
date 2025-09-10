@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -50,7 +51,8 @@ public class ProfileFragment extends Fragment {
     private ImageView imageViewProfileAvatar;
     private TextView textViewProfileUsername, textViewProfileTitle, textViewProfileLevel, textViewProfileXp, textViewProfileCoins, textViewProfilePP, textViewBadgesCount;
     private LinearLayout layout_coins, layout_power_points, layout_inventory_section, layout_weapons_container;
-    private GridLayout grid_equipped_container, grid_inventory_container;
+    private GridLayout grid_inventory_container;
+    private GridLayout grid_equipped_container;
     private Button buttonViewStatistics, buttonChangePassword, buttonAddFriend, buttonInviteToAlliance;
     private LinearLayout layout_own_profile_actions, layout_other_user_actions;
     private ImageView imageViewQrCode;
@@ -332,84 +334,59 @@ public class ProfileFragment extends Fragment {
 
     private void populateEquipped(User user) {
         grid_equipped_container.removeAllViews();
-        if (user.getEquipped() == null) return;
+        if (user.getEquipped() == null || !isAdded()) return;
+
         LayoutInflater inflater = LayoutInflater.from(getContext());
         for (UserItem equippedItem : user.getEquipped().values()) {
             View itemView = inflater.inflate(R.layout.grid_item_equipment, grid_equipped_container, false);
 
-            GridLayout.LayoutParams params = new GridLayout.LayoutParams();
-            params.width = 0;
-            params.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
-            itemView.setLayoutParams(params);
-
 
             ImageView itemIcon = itemView.findViewById(R.id.imageViewItemIcon);
-            TextView itemName = itemView.findViewById(R.id.textViewItemName);
             TextView itemQuantity = itemView.findViewById(R.id.textViewItemQuantity);
-            Button itemActionButton = itemView.findViewById(R.id.buttonItemAction);
 
             Item baseItem = GameData.getAllItems().get(equippedItem.getItemId());
             if (baseItem == null) continue;
-            itemName.setText(baseItem.getName());
 
             String imageId = baseItem.getImage();
-            if (imageId == null || imageId.isEmpty()) {
-                imageId = "default_item";
-            }
+            if (imageId == null || imageId.isEmpty()) imageId = "default_item";
             int resourceId = getResources().getIdentifier(imageId, "drawable", requireContext().getPackageName());
-            if (resourceId == 0) {
-                resourceId = R.drawable.default_avatar;
-            }
+            if (resourceId == 0) resourceId = R.drawable.default_avatar;
             Glide.with(requireContext()).load(resourceId).into(itemIcon);
 
-
-            if (equippedItem.getQuantity() > 1) {
+            if (equippedItem.getQuantity() > 1 || equippedItem.isDuplicated()) {
                 itemQuantity.setText(String.valueOf(equippedItem.getQuantity()));
                 itemQuantity.setVisibility(View.VISIBLE);
             } else {
                 itemQuantity.setVisibility(View.GONE);
             }
-            itemActionButton.setVisibility(View.GONE);
 
             grid_equipped_container.addView(itemView);
         }
     }
 
+
     private void populateInventory(User user) {
         grid_inventory_container.removeAllViews();
-        if (user.getUserItems() == null || user.getUserItems().isEmpty()) {
+        if (user.getUserItems() == null || user.getUserItems().isEmpty() || !isAdded()) {
             return;
         }
-
         LayoutInflater inflater = LayoutInflater.from(getContext());
 
         for (UserItem inventoryItem : user.getUserItems().values()) {
             View itemView = inflater.inflate(R.layout.grid_item_equipment, grid_inventory_container, false);
 
-            GridLayout.LayoutParams params = new GridLayout.LayoutParams();
-
-            params.width = 0;
-            params.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
-
-            itemView.setLayoutParams(params);
 
             ImageView itemIcon = itemView.findViewById(R.id.imageViewItemIcon);
-            TextView itemName = itemView.findViewById(R.id.textViewItemName);
             TextView itemQuantity = itemView.findViewById(R.id.textViewItemQuantity);
-            Button itemActionButton = itemView.findViewById(R.id.buttonItemAction);
+
 
             Item baseItem = GameData.getAllItems().get(inventoryItem.getItemId());
             if (baseItem == null) continue;
 
-            itemName.setText(baseItem.getName());
             String imageId = baseItem.getImage();
-            if (imageId == null || imageId.isEmpty()) {
-                imageId = "default_item";
-            }
+            if (imageId == null || imageId.isEmpty()) imageId = "default_item";
             int resourceId = getResources().getIdentifier(imageId, "drawable", requireContext().getPackageName());
-            if (resourceId == 0) {
-                resourceId = R.drawable.default_avatar;
-            }
+            if (resourceId == 0) resourceId = R.drawable.default_avatar;
             Glide.with(requireContext()).load(resourceId).into(itemIcon);
 
             if (inventoryItem.getQuantity() > 0) {
@@ -419,8 +396,7 @@ public class ProfileFragment extends Fragment {
                 itemQuantity.setVisibility(View.GONE);
             }
 
-            itemActionButton.setText("Equip");
-            itemActionButton.setOnClickListener(v -> {
+            itemView.setOnClickListener(v -> {
                 showEquipDialog(user, inventoryItem);
             });
 
