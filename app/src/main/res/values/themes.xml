@@ -1,35 +1,23 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
+    <!-- ===== GLAVNA TEMA APLIKACIJE ===== -->
     <style name="Theme.ShopApp" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <!-- Primary brand color. -->
-        <item name="colorPrimary">@color/pink_300</item>
-        <item name="colorPrimaryVariant">@color/pink_400</item>
-        <item name="colorOnPrimary">@color/white</item>
-        <!-- Secondary brand color. -->
-        <item name="colorSecondary">@color/blue_300</item>
-        <item name="colorSecondaryVariant">@color/teal_700</item>
-        <item name="colorOnSecondary">@color/white</item>
-        <!-- Status bar color. -->
-        <item name="android:statusBarColor">@color/black</item>
-        <!-- Customize your theme here. -->
-        <item name="android:textColor">@color/black</item>
-        <item name="android:fontFamily">sans-serif-medium</item>
-        <!-- Action bar  -->
+        <!-- Povezivanje sa novim bojama -->
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryVariant">@color/colorPrimaryVariant</item>
+        <item name="colorOnPrimary">@color/colorOnPrimary</item>
+        <item name="colorSecondary">@color/colorAccent</item>
+        <item name="colorOnSecondary">@color/black</item>
+        <item name="android:statusBarColor">@color/backgroundColor</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="m">true</item>
+
+        <!-- Postavljanje pozadine i podrazumevane boje teksta -->
+        <item name="android:windowBackground">@color/backgroundColor</item>
+        <item name="android:textColor">@color/textColorPrimary</item>
+
+        <!-- Standardne fullscreen opcije -->
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
-        <item name="android:windowFullscreen">true</item>
-        <item name="android:windowContentOverlay">@null</item>
-        <item name="materialButtonStyle">@style/PixelButtonStyle</item>
     </style>
-    <style name="FullScreenBottomSheetDialog" parent="Theme.Design.BottomSheetDialog">
-        <item name="android:windowIsFloating">false</item>
-        <item name="android:windowIsTranslucent">true</item>
-        <item name="android:windowBackground">@android:color/transparent</item>
-        <item name="android:windowMinWidthMajor">100%</item>
-        <item name="android:windowMinWidthMinor">100%</item>
-    </style>
-    <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.ActionBar" />
-    <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 
     <style name="Theme.AppCompat.Translucent" parent="Theme.AppCompat.NoActionBar">
         <item name="android:windowIsTranslucent">true</item>
@@ -40,30 +28,53 @@
         <item name="android:backgroundDimEnabled">true</item>
     </style>
 
+    <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+    <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+
+    <style name="FullScreenBottomSheetDialog" parent="Theme.Design.BottomSheetDialog">
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowMinWidthMajor">100%</item>
+        <item name="android:windowMinWidthMinor">100%</item>
+    </style>
+
+    <!-- ============================================= -->
+    <!-- ===== STILOVI ZA UI ELEMENTE ================ -->
+    <!-- ============================================= -->
+
     <style name="PixelButtonStyle" parent="Widget.AppCompat.Button">
-        <item name="android:background">@drawable/panel_transparent_border028</item>
-        <item name="android:textColor">#FFFFFFFF</item>
+        <item name="android:background">@drawable/panel_028</item>
+        <item name="android:backgroundTint">@color/buttonBackgroundColor</item>
+        <item name="android:textColor">@color/buttonTextColor</item>
         <item name="android:paddingStart">20dp</item>
         <item name="android:paddingEnd">20dp</item>
         <item name="android:textAllCaps">false</item>
     </style>
 
-    <style name="PixelPanelStyle.Filled">
-        <item name="android:background">@drawable/panel_028</item>
-        <item name="android:padding">16dp</item>
-    </style>
-
-    <style name="PixelPanelStyle.Bordered">
+    <style name="PixelButtonOutlinedStyle" parent="Widget.AppCompat.Button">
         <item name="android:background">@drawable/panel_border028</item>
+        <item name="android:backgroundTint">@color/panelBorderColor</item>
+        <item name="android:textColor">@color/buttonOutlinedTextColor</item>
+        <item name="android:paddingStart">20dp</item>
+        <item name="android:paddingEnd">20dp</item>
+        <item name="android:textAllCaps">false</item>
+    </style>
+
+    <style name="PixelPanelFilledStyle">
+        <item name="android:background">@drawable/panel_028</item>
+        <item name="android:backgroundTint">@color/panelColor</item>
         <item name="android:padding">16dp</item>
     </style>
 
-    <style name="PixelDividerStyleSolid">
-        <item name="android:background">@drawable/divider_003</item>
+    <style name="PixelPanelBorderStyle">
+        <item name="android:background">@drawable/panel_border028</item>
+        <item name="android:backgroundTint">@color/panelBorderColor</item>
+        <item name="android:padding">16dp</item>
     </style>
 
-    <style name="PixelDividerStyleFade">
+    <style name="PixelDividerFadeStyle">
         <item name="android:background">@drawable/divider_fade_000</item>
+        <item name="android:backgroundTint">@color/panelBorderColor</item>
     </style>
-
 </resources>

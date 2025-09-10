@@ -1,5 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <color name="colorPrimary">#4267B2</color> <!-- Jaka, klasična plava, laka za čitanje -->
+    <color name="colorPrimaryVariant">#395998</color> <!-- Tamnija varijanta za status bar -->
+    <color name="colorAccent">#FFC107</color> <!-- Zlatna ostaje odličan akcenat -->
+    <color name="colorOnPrimary">#FFFFFF</color>
+
+    <!-- Boje za UI elemente sa poboljšanim kontrastom -->
+    <color name="backgroundColor">#F5F5F5</color> <!-- Veoma svetlo siva, prijatnija od čisto bele -->
+    <color name="textColorPrimary">#212121</color> <!-- Skoro crna za glavni tekst, maksimalan kontrast -->
+    <color name="textColorSecondary">#616161</color> <!-- Tamnija siva za podnaslove, lakša za čitanje -->
+
+    <color name="panelColor">#FFFFFF</color> <!-- Paneli su beli da se istaknu od pozadine -->
+    <color name="panelBorderColor">#757575</color> <!-- **KLJUČNA PROMENA:** Mnogo tamnija siva za ivice -->
+
+    <color name="buttonTextColor">#FFFFFF</color> <!-- Tekst na glavnom dugmetu ostaje beo -->
+    <color name="buttonBackgroundColor">#455A64</color> <!-- Jako tamna plavo-siva, izgleda moćno -->
+    <color name="buttonOutlinedTextColor">#212121</color> <!-- Tekst na "outline" dugmetu je sada crn -->
+
+    <!-- stare, posle obrisati-->
     <color name="teal_200">#FF03DAC5</color>
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
