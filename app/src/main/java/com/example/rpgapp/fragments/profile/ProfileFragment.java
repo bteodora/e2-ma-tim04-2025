@@ -249,14 +249,20 @@ public class ProfileFragment extends Fragment {
         populateBadges(user);
 
     }
-
     private void populateWeapons(User user) {
         layout_weapons_container.removeAllViews();
+        if (!isAdded()) return;
+
         if (user.getUserWeapons() == null || user.getUserWeapons().isEmpty()) {
             TextView noWeaponsText = new TextView(getContext());
             noWeaponsText.setText("No weapons owned.");
             layout_weapons_container.addView(noWeaponsText);
             return;
+        }
+
+        Boolean isMyProfile = viewModel.getIsMyProfile().getValue();
+        if (isMyProfile == null) {
+            isMyProfile = false;
         }
 
         LayoutInflater inflater = LayoutInflater.from(getContext());
@@ -272,23 +278,32 @@ public class ProfileFragment extends Fragment {
             Weapon baseWeapon = GameData.getAllWeapons().get(userWeapon.getWeaponId());
             if (baseWeapon == null) continue;
 
+            String imageId = baseWeapon.getImage();
+            if (imageId == null || imageId.isEmpty()) imageId = "default_weapon";
+            int resourceId = getResources().getIdentifier(imageId, "drawable", requireContext().getPackageName());
+            if (resourceId == 0) resourceId = R.drawable.default_avatar;
+            Glide.with(requireContext()).asGif().load(resourceId).into(weaponIcon);
+
             weaponName.setText(baseWeapon.getName() + " (Lvl " + userWeapon.getLevel() + ")");
             weaponBonus.setText(userWeapon.getBoostAsString());
 
-            // TODO: Postavi pravu sliku oružja na osnovu baseWeapon.getImageId()
-            // weaponIcon.setImageResource(...);
+            if (isMyProfile) {
+                upgradeButton.setVisibility(View.VISIBLE);
+                int upgradePrice = baseWeapon.getUpgradePrice(user.calculatePreviosPrizeFormula());
+                upgradeButton.setText("Upgrade\n(" + upgradePrice + " coins)");
 
-            int upgradePrice = baseWeapon.getUpgradePrice(user.calculatePreviosPrizeFormula());
-            upgradeButton.setText("Upgrade\n(" + upgradePrice + " coins)");
+                if (user.getCoins() < upgradePrice) {
+                    upgradeButton.setEnabled(false);
+                } else {
+                    upgradeButton.setEnabled(true);
+                }
 
-            if (user.getCoins() < upgradePrice) {
-                upgradeButton.setEnabled(false);
+                upgradeButton.setOnClickListener(v -> {
+                    handleWeaponUpgrade(user, userWeapon, baseWeapon, upgradePrice);
+                });
+            } else {
+                upgradeButton.setVisibility(View.GONE);
             }
-
-            upgradeButton.setOnClickListener(v -> {
-                handleWeaponUpgrade(user, userWeapon, baseWeapon, upgradePrice);
-            });
-
             layout_weapons_container.addView(weaponView);
         }
     }
@@ -337,6 +352,16 @@ public class ProfileFragment extends Fragment {
             if (baseItem == null) continue;
             itemName.setText(baseItem.getName());
 
+            String imageId = baseItem.getImage();
+            if (imageId == null || imageId.isEmpty()) {
+                imageId = "default_item";
+            }
+            int resourceId = getResources().getIdentifier(imageId, "drawable", requireContext().getPackageName());
+            if (resourceId == 0) {
+                resourceId = R.drawable.default_avatar;
+            }
+            Glide.with(requireContext()).load(resourceId).into(itemIcon);
+
 
             if (equippedItem.getQuantity() > 1) {
                 itemQuantity.setText(String.valueOf(equippedItem.getQuantity()));
@@ -377,7 +402,15 @@ public class ProfileFragment extends Fragment {
             if (baseItem == null) continue;
 
             itemName.setText(baseItem.getName());
-            // TODO: Postavi pravu sliku item-a
+            String imageId = baseItem.getImage();
+            if (imageId == null || imageId.isEmpty()) {
+                imageId = "default_item";
+            }
+            int resourceId = getResources().getIdentifier(imageId, "drawable", requireContext().getPackageName());
+            if (resourceId == 0) {
+                resourceId = R.drawable.default_avatar;
+            }
+            Glide.with(requireContext()).load(resourceId).into(itemIcon);
 
             if (inventoryItem.getQuantity() > 0) {
                 itemQuantity.setText(String.valueOf(inventoryItem.getQuantity()));

@@ -40,7 +40,8 @@ public class fragment_register extends Fragment {
             "avatar2",
             "avatar3",
             "avatar4",
-            "avatar5"
+            "avatar5",
+            "avatar6"
     );
 
     public fragment_register() {

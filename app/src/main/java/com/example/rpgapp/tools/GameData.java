@@ -17,16 +17,17 @@ public class GameData {
         Item gloves = new Item();
         gloves.setId("gloves_strength");
         gloves.setName("Gloves of Strength");
-        gloves.setDescription("Increases your successful attack chance by 10%. Lasts for 2 boss fights.");
+        gloves.setDescription("Increases your strenght by 10%. Lasts for 2 boss fights.");
         gloves.setBonusType(BonusType.TEMPORARY_PP);
         gloves.setBonusValue(0.10);
         gloves.setLifespan(2);
         gloves.setPrice_percentage(60);
         gloves.setType(ItemType.CLOTHING);
+        gloves.setImage("gloves");
         items.put(gloves.getId(), gloves);
 
 
-        // 5. Štit za povećanje šanse uspešnog napada (+10%)
+        // Štit za povećanje šanse uspešnog napada (+10%)
         Item shield = new Item();
         shield.setId("shield_luck");
         shield.setName("Shield of Luck");
@@ -37,9 +38,10 @@ public class GameData {
         shield.setLifespan(2);
         shield.setBonusType(BonusType.SUCCESS_PERCENTAGE);
         shield.setBonusValue(0.10);
+        shield.setImage("shield");
         items.put(shield.getId(), shield);
 
-        // 6. Čizme za šansu povećanja broja napada (+1 dodatni napad)
+        // Čizme za šansu povećanja broja napada (+1 dodatni napad)
         Item boots = new Item();
         boots.setId("boots_swiftness");
         boots.setName("Boots of Swiftness");
@@ -50,6 +52,7 @@ public class GameData {
         boots.setLifespan(2);
         boots.setBonusType(BonusType.ATTACK_NUM);
         boots.setBonusValue(0.40);
+        boots.setImage("boots");
         items.put(boots.getId(), boots);
 
 
@@ -64,6 +67,7 @@ public class GameData {
         tempPotion20.setLifespan(1);
         tempPotion20.setBonusType(BonusType.TEMPORARY_PP);
         tempPotion20.setBonusValue(0.20);
+        tempPotion20.setImage("potion1");
         items.put(tempPotion20.getId(), tempPotion20);
 
         // Napitak za jednokratnu snagu (+40% PP, traje 1 borbu)
@@ -77,6 +81,7 @@ public class GameData {
         tempPotion40.setLifespan(1);
         tempPotion40.setBonusType(BonusType.TEMPORARY_PP);
         tempPotion40.setBonusValue(0.40);
+        tempPotion40.setImage("potion3");
         items.put(tempPotion40.getId(), tempPotion40);
 
         // Napitak za trajno povećanje snage (+5% PP)
@@ -90,6 +95,7 @@ public class GameData {
         permPotion5.setLifespan(0);
         permPotion5.setBonusType(BonusType.PERMANENT_PP);
         permPotion5.setBonusValue(0.05);
+        permPotion5.setImage("potion4");
         items.put(permPotion5.getId(), permPotion5);
 
         // Napitak za trajno povećanje snage (+10% PP)
@@ -103,6 +109,7 @@ public class GameData {
         permPotion10.setLifespan(0);
         permPotion10.setBonusType(BonusType.PERMANENT_PP);
         permPotion10.setBonusValue(0.10);
+        permPotion10.setImage("potion2");
         items.put(permPotion10.getId(), permPotion10);
 
 
@@ -117,7 +124,7 @@ public class GameData {
         sword.setId("sword_basic");
         sword.setName("Warrior's Sword");
         sword.setDescription("A sturdy blade that permanently increases your Power Points by 5%.");
-        sword.setImage("icon_sword");
+        sword.setImage("sword");
         sword.setBoost_type(BonusType.PERMANENT_PP);
         sword.setBoost(0.05);
         sword.setLevel(1);
@@ -128,7 +135,7 @@ public class GameData {
         bow.setId("bow_basic");
         bow.setName("Ranger's Bow");
         bow.setDescription("A reliable bow that permanently increases the amount of coins you find by 5%.");
-        bow.setImage("icon_bow");
+        bow.setImage("bow");
         bow.setBoost_type(BonusType.MONEY_BOOST);
         bow.setBoost(0.05);
         bow.setLevel(1);

@@ -1,7 +1,6 @@
 package com.example.rpgapp.adapters;
 
-import android.app.AlertDialog;
-import android.util.Log;
+import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,10 +10,11 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.bumptech.glide.Glide;
 import com.example.rpgapp.R;
 import com.example.rpgapp.fragments.shop.ShopScreenState;
 import com.example.rpgapp.model.Item;
-import com.example.rpgapp.model.ItemType;
 import com.example.rpgapp.model.User;
 import com.example.rpgapp.model.UserItem;
 import com.google.android.material.card.MaterialCardView;
@@ -28,7 +28,6 @@ public class ShopAdapter extends RecyclerView.Adapter<ShopAdapter.ShopViewHolder
     private List<Item> items = new ArrayList<>();
     private User currentUser;
     private final OnBuyClickListener buyClickListener;
-
 
     public interface OnBuyClickListener {
         void onBuyClick(Item item);
@@ -57,15 +56,12 @@ public class ShopAdapter extends RecyclerView.Adapter<ShopAdapter.ShopViewHolder
     }
 
     public void updateData(ShopScreenState state) {
-        if (state == null || state.shopItems == null || state.user == null) {
-            return;
-        }
+        if (state == null || state.shopItems == null || state.user == null) return;
         this.items.clear();
         this.items.addAll(state.shopItems);
         this.currentUser = state.user;
         notifyDataSetChanged();
     }
-
 
     static class ShopViewHolder extends RecyclerView.ViewHolder {
         private ImageView itemIcon;
@@ -86,11 +82,20 @@ public class ShopAdapter extends RecyclerView.Adapter<ShopAdapter.ShopViewHolder
             buyButton = itemView.findViewById(R.id.buttonBuyItem);
         }
 
-
         public void bind(final Item item, User user, final OnBuyClickListener listener) {
             itemName.setText(item.getName());
             itemDescription.setText(item.getDescription());
-            // TODO: Učitaj pravu sliku na osnovu item.getImageId()
+
+            String imageId = item.getImage();
+            if (imageId == null || imageId.isEmpty()) imageId = "default_item";
+
+            Context context = itemView.getContext();
+            int resourceId = context.getResources().getIdentifier(imageId, "drawable", context.getPackageName());
+            if (resourceId == 0) resourceId = R.drawable.default_avatar;
+
+            Glide.with(context)
+                    .load(resourceId)
+                    .into(itemIcon);
 
             cardViewItem.setOnClickListener(v -> {
                 boolean isVisible = expandableLayout.getVisibility() == View.VISIBLE;
@@ -112,21 +117,12 @@ public class ShopAdapter extends RecyclerView.Adapter<ShopAdapter.ShopViewHolder
 
             Map<String, UserItem> userItems = user.getUserItems();
             boolean ownsItem = userItems != null && userItems.containsKey(item.getId());
-            int quantity = 0;
-            if (ownsItem) {
-                quantity = userItems.get(item.getId()).quantity;
-            }
+            int quantity = ownsItem ? userItems.get(item.getId()).quantity : 0;
 
             itemStatus.setText("Owned: " + quantity);
             itemStatus.setVisibility(View.VISIBLE);
-
             buyButton.setVisibility(View.VISIBLE);
-
-            if (user.getCoins() < price) {
-                buyButton.setEnabled(false);
-            } else {
-                buyButton.setEnabled(true);
-            }
+            buyButton.setEnabled(user.getCoins() >= price);
         }
     }
 }
