@@ -66,7 +66,7 @@ public class ShopAdapter extends RecyclerView.Adapter<ShopAdapter.ShopViewHolder
     static class ShopViewHolder extends RecyclerView.ViewHolder {
         private ImageView itemIcon;
         private TextView itemName, itemDescription, itemStatus, itemPrice;
-        MaterialCardView cardViewItem;
+        LinearLayout  cardViewItem;
         LinearLayout expandableLayout;
         private Button buyButton;
 

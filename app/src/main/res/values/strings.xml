@@ -1,6 +1,6 @@
 <resources>
-    <string name="app_name" translatable="false">RPG game</string>
-    <string name="shop_app" translatable="false">RPG game</string>
+    <string name="app_name" translatable="false">QuestLog</string>
+    <string name="shop_app" translatable="false">QuestLog</string>
     <string name="cart">Cart</string>
     <string name="filters">Filters</string>
     <string name="category">Category</string>
