@@ -19,7 +19,7 @@
         <item name="windowNoTitle">true</item>
         <item name="android:windowFullscreen">true</item>
         <item name="android:windowContentOverlay">@null</item>
-
+        <item name="materialButtonStyle">@style/PixelButtonStyle</item>
     </style>
     <style name="FullScreenBottomSheetDialog" parent="Theme.Design.BottomSheetDialog">
         <item name="android:windowIsFloating">false</item>
@@ -38,6 +38,32 @@
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowIsFloating">true</item>
         <item name="android:backgroundDimEnabled">true</item>
+    </style>
+
+    <style name="PixelButtonStyle" parent="Widget.AppCompat.Button">
+        <item name="android:background">@drawable/panel_transparent_border028</item>
+        <item name="android:textColor">#FFFFFFFF</item>
+        <item name="android:paddingStart">20dp</item>
+        <item name="android:paddingEnd">20dp</item>
+        <item name="android:textAllCaps">false</item>
+    </style>
+
+    <style name="PixelPanelStyle.Filled">
+        <item name="android:background">@drawable/panel_028</item>
+        <item name="android:padding">16dp</item>
+    </style>
+
+    <style name="PixelPanelStyle.Bordered">
+        <item name="android:background">@drawable/panel_border028</item>
+        <item name="android:padding">16dp</item>
+    </style>
+
+    <style name="PixelDividerStyleSolid">
+        <item name="android:background">@drawable/divider_003</item>
+    </style>
+
+    <style name="PixelDividerStyleFade">
+        <item name="android:background">@drawable/divider_fade_000</item>
     </style>
 
 </resources>
