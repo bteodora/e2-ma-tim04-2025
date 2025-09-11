@@ -160,7 +160,7 @@ public class SQLiteHelper extends SQLiteOpenHelper {
     public static final String TABLE_SPECIAL_MISSIONS = "SPECIAL_MISSIONS";
     public static final String COLUMN_MISSION_ID = "mission_id";
     public static final String COLUMN_ALLIANCE_ID_FK = "alliance_id";
-    public static final String COLUMN_BOSS_HP = "boss_hp";
+    // public static final String COLUMN_BOSS_HP = "boss_hp";
     public static final String COLUMN_MAX_BOSS_HP = "max_boss_hp";
     public static final String COLUMN_USER_PROGRESS_JSON = "user_progress_json"; // JSON mapa userId -> progress
     public static final String COLUMN_ALLIANCE_PROGRESS = "alliance_progress";
@@ -168,20 +168,6 @@ public class SQLiteHelper extends SQLiteOpenHelper {
     public static final String COLUMN_START_TIME = "start_time";
     public static final String COLUMN_DURATION = "duration";
     public static final String COLUMN_IS_ACTIVE = "is_active";
-
-    private static final String DB_CREATE_SPECIAL_MISSIONS = "CREATE TABLE " + TABLE_SPECIAL_MISSIONS + "("
-            + COLUMN_MISSION_ID + " TEXT PRIMARY KEY, "
-            + COLUMN_ALLIANCE_ID_FK + " TEXT NOT NULL, "
-            + COLUMN_BOSS_HP + " INTEGER, "
-            + COLUMN_MAX_BOSS_HP + " INTEGER, "
-            + COLUMN_USER_PROGRESS_JSON + " TEXT, "
-            + COLUMN_ALLIANCE_PROGRESS + " INTEGER, "
-            + COLUMN_TASKS_JSON + " TEXT, "
-            + COLUMN_START_TIME + " INTEGER, "
-            + COLUMN_DURATION + " INTEGER, "
-            + COLUMN_IS_ACTIVE + " INTEGER"
-            + ")";
-
 
 
     //--------------- BATTLE ---------------------
