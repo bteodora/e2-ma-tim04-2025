@@ -67,4 +67,13 @@ public class UserItem {
     public void setDuplicated(boolean duplicated) {
         isDuplicated = duplicated;
     }
+    
+    public UserItem(String itemId, BonusType bonusType, double currentBonus) {
+        this.itemId = itemId;
+        this.bonusType = bonusType;
+        this.currentBonus = currentBonus;
+        this.lifespan = 1;
+        this.quantity = 1;
+    }
+
 }

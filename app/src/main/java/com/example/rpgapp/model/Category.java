@@ -4,8 +4,8 @@ public class Category {
 
     private int id;
     private String name;
-    private String color; // npr. "#FF5722"
-
+    private String color;
+    private String userId;
     public Category() {}
 
     public Category(int id,String name, String color) {
@@ -27,4 +27,7 @@ public class Category {
 
     public String getColor() { return color; }
     public void setColor(String color) { this.color = color; }
+
+    public String getUserId() { return userId; }
+    public void setUserId(String userId) { this.userId = userId; }
 }

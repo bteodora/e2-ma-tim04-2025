@@ -21,6 +21,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.example.rpgapp.R;
+import com.example.rpgapp.database.BattleRepository;
 import com.example.rpgapp.database.UserRepository;
 import com.example.rpgapp.model.Battle;
 import com.example.rpgapp.model.BonusType;
@@ -28,8 +29,13 @@ import com.example.rpgapp.model.User;
 import com.example.rpgapp.model.UserItem;
 import com.example.rpgapp.model.UserWeapon;
 import com.example.rpgapp.services.TaskService;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
@@ -39,13 +45,16 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
     private static final String SP_BOSS_LEVEL = "boss_level";
     private static final String SP_BOSS_HP = "boss_hp";
 
+    private BattleRepository battleRepository;
+
     private Battle battle;
     private User user;
+    private String currentUserId;
 
-    private ImageView bossImageView, treasureChestImage;
+    private ImageView bossImageView, treasureChestImage, activeWeaponIcon;
     private ProgressBar bossHpBar, userPpBar;
     private TextView successRateText, remainingAttacksText, coinsEarnedText;
-    private Button attackButton;
+    private Button attackButton, selectWeaponButton;
 
     private SensorManager sensorManager;
     private Sensor accelerometer;
@@ -57,12 +66,24 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
 
     private TaskService taskService;
 
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        FirebaseAuth auth = FirebaseAuth.getInstance();
+        currentUserId = (auth.getCurrentUser() != null) ? auth.getCurrentUser().getUid() : null;
+
+        battleRepository = new BattleRepository();
+    }
+
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater,
+                             @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
+
         View view = inflater.inflate(R.layout.fragment_boss_battle, container, false);
 
-        // UI bind
+        // bind UI
         bossImageView = view.findViewById(R.id.bossImageView);
         treasureChestImage = view.findViewById(R.id.treasureChestImage);
         bossHpBar = view.findViewById(R.id.bossHpBar);
@@ -71,16 +92,60 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
         remainingAttacksText = view.findViewById(R.id.remainingAttacksText);
         coinsEarnedText = view.findViewById(R.id.coinsEarnedText);
         attackButton = view.findViewById(R.id.attackButton);
+        selectWeaponButton = view.findViewById(R.id.selectWeaponButton);
+        activeWeaponIcon = view.findViewById(R.id.activeWeaponIcon);
+
+        coinsEarnedText.setVisibility(View.GONE);
+        treasureChestImage.setVisibility(View.GONE);
+        activeWeaponIcon.setVisibility(View.GONE);
+
+        if (currentUserId == null) {
+            Toast.makeText(requireContext(), "Niste ulogovani.", Toast.LENGTH_SHORT).show();
+            return view;
+        }
 
         // Load user
-        user = UserRepository.getInstance(requireContext()).getLoggedInUser();
-        if (user == null) user = new User("Player1", "avatar1");
+        UserRepository.getInstance(requireContext()).getUserById(currentUserId, new UserRepository.UserCallback() {
+            @Override
+            public void onUserLoaded(User loadedUser) {
+                if (loadedUser == null) {
+                    requireActivity().runOnUiThread(() ->
+                            Toast.makeText(requireContext(), "User not found!", Toast.LENGTH_SHORT).show());
+                    return;
+                }
 
-        // Restore battle state
-        int bossLevel = loadBossLevelOrDefault(1);
-        battle = new Battle(user, bossLevel);
-        restoreBossHpIfExists();
+                user = loadedUser;
+                int bossLevel = loadBossLevelOrDefault(1);
 
+                battleRepository.getBattlesForCurrentUser(new OnCompleteListener<List<Battle>>() {
+                    @Override
+                    public void onComplete(@NonNull Task<List<Battle>> task) {
+                        if (task.isSuccessful() && !task.getResult().isEmpty()) {
+                            battle = task.getResult().get(0);
+                            restoreBossHpIfExists();
+                        } else {
+                            battle = new Battle(user, bossLevel, successRate);
+                            battleRepository.addBattle(battle, t -> {});
+                        }
+                        requireActivity().runOnUiThread(BossBattleFragment.this::setupUi);
+                    }
+                });
+            }
+
+            @Override
+            public void onError(Exception e) {
+                requireActivity().runOnUiThread(() ->
+                        Toast.makeText(requireContext(), "Error loading user: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+            }
+        });
+
+        sensorManager = (SensorManager) requireActivity().getSystemService(Context.SENSOR_SERVICE);
+        if (sensorManager != null) accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+
+        return view;
+    }
+
+    private void setupUi() {
         int totalPP = calculateTotalPP(user);
         userPpBar.setMax(Math.max(totalPP, 1));
         userPpBar.setProgress(totalPP);
@@ -89,31 +154,24 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
         bossHpBar.setProgress(battle.getBoss().getCurrentHp());
 
         remainingAttacksText.setText("Remaining attacks: " + battle.getRemainingAttacks() + "/5");
-        coinsEarnedText.setVisibility(View.GONE);
-        treasureChestImage.setVisibility(View.GONE);
-        treasureChestImage.setImageResource(R.drawable.sanduk);
 
         attackButton.setOnClickListener(v -> handleAttack());
-
-        sensorManager = (SensorManager) requireActivity().getSystemService(Context.SENSOR_SERVICE);
-        if (sensorManager != null) accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        selectWeaponButton.setOnClickListener(v -> showWeaponSelectionDialog());
 
         taskService = TaskService.getInstance(requireContext());
         taskService.getSuccessRate().observe(getViewLifecycleOwner(), rate -> {
             successRate = clamp((int) Math.round(rate), 1, 100);
             successRateText.setText("Chance to hit: " + successRate + "%");
+            if (battle != null) battle.setSuccessRate(successRate);
         });
-
-        return view;
     }
 
-    // === BORBA ===
 
     private void handleAttack() {
-        if (isAttackInProgress || battle.isFinished()) return;
+        if (isAttackInProgress || battle == null || battle.isFinished()) return;
         isAttackInProgress = true;
 
-        boolean hit = battle.attack(successRate);
+        boolean hit = battle.attack();
         if (hit) {
             bossImageView.setImageResource(R.drawable.boss_borba);
             bossImageView.postDelayed(() -> bossImageView.setImageResource(R.drawable.boss), 300);
@@ -124,6 +182,8 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
 
         bossHpBar.setProgress(battle.getBoss().getCurrentHp());
         remainingAttacksText.setText("Remaining attacks: " + battle.getRemainingAttacks() + "/5");
+
+        battleRepository.updateBattle(battle, t -> {});
 
         if (battle.isFinished()) showResults();
         isAttackInProgress = false;
@@ -136,12 +196,12 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
 
         consumeTemporaryEquipment(user);
         giveReward();
+
+        battleRepository.deleteBattle(battle.getBattleId(), t -> {});
     }
 
-    // === NAGRADE ===
-
     private void giveReward() {
-        if (user == null) return;
+        if (user == null || battle == null) return;
 
         treasureChestImage.setImageResource(R.drawable.sanduk_otvoren);
 
@@ -165,8 +225,10 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
         coinsReward = (int) Math.round(coinsReward * (1.0 + getMoneyBoostPercent(user)));
 
         String equipmentMsg = "";
-        if (equipmentChance > 0 && new Random().nextInt(100) < equipmentChance) {
-            if (new Random().nextInt(100) < 95) {
+        Random random = new Random();
+
+        if (equipmentChance > 0 && random.nextInt(100) < equipmentChance) {
+            if (random.nextInt(100) < 95) {
                 UserItem clothing = new UserItem();
                 clothing.setItemId("clothing_" + System.currentTimeMillis());
                 clothing.setQuantity(1);
@@ -205,21 +267,29 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
                 .edit().putLong("user_coins", user.getCoins()).apply();
     }
 
-    // === HELPERI ===
-
+    // === Helpers ===
     private int calculateTotalPP(User u) {
         int total = u.getPowerPoints();
+
+        // Dodaj bonus od odeće/equipment-a
         if (u.getEquipped() != null) {
             for (UserItem it : u.getEquipped().values()) {
                 if (it.getBonusType() == BonusType.PERMANENT_PP || it.getBonusType() == BonusType.TEMPORARY_PP)
                     total += (int) it.getCurrentBonus();
             }
         }
+
+        // Dodaj bonus od trenutno aktivnog oružja u borbi
+        if (battle != null && battle.getActiveWeapon() != null) {
+            total += battle.getActiveWeapon().getBonusPP();
+        }
+
         return Math.max(total, 0);
     }
 
+
     private void consumeTemporaryEquipment(User u) {
-        if (u.getEquipped() == null) return;
+        if (u == null || u.getEquipped() == null) return;
         Map<String, UserItem> eq = u.getEquipped();
         Map<String, String> toRemove = new HashMap<>();
         for (Map.Entry<String, UserItem> e : eq.entrySet()) {
@@ -272,6 +342,7 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
     }
 
     private void restoreBossHpIfExists() {
+        if (battle == null) return;
         SharedPreferences sp = requireContext().getSharedPreferences(SP_NAME, Context.MODE_PRIVATE);
         int savedHp = sp.getInt(SP_BOSS_HP, -1);
         if (savedHp >= 0) {
@@ -280,14 +351,47 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
             battle.getBoss().reduceHp(max - hp);
         }
     }
+    private void showWeaponSelectionDialog() {
+        if (user == null || user.getUserWeapons() == null || user.getUserWeapons().isEmpty()) {
+            Toast.makeText(requireContext(), "Nemate oružje.", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-    // === SENSOR ===
+        // Pretvori mapu u listu
+        List<UserWeapon> weaponsList = new ArrayList<>(user.getUserWeapons().values());
+        String[] weaponNames = new String[weaponsList.size()];
+        for (int i = 0; i < weaponsList.size(); i++) {
+            UserWeapon w = weaponsList.get(i);
+            weaponNames[i] = "Weapon " + w.getLevel(); // ili ime ako postoji
+        }
 
+        // AlertDialog sa listom oružja
+        new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                .setTitle("Select Weapon")
+                .setItems(weaponNames, (dialog, which) -> {
+                    // Aktiviraj izabrano oružje u borbi
+                    UserWeapon selectedWeapon = weaponsList.get(which);
+                    if (battle != null) {
+                        battle.setActiveWeapon(selectedWeapon);
+                    }
+
+                    // Prikaži ikoncu aktivnog oružja
+                    activeWeaponIcon.setVisibility(View.VISIBLE);
+                    activeWeaponIcon.setImageResource(R.drawable.ic_face); // zameni sa odgovarajućom slikom
+
+                    Toast.makeText(requireContext(), "Aktivirano oružje: " + weaponNames[which], Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+
+
+    // === Sensor ===
     @Override
     public void onResume() {
         super.onResume();
-        if (accelerometer != null)
-            sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+        if (accelerometer != null) sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
     }
 
     @Override
@@ -298,24 +402,15 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        float x = event.values[0];
-        float y = event.values[1];
-        float z = event.values[2];
-
+        float x = event.values[0], y = event.values[1], z = event.values[2];
         long curTime = System.currentTimeMillis();
-        if ((curTime - lastUpdate) > 100) {
-            long diffTime = curTime - lastUpdate;
-            lastUpdate = curTime;
-
-            float speed = Math.abs(x + y + z - lastX - lastY - lastZ) / diffTime * 10000;
-            if (speed > 800) handleAttack();
-
-            lastX = x;
-            lastY = y;
-            lastZ = z;
+        if (curTime - lastUpdate > 100) {
+            float delta = Math.abs(x + y + z - lastX - lastY - lastZ);
+            if (delta > 15 && !isAttackInProgress) handleAttack();
+            lastX = x; lastY = y; lastZ = z; lastUpdate = curTime;
         }
     }
 
     @Override
-    public void onAccuracyChanged(Sensor sensor, int accuracy) { }
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {}
 }

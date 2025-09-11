@@ -10,7 +10,9 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.example.rpgapp.model.Task;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.text.SimpleDateFormat;
@@ -45,12 +47,48 @@ public class TaskRepository {
         }
         return INSTANCE;
     }
+    private String getCurrentUserId() {
+        if (FirebaseAuth.getInstance().getCurrentUser() != null) {
+            return FirebaseAuth.getInstance().getCurrentUser().getUid();
+        }
+        return null;
+    }
+
 
     // --- LISTA SVIH TASKOVA ---
     public LiveData<List<Task>> getAllTasksLiveData() {
         loadTasksFromSQLite();
+        loadTasksFromFirestore(); //filter po useru
         return allTasksLiveData;
     }
+
+    public void loadTasksFromFirestore() {
+        String currentUserId = getCurrentUserId();
+        if (currentUserId == null) return;
+
+        db.collection("tasks")
+                .whereEqualTo("userId", currentUserId)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    List<Task> tasks = new ArrayList<>();
+                    for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
+                        Task task = doc.toObject(Task.class);
+                        if (task != null) {
+                            task.setTaskId(doc.getId()); // osigurava da svaki task ima taskId
+                            tasks.add(task);
+                        }
+                    }
+
+                    allTasksLiveData.postValue(tasks);
+
+                    // Opcionalno: sinhronizuj sa SQLite
+                    for (Task t : tasks) {
+                        cacheTaskToSQLite(t);
+                    }
+                })
+                .addOnFailureListener(e -> Log.e(TAG, "Error loading tasks from Firestore", e));
+    }
+
 
     // --- JEDAN TASK PO ID ---
     public LiveData<Task> getTaskById(String taskId) {
@@ -114,9 +152,11 @@ public class TaskRepository {
             values.put(SQLiteHelper.COLUMN_DUE_DATE, task.getDueDate());
             values.put(SQLiteHelper.COLUMN_START_DATE, task.getStartDate());
             values.put(SQLiteHelper.COLUMN_END_DATE, task.getEndDate());
+            // recurring
             values.put(SQLiteHelper.COLUMN_RECURRING, task.isRecurring() ? 1 : 0);
             values.put(SQLiteHelper.COLUMN_RECURRING_ID, task.getRecurringId());
-
+            // user_id
+            values.put(SQLiteHelper.COLUMN_TASK_USER_ID, getCurrentUserId());
 
 
             database.insertWithOnConflict(SQLiteHelper.TABLE_TASKS, null, values, SQLiteDatabase.CONFLICT_REPLACE);
@@ -141,7 +181,16 @@ public class TaskRepository {
         List<Task> tasks = new ArrayList<>();
         try {
             database = dbHelper.getReadableDatabase();
-            Cursor cursor = database.query(SQLiteHelper.TABLE_TASKS, null, null, null, null, null, null);
+            String selection = null;
+            String[] selectionArgs = null;
+
+            String currentUserId = getCurrentUserId();
+            if (currentUserId != null) {
+                selection = SQLiteHelper.COLUMN_TASK_USER_ID + "=?";
+                selectionArgs = new String[]{currentUserId};
+            }
+
+            Cursor cursor = database.query(SQLiteHelper.TABLE_TASKS, null, selection, selectionArgs, null, null, null);
             if (cursor != null && cursor.moveToFirst()) {
                 do {
                     Task task = mapCursorToTask(cursor);
@@ -176,6 +225,8 @@ public class TaskRepository {
         task.setEndDate(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_END_DATE)));
         task.setRecurring(cursor.getInt(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_RECURRING)) == 1);
         task.setRecurringId(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_RECURRING_ID)));
+        task.setUserId(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_TASK_USER_ID)));
+
 
         return task;
     }
@@ -261,6 +312,19 @@ public class TaskRepository {
         allTasksLiveData.setValue(updatedTasks);
     }
 
+    public List<String> getAllCategories() {
+        List<String> categories = new ArrayList<>();
+        List<Task> tasks = allTasksLiveData.getValue();
+        if (tasks != null) {
+            for (Task task : tasks) {
+                String cat = task.getCategory();
+                if (cat != null && !cat.isEmpty() && !categories.contains(cat)) {
+                    categories.add(cat);
+                }
+            }
+        }
+        return categories;
+    }
 
 
 }

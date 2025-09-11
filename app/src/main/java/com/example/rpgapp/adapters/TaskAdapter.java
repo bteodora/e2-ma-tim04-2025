@@ -8,11 +8,13 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.example.rpgapp.R;
+import com.example.rpgapp.database.TaskRepository;
 import com.example.rpgapp.model.Task;
 
 import java.util.ArrayList;
@@ -26,12 +28,12 @@ public class TaskAdapter extends ArrayAdapter<Task> {
     private OnItemClickListener listener;
 
     public interface OnItemClickListener {
-        void onItemClick(Task task);
+        void onItemClick(Task task, View view);
     }
+
     public TaskAdapter(@NonNull Context context, @NonNull List<Task> tasks, OnItemClickListener listener) {
         super(context, 0, tasks);
         this.context = context;
-//        this.tasks = tasks;
         this.tasks = new ArrayList<>(tasks);
         this.listener = listener;
     }
@@ -58,32 +60,58 @@ public class TaskAdapter extends ArrayAdapter<Task> {
             taskTitle.setText(currentTask.getTitle());
         }
 
+        TextView categoryText = listItem.findViewById(R.id.textViewTaskCategory); // ID iz XML-a
         taskCategory.setText(currentTask.getCategory());
 
         // Postavljanje boje kategorije
         if (currentTask.getColor() != null && !currentTask.getColor().isEmpty()) {
             try {
-                taskCategory.setBackgroundColor(Color.parseColor(currentTask.getColor()));
+                categoryText.setBackgroundColor(Color.parseColor(currentTask.getColor()));
             } catch (IllegalArgumentException e) {
-                taskCategory.setBackgroundColor(Color.GRAY);
+                categoryText.setBackgroundColor(Color.GRAY);
             }
+        } else {
+            categoryText.setBackgroundColor(Color.GRAY);
         }
 
         taskStatus.setText(currentTask.getStatus());
 
-        // Action button (npr. mark done)
-        actionButton.setText("Mark Done");
-        actionButton.setOnClickListener(v -> {
-            currentTask.setStatus("urađen");
-            notifyDataSetChanged();
-        });
+        // Sakrij dugme ako je task urađen
+        if ("urađen".equalsIgnoreCase(currentTask.getStatus())) {
+            actionButton.setVisibility(View.GONE);
+        } else {
+            actionButton.setVisibility(View.VISIBLE);
+            actionButton.setText("Mark Done");
+            actionButton.setOnClickListener(v -> {
+                // Promeni status taska
+                currentTask.setStatus("urađen");
+
+                // Sačuvaj promenu u bazi
+                TaskRepository.getInstance(context).updateTask(currentTask);
+
+                // Osveži listu da dugme nestane
+                notifyDataSetChanged();
+            });
+        }
+
+
 
         // Klik na ceo item
+// Klik na ceo item
         listItem.setOnClickListener(v -> {
             if (listener != null) {
-                listener.onItemClick(currentTask);
+                // Toast da proverimo taskId
+                String taskId = currentTask.getTaskId();
+                if (taskId != null) {
+                    Toast.makeText(context, "taskId = " + taskId + " | type = " + taskId.getClass().getSimpleName(), Toast.LENGTH_LONG).show();
+                } else {
+                    Toast.makeText(context, "taskId je null!", Toast.LENGTH_LONG).show();
+                }
+
+                listener.onItemClick(currentTask, v);
             }
         });
+
 
         return listItem;
     }

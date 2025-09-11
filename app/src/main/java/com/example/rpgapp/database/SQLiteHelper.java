@@ -14,7 +14,8 @@ public class SQLiteHelper extends SQLiteOpenHelper {
     public static final String COLUMN_IMAGE = "image";
 
     private static final String DATABASE_NAME = "rpgapp_final.db";
-    private static final int DATABASE_VERSION = 9;
+
+    private static final int DATABASE_VERSION = 11;
 
     private static final String DB_CREATE = "create table "
             + TABLE_PRODUCTS + "("
@@ -113,6 +114,9 @@ public class SQLiteHelper extends SQLiteOpenHelper {
     public static final String COLUMN_DUE_DATE = "dueDate";
     public static final String COLUMN_RECURRING = "recurring";
     public static final String COLUMN_RECURRING_ID = "recurring_id";
+    public static final String COLUMN_TASK_USER_ID = "user_id";
+    public static final String COLUMN_CATEGORY_USER_ID = "user_id";
+
 
     private static final String DB_CREATE_TASKS = "CREATE TABLE " + TABLE_TASKS + "("
             + COLUMN_TASK_ID + " TEXT PRIMARY KEY, "
@@ -132,7 +136,9 @@ public class SQLiteHelper extends SQLiteOpenHelper {
             + COLUMN_STATUS + " TEXT,"
             + COLUMN_DUE_DATE + " TEXT,"
             + COLUMN_RECURRING + " INTEGER, "
-            + COLUMN_RECURRING_ID + " TEXT"
+            + COLUMN_RECURRING_ID + " TEXT, "
+            + COLUMN_TASK_USER_ID + " TEXT, "
+            + "FOREIGN KEY(" + COLUMN_TASK_USER_ID + ") REFERENCES " + TABLE_USERS + "(" + COLUMN_USER_ID + ")"
             + ")";
     //--------------- CATEGORY ---------------------
 
@@ -143,8 +149,11 @@ public class SQLiteHelper extends SQLiteOpenHelper {
 
     private static final String DB_CREATE_CATEGORIES = "CREATE TABLE " + TABLE_CATEGORIES + "("
             + COLUMN_CATEGORY_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
-            + COLUMN_CATEGORY_NAME + " TEXT UNIQUE NOT NULL, "
-            + COLUMN_CATEGORY_COLOR + " TEXT UNIQUE NOT NULL"  // boja mora biti jedinstvena
+            + COLUMN_CATEGORY_NAME + " TEXT NOT NULL, "
+            + COLUMN_CATEGORY_COLOR + " TEXT NOT NULL, "
+            + COLUMN_CATEGORY_USER_ID + " TEXT, "
+            + "FOREIGN KEY(" + COLUMN_CATEGORY_USER_ID + ") REFERENCES " + TABLE_USERS + "(" + COLUMN_USER_ID + "), "
+            + "UNIQUE(" + COLUMN_CATEGORY_USER_ID + ", " + COLUMN_CATEGORY_COLOR + ")"
             + ")";
 
     //--------------- SPECIAL MISSION ---------------------
@@ -175,13 +184,40 @@ public class SQLiteHelper extends SQLiteOpenHelper {
 
 
 
-    //Potrebno je dodati konstruktor zbog pravilne inicijalizacije
+    //--------------- BATTLE ---------------------
+
+    //--------------- BATTLE ---------------------
+    public static final String TABLE_BOSS_BATTLES = "boss_battles";
+    public static final String COLUMN_BATTLE_ID = "battle_id";
+    public static final String COLUMN_BOSS_LEVEL = "boss_level";
+    public static final String COLUMN_BOSS_HP = "boss_hp";
+    public static final String COLUMN_REMAINING_ATTACKS = "remaining_attacks";
+    public static final String COLUMN_COINS_EARNED = "coins_earned";
+    public static final String COLUMN_FINISHED = "finished";
+    public static final String COLUMN_ACTIVE_ITEMS = "active_items"; // JSON
+    public static final String COLUMN_ACTIVE_WEAPON = "active_weapon"; // JSON
+    public static final String COLUMN_USER_BATTLE_ID = "user_id";
+
+    // SQL CREATE TABLE
+    private static final String DB_CREATE_BOSS_BATTLES = "CREATE TABLE " + TABLE_BOSS_BATTLES + " ("
+            + COLUMN_BATTLE_ID + " TEXT PRIMARY KEY, "
+            + COLUMN_USER_BATTLE_ID + " TEXT NOT NULL, "
+            + COLUMN_BOSS_LEVEL + " INTEGER, "
+            + COLUMN_BOSS_HP + " INTEGER, "
+            + COLUMN_REMAINING_ATTACKS + " INTEGER, "
+            + COLUMN_COINS_EARNED + " INTEGER, "
+            + COLUMN_FINISHED + " INTEGER, "
+            + COLUMN_ACTIVE_ITEMS + " TEXT, "
+            + COLUMN_ACTIVE_WEAPON + " TEXT, "
+            + "FOREIGN KEY(" + COLUMN_USER_BATTLE_ID + ") REFERENCES " + TABLE_USERS + "(" + COLUMN_USER_ID + ")"
+            + ");";
+
+
+
     public SQLiteHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
 
-    //Prilikom kreiranja baze potrebno je da pozovemo odgovarajuce metode biblioteke
-    //prilikom kreiranja moramo pozvati db.execSQL za svaku tabelu koju imamo
     @Override
     public void onCreate(SQLiteDatabase db) {
         Log.i("REZ_DB", "ON CREATE SQLITE HELPER");
@@ -190,29 +226,20 @@ public class SQLiteHelper extends SQLiteOpenHelper {
         db.execSQL(DB_CREATE_ALLIANCES);
         db.execSQL(DB_CREATE_TASKS);
         db.execSQL(DB_CREATE_CATEGORIES);
-        db.execSQL(DB_CREATE_SPECIAL_MISSIONS);
+        db.execSQL(DB_CREATE_BOSS_BATTLES);
 
 
-        // Seed default kategorije
-        db.execSQL("INSERT INTO " + TABLE_CATEGORIES + " ("
-                + COLUMN_CATEGORY_NAME + ", " + COLUMN_CATEGORY_COLOR + ") VALUES "
-                + "('zdravlje', '#4CAF50'),"
-                + "('učenje', '#FF9800'),"
-                + "('zabava', '#2196F3'),"
-                + "('sređivanje', '#9C27B0');");
     }
 
-    //kada zelimo da izmenimo tabele, moramo pozvati drop table za sve tabele koje imamo
-    //  moramo voditi računa o podacima, pa ćemo onda raditi ovde migracije po potrebi
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         Log.i("REZ_DB", "ON UPGRADE SQLITE HELPER");
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_PRODUCTS);
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_USERS); //
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_USERS); 
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_TASKS);
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_CATEGORIES);
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_ALLIANCES);
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_SPECIAL_MISSIONS);
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_CATEGORIES);
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_BOSS_BATTLES);
 
         onCreate(db);
     }
