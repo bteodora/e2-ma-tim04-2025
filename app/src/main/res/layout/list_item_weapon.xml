@@ -16,8 +16,6 @@
         android:contentDescription="Weapon Icon"
         tools:src="@mipmap/ic_launcher"/>
 
-    <!-- KLJUČNA PROMENA: Dugme sada ima fiksnu širinu.
-         Ovo osigurava da tekst uvek ima dovoljno prostora. -->
     <Button
         android:id="@+id/buttonUpgradeWeapon"
         style="@style/PixelButtonStyle"

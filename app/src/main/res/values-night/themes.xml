@@ -1,23 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Primarne boje -->
-    <color name="colorPrimary">#4A6FA5</color> <!-- Mistično tamno-plava -->
-    <color name="colorPrimaryVariant">#2E3B55</color> <!-- Još tamnija, za kontrast -->
-    <color name="colorAccent">#C99A2E</color> <!-- Zlatna ostaje ista, daje magični akcenat -->
-    <color name="colorOnPrimary">#FFFFFF</color> <!-- Bela za kontrast na primarnoj -->
+    <color name="colorPrimary">#4A6FA5</color>
+    <color name="colorPrimaryVariant">#2E3B55</color>
+    <color name="colorAccent">#C99A2E</color>
+    <color name="colorOnPrimary">#FFFFFF</color>
 
-    <!-- Pozadine i tekst -->
-    <color name="backgroundColor">#0D1117</color> <!-- Tamna plavo-siva, mistična i elegantna -->
-    <color name="textColorPrimary">#E6E6E6</color> <!-- Svetlo siva, mekša od čisto bele -->
-    <color name="textColorSecondary">#A5B4C4</color> <!-- Hladna sivo-plava za sekundarni tekst -->
+    <color name="backgroundColor">#0D1117</color>
+    <color name="textColorPrimary">#E6E6E6</color>
+    <color name="textColorSecondary">#A5B4C4</color>
 
-    <!-- Paneli -->
-    <color name="panelColor">#1C2331</color> <!-- Tamno-plava za panele, razlikuje se od pozadine -->
-    <color name="panelBorderColor">#6C7A89</color> <!-- Mutna srebrna za ivice -->
+    <color name="panelColor">#1C2331</color>
+    <color name="panelBorderColor">#6C7A89</color>
 
-    <!-- Dugmad -->
-    <color name="buttonTextColor">#FFFFFF</color> <!-- Tekst na glavnom dugmetu -->
-    <color name="buttonBackgroundColor">#3E5366</color> <!-- Tamna teal-plava, moćno i RPG osećaj -->
-    <color name="buttonOutlinedTextColor">#C99A2E</color> <!-- Zlatna za outline dugmad -->
+    <color name="buttonTextColor">#FFFFFF</color>
+    <color name="buttonBackgroundColor">#3E5366</color>
+    <color name="buttonOutlinedTextColor">#C99A2E</color>
 </resources>
-

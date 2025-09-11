@@ -1,27 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#7A9CC6</color> <!-- Svetlija mistična plava -->
-    <color name="colorPrimaryVariant">#5A6F8C</color> <!-- Tamnija nijansa za naglašene delove -->
-    <color name="colorAccent">#C99A2E</color> <!-- Zlatna, toplija i mekša nego u dark varijanti -->
-    <color name="colorOnPrimary">#FFFFFF</color> <!-- Bela za kontrast na primarnoj -->
+    <color name="colorPrimary">#7A9CC6</color>
+    <color name="colorPrimaryVariant">#5A6F8C</color>
+    <color name="colorAccent">#C99A2E</color>
+    <color name="colorOnPrimary">#FFFFFF</color>
 
-    <!-- Pozadine i tekst -->
-    <color name="backgroundColor">#F2F5FA</color> <!-- Veoma svetla plavo-siva (umesto tamne) -->
-    <color name="textColorPrimary">#1E1E2E</color> <!-- Tamno plava-siva, čitljiva na svetloj pozadini -->
-    <color name="textColorSecondary">#4A5568</color> <!-- Sivo-plava, mekša za sekundarni tekst -->
+    <color name="backgroundColor">#F2F5FA</color>
+    <color name="textColorPrimary">#1E1E2E</color>
+    <color name="textColorSecondary">#4A5568</color>
 
-    <!-- Paneli -->
-    <color name="panelColor">#FFFFFF</color> <!-- Paneli čisti beli da se jasno izdvoje -->
-    <color name="panelBorderColor">#B0BEC5</color> <!-- Svetla srebrno-siva za ivice -->
+    <color name="panelColor">#FFFFFF</color>
+    <color name="panelBorderColor">#B0BEC5</color>
 
-    <!-- Dugmad -->
-    <color name="buttonTextColor">#FFFFFF</color> <!-- Glavno dugme ostaje belo -->
-    <color name="buttonBackgroundColor">#607D8B</color> <!-- Mekša plavo-siva, fantazijski osećaj -->
-    <color name="buttonOutlinedTextColor">#C99A2E</color> <!-- Zlatna za outline dugmad -->
+    <color name="buttonTextColor">#FFFFFF</color>
+    <color name="buttonBackgroundColor">#607D8B</color>
+    <color name="buttonOutlinedTextColor">#C99A2E</color>
 
-
-
-    <!-- stare, posle obrisati-->
+    <!-- TODO obrisati-->
     <color name="teal_200">#FF03DAC5</color>
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
