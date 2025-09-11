@@ -2,6 +2,9 @@ package com.example.rpgapp.model;
 
 import com.google.firebase.firestore.Exclude;
 
+import java.text.SimpleDateFormat;
+import java.util.Locale;
+
 public class Task {
 
     private String title;
@@ -140,6 +143,17 @@ public class Task {
         return "ponavljajući".equalsIgnoreCase(frequency);
     }
 
-
+    @Exclude
+    public long getCompletionTimestamp() {
+        if (dueDate == null || dueDate.isEmpty()) {
+            return 0;
+        }
+        try {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+            return dateFormat.parse(dueDate).getTime();
+        } catch (Exception e) {
+            return 0;
+        }
+    }
 
 }

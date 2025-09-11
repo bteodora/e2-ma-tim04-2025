@@ -27,8 +27,6 @@ public class AuthRepository {
         userRepository = UserRepository.getInstance(context);
     }
 
-
-
     public void registerUser(String email, String password, String username, String avatarId) {
         mAuth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(task -> {
@@ -101,6 +99,10 @@ public class AuthRepository {
 
     public FirebaseUser getCurrentUser() {
         return mAuth.getCurrentUser();
+    }
+
+    public String getCurrentUserId(){
+        return mAuth.getCurrentUser().getUid();
     }
 
     private void checkVerification(FirebaseUser firebaseUser) {

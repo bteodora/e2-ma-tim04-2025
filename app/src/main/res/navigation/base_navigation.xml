@@ -13,6 +13,12 @@
         android:label="Products"
         tools:layout="@layout/fragment_products_page" />
 
+    <fragment
+        android:id="@+id/nav_statistics"
+        android:name="com.example.rpgapp.fragments.profile.StatisticsFragment"
+        android:label="Products"
+        tools:layout="@layout/fragment_statistics" />
+
     <!-- New Product -->
     <fragment
         android:id="@+id/nav_new"
@@ -68,6 +74,9 @@
         <action
             android:id="@+id/action_profileFragment_to_changePasswordFragment"
             app:destination="@id/nav_password" />
+        <action
+            android:id="@+id/action_profileFragment_to_statisticsFragment"
+            app:destination="@id/nav_statistics" />
     </fragment>
 
     <!-- Friend Profile -->

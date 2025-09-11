@@ -112,6 +112,11 @@ public class ProfileFragment extends Fragment {
             NavHostFragment.findNavController(ProfileFragment.this)
                     .navigate(R.id.action_profileFragment_to_changePasswordFragment);
         });
+
+        buttonViewStatistics.setOnClickListener(v -> {
+            NavHostFragment.findNavController(ProfileFragment.this)
+                    .navigate(R.id.action_profileFragment_to_statisticsFragment);
+        });
     }
 
     private void observeViewModel() {

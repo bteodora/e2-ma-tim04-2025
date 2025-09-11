@@ -8,8 +8,6 @@
     android:fillViewport="true"
     tools:context=".fragments.profile.ProfileFragment">
 
-    <!-- Glavni kontejner je vertikalni LinearLayout. Omogućava jasan redosled i
-         lako dodavanje/uklanjanje sekcija bez remećenja celog layouta. -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

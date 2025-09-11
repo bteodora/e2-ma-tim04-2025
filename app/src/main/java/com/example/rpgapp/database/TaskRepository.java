@@ -89,6 +89,35 @@ public class TaskRepository {
                 .addOnFailureListener(e -> Log.e(TAG, "Error loading tasks from Firestore", e));
     }
 
+    public LiveData<List<Task>> getAllTasksForUser(String userId) {
+        MutableLiveData<List<Task>> tasksLiveData = new MutableLiveData<>();
+
+        if (userId == null) {
+            tasksLiveData.setValue(new ArrayList<>());
+            return tasksLiveData;
+        }
+
+        db.collection("tasks")
+                .whereEqualTo("userId", userId)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    List<Task> tasks = new ArrayList<>();
+                    for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
+                        Task task = doc.toObject(Task.class);
+                        if (task != null) {
+                            task.setTaskId(doc.getId());
+                            tasks.add(task);
+                        }
+                    }
+                    tasksLiveData.postValue(tasks);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error loading tasks from Firestore for statistics", e);
+                    tasksLiveData.postValue(null); // Signaliziraj grešku
+                });
+
+        return tasksLiveData;
+    }
 
     // --- JEDAN TASK PO ID ---
     public LiveData<Task> getTaskById(String taskId) {
