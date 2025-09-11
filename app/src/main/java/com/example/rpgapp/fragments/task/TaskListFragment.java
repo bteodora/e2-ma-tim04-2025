@@ -204,7 +204,7 @@ public class TaskListFragment extends ListFragment implements AdapterView.OnItem
             if (task.getDueDate() != null && !task.getDueDate().isEmpty()) {
                 long dueMillis = TaskRepository.dateFormat.parse(task.getDueDate()).getTime();
                 if (now > dueMillis + threeDaysMillis) {
-                    task.setStatus("undone");
+                    task.setStatus("neurađen");
                     TaskRepository.getInstance(getContext()).updateTask(task);
                     return true;
                 }
@@ -213,7 +213,7 @@ public class TaskListFragment extends ListFragment implements AdapterView.OnItem
             if (task.getEndDate() != null && !task.getEndDate().isEmpty()) {
                 long endMillis = TaskRepository.dateFormat.parse(task.getEndDate()).getTime();
                 if (now > endMillis + threeDaysMillis) {
-                    task.setStatus("undone");
+                    task.setStatus("neurađen");
                     TaskRepository.getInstance(getContext()).updateTask(task);
                     return true;
                 }

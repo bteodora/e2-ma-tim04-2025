@@ -5,6 +5,8 @@ public class Boss {
     private int maxHp;
     private int currentHp;
 
+    public Boss(){}
+
     public Boss(int level) {
         this.level = level;
         this.maxHp = calculateBossHp(level);

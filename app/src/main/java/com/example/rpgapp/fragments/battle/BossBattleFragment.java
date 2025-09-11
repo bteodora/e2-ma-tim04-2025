@@ -7,6 +7,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,6 +22,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.example.rpgapp.R;
+import com.example.rpgapp.adapters.WeaponListAdapter;
 import com.example.rpgapp.database.BattleRepository;
 import com.example.rpgapp.database.UserRepository;
 import com.example.rpgapp.model.Battle;
@@ -357,32 +359,39 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
             return;
         }
 
-        // Pretvori mapu u listu
+        // 1. Pretvori mapu u listu
         List<UserWeapon> weaponsList = new ArrayList<>(user.getUserWeapons().values());
-        String[] weaponNames = new String[weaponsList.size()];
-        for (int i = 0; i < weaponsList.size(); i++) {
-            UserWeapon w = weaponsList.get(i);
-            weaponNames[i] = "Weapon " + w.getLevel(); // ili ime ako postoji
+
+        // 2. Napravi adapter za prikaz u listi sa slikom i imenom
+        WeaponListAdapter adapter = new WeaponListAdapter(requireContext(), weaponsList);
+
+        // 3. Kreiraj AlertDialog
+        androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(requireContext());
+        builder.setTitle("Izaberite oružje");
+        builder.setAdapter(adapter, (dialog, which) -> {
+            UserWeapon selectedWeapon = weaponsList.get(which);
+
+            // Postavi aktivno oružje u borbi
+            if (battle != null) battle.setActiveWeapon(selectedWeapon);
+
+            // Prikazi ikonu izabranog oružja
+            activeWeaponIcon.setVisibility(View.VISIBLE);
+            activeWeaponIcon.setImageResource(selectedWeapon.getImageResourceId());
+
+            Toast.makeText(requireContext(), "Aktivirano: " + selectedWeapon.getName(), Toast.LENGTH_SHORT).show();
+        });
+
+        builder.setNegativeButton("Cancel", null);
+        builder.show();
+
+
+        // Debug Toast: prikaži sva korisnikova oružja
+        StringBuilder sb = new StringBuilder("Tvoja oružja:\n");
+        for (UserWeapon w : weaponsList) {
+            sb.append(w.getName()).append(" (ImageId: ").append(w.getImageResourceId()).append(")\n");
         }
+        Toast.makeText(requireContext(), sb.toString(), Toast.LENGTH_LONG).show();
 
-        // AlertDialog sa listom oružja
-        new androidx.appcompat.app.AlertDialog.Builder(requireContext())
-                .setTitle("Select Weapon")
-                .setItems(weaponNames, (dialog, which) -> {
-                    // Aktiviraj izabrano oružje u borbi
-                    UserWeapon selectedWeapon = weaponsList.get(which);
-                    if (battle != null) {
-                        battle.setActiveWeapon(selectedWeapon);
-                    }
-
-                    // Prikaži ikoncu aktivnog oružja
-                    activeWeaponIcon.setVisibility(View.VISIBLE);
-                    activeWeaponIcon.setImageResource(R.drawable.ic_face); // zameni sa odgovarajućom slikom
-
-                    Toast.makeText(requireContext(), "Aktivirano oružje: " + weaponNames[which], Toast.LENGTH_SHORT).show();
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
     }
 
 
