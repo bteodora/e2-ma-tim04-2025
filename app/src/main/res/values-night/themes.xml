@@ -1,18 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Glavne boje teme -->
-    <color name="colorPrimary">#673AB7</color> <!-- Misteriozna ljubičasta -->
-    <color name="colorPrimaryVariant">#512DA8</color> <!-- Tamnija ljubičasta -->
-    <color name="colorAccent">#E040FB</color> <!-- Magična, svetla roze/ljubičasta -->
-    <color name="colorOnPrimary">#FFFFFF</color> <!-- Tekst na primarnoj boji je beo -->
+    <!-- Primarne boje -->
+    <color name="colorPrimary">#4A6FA5</color> <!-- Mistično tamno-plava -->
+    <color name="colorPrimaryVariant">#2E3B55</color> <!-- Još tamnija, za kontrast -->
+    <color name="colorAccent">#C99A2E</color> <!-- Zlatna ostaje ista, daje magični akcenat -->
+    <color name="colorOnPrimary">#FFFFFF</color> <!-- Bela za kontrast na primarnoj -->
 
-    <!-- Boje za UI elemente -->
-    <color name="backgroundColor">#1C1B2A</color> <!-- Veoma tamna plavo-ljubičasta -->
-    <color name="textColorPrimary">#E0E0E0</color> <!-- Skoro bela za tekst -->
-    <color name="textColorSecondary">#9E9E9E</color> <!-- Siva za podnaslove -->
-    <color name="panelColor">#2A283E</color> <!-- Malo svetlija od pozadine -->
-    <color name="panelBorderColor">#7E57C2</color> <!-- Ljubičasta za ivice i dividere -->
+    <!-- Pozadine i tekst -->
+    <color name="backgroundColor">#0D1117</color> <!-- Tamna plavo-siva, mistična i elegantna -->
+    <color name="textColorPrimary">#E6E6E6</color> <!-- Svetlo siva, mekša od čisto bele -->
+    <color name="textColorSecondary">#A5B4C4</color> <!-- Hladna sivo-plava za sekundarni tekst -->
+
+    <!-- Paneli -->
+    <color name="panelColor">#1C2331</color> <!-- Tamno-plava za panele, razlikuje se od pozadine -->
+    <color name="panelBorderColor">#6C7A89</color> <!-- Mutna srebrna za ivice -->
+
+    <!-- Dugmad -->
     <color name="buttonTextColor">#FFFFFF</color> <!-- Tekst na glavnom dugmetu -->
-    <color name="buttonBackgroundColor">#512DA8</color> <!-- Glavno dugme je tamno ljubičasto -->
-    <color name="buttonOutlinedTextColor">#E0E0E0</color> <!-- Tekst na "outline" dugmetu -->
+    <color name="buttonBackgroundColor">#3E5366</color> <!-- Tamna teal-plava, moćno i RPG osećaj -->
+    <color name="buttonOutlinedTextColor">#C99A2E</color> <!-- Zlatna za outline dugmad -->
 </resources>
+

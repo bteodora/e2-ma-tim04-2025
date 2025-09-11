@@ -1,21 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#4267B2</color> <!-- Jaka, klasična plava, laka za čitanje -->
-    <color name="colorPrimaryVariant">#395998</color> <!-- Tamnija varijanta za status bar -->
-    <color name="colorAccent">#FFC107</color> <!-- Zlatna ostaje odličan akcenat -->
-    <color name="colorOnPrimary">#FFFFFF</color>
+    <color name="colorPrimary">#7A9CC6</color> <!-- Svetlija mistična plava -->
+    <color name="colorPrimaryVariant">#5A6F8C</color> <!-- Tamnija nijansa za naglašene delove -->
+    <color name="colorAccent">#C99A2E</color> <!-- Zlatna, toplija i mekša nego u dark varijanti -->
+    <color name="colorOnPrimary">#FFFFFF</color> <!-- Bela za kontrast na primarnoj -->
 
-    <!-- Boje za UI elemente sa poboljšanim kontrastom -->
-    <color name="backgroundColor">#F5F5F5</color> <!-- Veoma svetlo siva, prijatnija od čisto bele -->
-    <color name="textColorPrimary">#212121</color> <!-- Skoro crna za glavni tekst, maksimalan kontrast -->
-    <color name="textColorSecondary">#616161</color> <!-- Tamnija siva za podnaslove, lakša za čitanje -->
+    <!-- Pozadine i tekst -->
+    <color name="backgroundColor">#F2F5FA</color> <!-- Veoma svetla plavo-siva (umesto tamne) -->
+    <color name="textColorPrimary">#1E1E2E</color> <!-- Tamno plava-siva, čitljiva na svetloj pozadini -->
+    <color name="textColorSecondary">#4A5568</color> <!-- Sivo-plava, mekša za sekundarni tekst -->
 
-    <color name="panelColor">#FFFFFF</color> <!-- Paneli su beli da se istaknu od pozadine -->
-    <color name="panelBorderColor">#757575</color> <!-- **KLJUČNA PROMENA:** Mnogo tamnija siva za ivice -->
+    <!-- Paneli -->
+    <color name="panelColor">#FFFFFF</color> <!-- Paneli čisti beli da se jasno izdvoje -->
+    <color name="panelBorderColor">#B0BEC5</color> <!-- Svetla srebrno-siva za ivice -->
 
-    <color name="buttonTextColor">#FFFFFF</color> <!-- Tekst na glavnom dugmetu ostaje beo -->
-    <color name="buttonBackgroundColor">#455A64</color> <!-- Jako tamna plavo-siva, izgleda moćno -->
-    <color name="buttonOutlinedTextColor">#212121</color> <!-- Tekst na "outline" dugmetu je sada crn -->
+    <!-- Dugmad -->
+    <color name="buttonTextColor">#FFFFFF</color> <!-- Glavno dugme ostaje belo -->
+    <color name="buttonBackgroundColor">#607D8B</color> <!-- Mekša plavo-siva, fantazijski osećaj -->
+    <color name="buttonOutlinedTextColor">#C99A2E</color> <!-- Zlatna za outline dugmad -->
+
+
 
     <!-- stare, posle obrisati-->
     <color name="teal_200">#FF03DAC5</color>
