@@ -71,8 +71,18 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        FirebaseAuth auth = FirebaseAuth.getInstance();
-        currentUserId = (auth.getCurrentUser() != null) ? auth.getCurrentUser().getUid() : null;
+
+        // Dobavljanje ulogovanog korisnika iz UserRepository, isto kao u TaskPageFragment
+        user = UserRepository.getInstance(requireContext()).getLoggedInUser();
+
+        if (user == null) {
+            Toast.makeText(requireContext(), "Niste ulogovani.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (user != null) {
+            currentUserId = user.getUserId();
+        }
 
         battleRepository = new BattleRepository();
     }
@@ -85,7 +95,7 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
 
         View view = inflater.inflate(R.layout.fragment_boss_battle, container, false);
 
-        // bind UI
+        // --- Bind UI ---
         bossImageView = view.findViewById(R.id.bossImageView);
         treasureChestImage = view.findViewById(R.id.treasureChestImage);
         bossHpBar = view.findViewById(R.id.bossHpBar);
@@ -97,16 +107,30 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
         selectWeaponButton = view.findViewById(R.id.selectWeaponButton);
         activeWeaponIcon = view.findViewById(R.id.activeWeaponIcon);
 
+        // --- Hide neki elementi na startu ---
         coinsEarnedText.setVisibility(View.GONE);
         treasureChestImage.setVisibility(View.GONE);
         activeWeaponIcon.setVisibility(View.GONE);
 
-        if (currentUserId == null) {
+        // --- Provera da li je user ulogovan ---
+        if (user == null) {
             Toast.makeText(requireContext(), "Niste ulogovani.", Toast.LENGTH_SHORT).show();
             return view;
         }
 
-        // Load user
+        // --- Učitavanje User + Battle (izdvojeno u posebnu metodu) ---
+        loadUserAndBattle();
+
+        // --- Senzor za pokrete ---
+        sensorManager = (SensorManager) requireActivity().getSystemService(Context.SENSOR_SERVICE);
+        if (sensorManager != null) {
+            accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        }
+
+        return view;
+    }
+
+    private void loadUserAndBattle() {
         UserRepository.getInstance(requireContext()).getUserById(currentUserId, new UserRepository.UserCallback() {
             @Override
             public void onUserLoaded(User loadedUser) {
@@ -119,18 +143,18 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
                 user = loadedUser;
                 int bossLevel = loadBossLevelOrDefault(1);
 
-                battleRepository.getBattlesForCurrentUser(new OnCompleteListener<List<Battle>>() {
-                    @Override
-                    public void onComplete(@NonNull Task<List<Battle>> task) {
-                        if (task.isSuccessful() && !task.getResult().isEmpty()) {
-                            battle = task.getResult().get(0);
-                            restoreBossHpIfExists();
-                        } else {
-                            battle = new Battle(user, bossLevel, successRate);
-                            battleRepository.addBattle(battle, t -> {});
-                        }
-                        requireActivity().runOnUiThread(BossBattleFragment.this::setupUi);
+                battleRepository.getBattlesForCurrentUser(task -> {
+                    if (task.isSuccessful() && !task.getResult().isEmpty()) {
+                        battle = task.getResult().get(0);
+                        battle.setUser(user);
+                        restoreBossHpIfExists();
+                    } else {
+                        battle = new Battle(user, bossLevel, successRate);
+                        battleRepository.addBattle(battle, t -> {});
                     }
+
+                    // --- POSTAVI UI tek kada su user i battle učitani ---
+                    requireActivity().runOnUiThread(() -> setupUi());
                 });
             }
 
@@ -140,14 +164,14 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
                         Toast.makeText(requireContext(), "Error loading user: " + e.getMessage(), Toast.LENGTH_SHORT).show());
             }
         });
-
-        sensorManager = (SensorManager) requireActivity().getSystemService(Context.SENSOR_SERVICE);
-        if (sensorManager != null) accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-
-        return view;
     }
 
+
+
     private void setupUi() {
+
+        if (user == null || battle == null) return;
+
         int totalPP = calculateTotalPP(user);
         userPpBar.setMax(Math.max(totalPP, 1));
         userPpBar.setProgress(totalPP);
@@ -170,7 +194,7 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
 
 
     private void handleAttack() {
-        if (isAttackInProgress || battle == null || battle.isFinished()) return;
+        if (isAttackInProgress || battle == null || battle.isFinished() || user == null) return;
         isAttackInProgress = true;
 
         boolean hit = battle.attack();
@@ -393,6 +417,7 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
         Toast.makeText(requireContext(), sb.toString(), Toast.LENGTH_LONG).show();
 
     }
+
 
 
 

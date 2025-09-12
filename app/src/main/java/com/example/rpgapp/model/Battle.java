@@ -54,6 +54,13 @@ public class Battle {
     public void setUserId(String userId) {
         this.userId=userId;
     }
+    public void setUser(User user) {
+        this.user = user;
+        if (user != null) {
+            this.userId = user.getUserId();
+        }
+    }
+
     public Boss getBoss() { return boss; }
     public int getRemainingAttacks() { return remainingAttacks; }
     public boolean isFinished() { return finished; }
@@ -131,6 +138,8 @@ public class Battle {
     }
 
     private int calculateTotalPP() {
+        if (user == null) return 0; // zaštita
+
         int totalPP = user.getPowerPoints();
 
         if(activeItems != null) {
@@ -147,6 +156,7 @@ public class Battle {
 
         return totalPP;
     }
+
 
     // --- NAGRADE ---
     private void finalizeBattle() {
