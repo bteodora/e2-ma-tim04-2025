@@ -116,7 +116,6 @@ public class SpecialMissionViewModel extends AndroidViewModel {
                 });
     }
 
-
     public void completeTask(int position, String missionId, String userId) {
         SpecialMission mission = currentMission.getValue();
         if (mission == null) return;
@@ -127,29 +126,22 @@ public class SpecialMissionViewModel extends AndroidViewModel {
         MissionTask task = tasks.get(position);
         if (task == null) return;
 
-        // Pokušaj da inkrementiraš progres korisnika
         boolean incremented = task.incrementProgress(userId);
         if (!incremented) {
             Log.d("SpecialMissionVM", "Task max completions reached for user: " + userId);
             return;
         }
 
-        // Generiši taskId ako ne postoji
-        if (task.getTaskId() == null || task.getTaskId().isEmpty()) {
-            task.setTaskId(UUID.randomUUID().toString());
-        }
+        tasks.set(position, task);
+        mission.setTasks(tasks);
 
-        // Sačuvaj ažurirani task u Firestore
+        // ✅ Update celog dokumenta, ne podkolekcije
         FirebaseFirestore.getInstance()
                 .collection("specialMissions")
                 .document(missionId)
-                .collection("tasks")
-                .document(task.getTaskId())
-                .set(task)
+                .update("tasks", tasks)
                 .addOnSuccessListener(aVoid -> {
                     _taskCompletedLiveData.setValue(task);
-                    tasks.set(position, task);
-                    mission.setTasks(tasks);
                     currentMission.postValue(mission);
                     Log.d("SpecialMissionVM", "Task progress updated for user: " + userId);
                 })
@@ -157,6 +149,7 @@ public class SpecialMissionViewModel extends AndroidViewModel {
                     Log.e("SpecialMissionVM", "Error updating task progress", e);
                 });
     }
+
 
 
 
