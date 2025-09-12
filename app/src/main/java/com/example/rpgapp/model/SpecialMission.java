@@ -112,4 +112,33 @@ public class SpecialMission {
 
     public int getCompletedBossCount() { return completedBossCount; }
     public void incrementCompletedBossCount() { completedBossCount++; }
+
+
+
+    public SpecialMission deepCopy() {
+        SpecialMission copy = new SpecialMission();
+        copy.setMissionId(this.missionId);
+        copy.setAllianceId(this.allianceId);
+        copy.setMaxBossHP(this.maxBossHP);
+        copy.setBossHP(this.bossHP);
+        copy.setUserProgress(this.userProgress);
+        copy.setAllianceProgress(this.allianceProgress);
+        copy.setStartTime(this.startTime);
+        copy.setDurationMillis(this.durationMillis);
+        copy.setActive(this.isActive);
+        copy.completedBossCount = this.completedBossCount;
+
+        // Kopiranje liste zadataka
+        List<MissionTask> taskCopies = new ArrayList<>();
+        for (MissionTask task : this.tasks) {
+            taskCopies.add(task.deepCopy());
+        }
+        copy.setTasks(taskCopies);
+
+        // Kopiranje mape progres-a korisnika
+        copy.setUserTaskProgress(new HashMap<>(this.userTaskProgress));
+
+        return copy;
+    }
+
 }

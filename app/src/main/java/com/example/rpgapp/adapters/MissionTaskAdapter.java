@@ -59,13 +59,18 @@ public class MissionTaskAdapter extends RecyclerView.Adapter<MissionTaskAdapter.
             holder.buttonComplete.setText("Complete");
         }
 
+//        holder.buttonComplete.setOnClickListener(v -> {
+//            boolean incremented = task.incrementProgress(userId);
+//            if (incremented) {
+//                listener.onTaskCompleted(position);
+//            }
+//            notifyItemChanged(position);
+//        });
+
         holder.buttonComplete.setOnClickListener(v -> {
-            boolean incremented = task.incrementProgress(userId);
-            if (incremented) {
-                listener.onTaskCompleted(position);
-            }
-            notifyItemChanged(position);
+            listener.onTaskCompleted(position);
         });
+
     }
 
     @Override

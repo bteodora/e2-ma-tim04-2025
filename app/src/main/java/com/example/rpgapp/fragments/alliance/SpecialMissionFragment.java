@@ -104,18 +104,25 @@ public class SpecialMissionFragment extends Fragment {
         recyclerViewMembersProgress.setLayoutManager(new LinearLayoutManager(getContext()));
         recyclerViewMembersProgress.setAdapter(memberProgressAdapter);
 
+//        taskAdapter = new MissionTaskAdapter(position -> {
+//            SpecialMission mission = viewModel.getCurrentMission().getValue();
+//            if (mission != null && currentUserId != null && mission.getTasks() != null
+//                    && position < mission.getTasks().size()) {
+//                MissionTask task = mission.getTasks().get(position);
+//                if (task.incrementProgress(currentUserId)) {
+//                    int hpReduction = viewModel.calculateHpReduction(task);
+//                    viewModel.completeTask(position, hpReduction, 1, currentUserId);
+//                    memberProgressAdapter.updateProgress(mission.getUserTaskProgress());
+//                }
+//            }
+//        }, currentUserId);
         taskAdapter = new MissionTaskAdapter(position -> {
             SpecialMission mission = viewModel.getCurrentMission().getValue();
-            if (mission != null && currentUserId != null && mission.getTasks() != null
-                    && position < mission.getTasks().size()) {
-                MissionTask task = mission.getTasks().get(position);
-                if (task.incrementProgress(currentUserId)) {
-                    int hpReduction = viewModel.calculateHpReduction(task);
-                    viewModel.completeTask(position, hpReduction, 1, currentUserId);
-                    memberProgressAdapter.updateProgress(mission.getUserTaskProgress());
-                }
+            if (mission != null && currentUserId != null) {
+                viewModel.completeTask(position,  mission.getMissionId(), currentUserId);
             }
         }, currentUserId);
+
         recyclerViewTasks.setLayoutManager(new LinearLayoutManager(getContext()));
         recyclerViewTasks.setAdapter(taskAdapter);
     }
@@ -147,7 +154,7 @@ public class SpecialMissionFragment extends Fragment {
             });
 
             allianceViewModel.getCurrentAlliance().observe(getViewLifecycleOwner(), alliance -> {
-                if (alliance != null) viewModel.loadMission(alliance.getAllianceId());
+                if (alliance != null) viewModel.loadMission(alliance.getAllianceId(), 1000);
             });
         });
     }
