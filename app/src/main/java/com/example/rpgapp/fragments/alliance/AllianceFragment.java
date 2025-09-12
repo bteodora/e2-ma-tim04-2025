@@ -53,7 +53,9 @@ public class AllianceFragment extends Fragment {
                 case 1:
                     tab.setText("Chat");
                     break;
-                    // TODO dodati i za misiju
+                case 2:
+                    tab.setText("Special Missions"); // novi tab za specijalne misije
+                    break;
             }
         }).attach();
 

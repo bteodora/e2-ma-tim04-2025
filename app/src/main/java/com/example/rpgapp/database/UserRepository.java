@@ -596,4 +596,40 @@ public class UserRepository {
         }
     }
 
+    public void updateUserReward(String userId, Map<String, Object> reward) {
+        new Thread(() -> {
+            try {
+                SQLiteDatabase db = dbHelper.getWritableDatabase();
+                // Na primer, povuci trenutne vrednosti iz baze
+                Cursor cursor = db.query(SQLiteHelper.TABLE_USERS, null,
+                        SQLiteHelper.COLUMN_USER_ID + "=?", new String[]{userId}, null, null, null);
+
+                if (cursor != null && cursor.moveToFirst()) {
+                    int potions = cursor.getInt(cursor.getColumnIndexOrThrow("potions"));
+                    int clothes = cursor.getInt(cursor.getColumnIndexOrThrow("clothes"));
+                    int coins = cursor.getInt(cursor.getColumnIndexOrThrow("coins"));
+                    int badges = cursor.getInt(cursor.getColumnIndexOrThrow("badges"));
+
+                    // Dodavanje nagrada
+                    potions += (int) reward.get("potions");
+                    clothes += (int) reward.get("clothes");
+                    coins += (int) reward.get("coins");
+                    badges += (int) reward.get("badge");
+
+                    ContentValues cv = new ContentValues();
+                    cv.put("potions", potions);
+                    cv.put("clothes", clothes);
+                    cv.put("coins", coins);
+                    cv.put("badges", badges);
+
+                    db.update(SQLiteHelper.TABLE_USERS, cv,
+                            SQLiteHelper.COLUMN_USER_ID + "=?", new String[]{userId});
+                    cursor.close();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
+
 }
