@@ -116,39 +116,72 @@ public class SpecialMissionViewModel extends AndroidViewModel {
                 });
     }
 
-    public void completeTask(int position, String missionId, String userId) {
+    public void completeTask(int taskIndex, String missionId, String userId) {
         SpecialMission mission = currentMission.getValue();
-        if (mission == null) return;
+        if (mission == null || userId == null) return;
 
+        // 1. Uzmemo task
         List<MissionTask> tasks = mission.getTasks();
-        if (tasks == null || position >= tasks.size()) return;
+        if (tasks == null || taskIndex >= tasks.size()) return;
 
-        MissionTask task = tasks.get(position);
+        MissionTask task = tasks.get(taskIndex);
         if (task == null) return;
 
-        boolean incremented = task.incrementProgress(userId);
-        if (!incremented) {
+        // 2. Inkrement progres
+        boolean valid = task.incrementProgress(userId);
+        if (!valid) {
             Log.d("SpecialMissionVM", "Task max completions reached for user: " + userId);
             return;
         }
 
-        tasks.set(position, task);
+        // 3. Izračunaj koliko HP-a boss gubi
+        int hpReduction = task.getHpReductionPerCompletion();
+
+        // 4. Update misije
+        mission.reduceBossHP(hpReduction);
+        mission.increaseUserProgress(userId, 1);
+        mission.increaseAllianceProgress(hpReduction);
+
+        // 5. Snimi nazad izmenjeni task u listu
+        tasks.set(taskIndex, task);
         mission.setTasks(tasks);
 
-        // ✅ Update celog dokumenta, ne podkolekcije
+        // 6. Proveri da li je boss mrtav
+        if (mission.getBossHP() <= 0) {
+            mission.endMission();
+            mission.setActive(false);
+        }
+
+        // 7. Snimi sve izmene u Firestore
         FirebaseFirestore.getInstance()
                 .collection("specialMissions")
                 .document(missionId)
-                .update("tasks", tasks)
+                .set(mission)  // snima celu misiju sa svim poljima
                 .addOnSuccessListener(aVoid -> {
                     _taskCompletedLiveData.setValue(task);
                     currentMission.postValue(mission);
-                    Log.d("SpecialMissionVM", "Task progress updated for user: " + userId);
+                    Log.d("SpecialMissionVM", "Task + mission progress updated for user: " + userId);
                 })
                 .addOnFailureListener(e -> {
-                    Log.e("SpecialMissionVM", "Error updating task progress", e);
+                    Log.e("SpecialMissionVM", "Error updating mission", e);
                 });
     }
+
+
+    // ✅ Update celog dokumenta, ne podkolekcije
+//        FirebaseFirestore.getInstance()
+//                .collection("specialMissions")
+//                .document(missionId)
+//                .update("tasks", tasks)
+//                .addOnSuccessListener(aVoid -> {
+//                    _taskCompletedLiveData.setValue(task);
+//                    currentMission.postValue(mission);
+//                    Log.d("SpecialMissionVM", "Task progress updated for user: " + userId);
+//                })
+//                .addOnFailureListener(e -> {
+//                    Log.e("SpecialMissionVM", "Error updating task progress", e);
+//                });
+
 
 
 
