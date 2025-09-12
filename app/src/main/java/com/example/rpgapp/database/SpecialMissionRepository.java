@@ -6,11 +6,14 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Handler;
 import android.os.Looper;
+
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
+import com.example.rpgapp.model.Alliance;
 import com.example.rpgapp.model.MissionTask;
 import com.example.rpgapp.model.SpecialMission;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -164,5 +167,53 @@ public class SpecialMissionRepository {
         return liveData;
     }
 
+    // --------------------- FIRESTORE METODE ---------------------
+    public LiveData<Boolean> hasActiveMission(String allianceId) {
+        MutableLiveData<Boolean> result = new MutableLiveData<>();
 
+        FirebaseFirestore.getInstance()
+                .collection("alliances")
+                .document(allianceId)
+                .get()
+                .addOnSuccessListener(doc -> {
+                    if (doc.exists()) {
+                        Boolean started = doc.getBoolean("missionStarted");
+                        result.setValue(started != null && started);
+                    } else {
+                        result.setValue(false);
+                    }
+                })
+                .addOnFailureListener(e -> result.setValue(false));
+
+        return result;
+    }
+
+    public void startMission(Alliance alliance) {
+        String allianceId = alliance.getAllianceId();
+        SpecialMission mission = new SpecialMission(allianceId);
+
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        // upiši misiju
+        db.collection("special_missions")
+                .document(allianceId)
+                .set(mission)
+                .addOnSuccessListener(aVoid -> {
+                    // obeleži da je savez zauzet
+                    db.collection("alliances")
+                            .document(allianceId)
+                            .update("missionStarted", true);
+                });
+    }
+
+    public void forceEndMission(String allianceId) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("special_missions")
+                .document(allianceId)
+                .update("isActive", false);
+
+        db.collection("alliances")
+                .document(allianceId)
+                .update("missionStarted", false);
+    }
 }

@@ -31,6 +31,10 @@ public class SpecialMission {
         generateTasks();
     }
 
+    public SpecialMission(String allianceId) {
+        this.allianceId=allianceId;
+    }
+
     private void generateTasks() {
         tasks.add(new MissionTask("Kupovina u prodavnici", 2, 5*14, 2));
         tasks.add(new MissionTask("Udarac u regularnoj borbi", 2, 10*14, 10));
@@ -49,7 +53,28 @@ public class SpecialMission {
     }
 
     public void increaseAllianceProgress(int amount) { allianceProgress += amount; }
-    public void endMission() { isActive = false; }
+    public void endMission() {
+        // Proveri razloge završetka
+        long elapsed = System.currentTimeMillis() - startTime;
+
+        if (bossHP <= 0) {
+            // Boss je pobijeđen
+            completedBossCount++;
+            System.out.println("Misija završena – boss pobijeđen!");
+        } else if (elapsed >= durationMillis) {
+            // Isteklo vreme
+            System.out.println("Misija završena – isteklo vreme!");
+        } else {
+            // Ručno prekinuta
+            System.out.println("Misija završena – ručno prekinuta!");
+        }
+
+        // Na kraju je svakako neaktivna
+        this.isActive = false;
+
+        // Ovde možeš dodati logiku za nagrade ili upis u bazu
+    }
+
 
     // ---------- GETTERS / SETTERS ----------
     public String getMissionId() { return missionId; }

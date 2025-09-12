@@ -15,7 +15,7 @@ public class MissionTask {
     private Map<String, Integer> userTotalProgress = new HashMap<>();
     // userId -> (datum -> dnevni progres)
     private Map<String, Map<String, Integer>> userDailyProgress = new HashMap<>();
-
+    public MissionTask(){}
     public MissionTask(String name, int hpReduction, int maxCompletions, int dailyMax) {
         this.name = name;
         this.hpReductionPerCompletion = hpReduction;
@@ -79,4 +79,12 @@ public class MissionTask {
     public Map<String, Map<String, Integer>> getUserDailyProgress() {
         return userDailyProgress;
     }
+
+    public void setName(String name) { this.name = name; }
+    public void setHpReductionPerCompletion(int hpReductionPerCompletion) { this.hpReductionPerCompletion = hpReductionPerCompletion; }
+    public void setMaxCompletions(int maxCompletions) { this.maxCompletions = maxCompletions; }
+    public void setDailyMax(int dailyMax) { this.dailyMax = dailyMax; }
+    public void setUserTotalProgress(Map<String, Integer> userTotalProgress) { this.userTotalProgress = userTotalProgress; }
+    public void setUserDailyProgress(Map<String, Map<String, Integer>> userDailyProgress) { this.userDailyProgress = userDailyProgress; }
+
 }
