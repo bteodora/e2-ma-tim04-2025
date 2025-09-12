@@ -55,7 +55,7 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
 
     private ImageView bossImageView, treasureChestImage, activeWeaponIcon;
     private ProgressBar bossHpBar, userPpBar;
-    private TextView successRateText, remainingAttacksText, coinsEarnedText;
+    private TextView successRateText, remainingAttacksText, coinsEarnedText, bossLevelText, bossHpText;
     private Button attackButton, selectWeaponButton;
 
     private SensorManager sensorManager;
@@ -106,6 +106,8 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
         attackButton = view.findViewById(R.id.attackButton);
         selectWeaponButton = view.findViewById(R.id.selectWeaponButton);
         activeWeaponIcon = view.findViewById(R.id.activeWeaponIcon);
+        bossLevelText = view.findViewById(R.id.bossLevelText);
+        bossHpText = view.findViewById(R.id.bossHpText);
 
         // --- Hide neki elementi na startu ---
         coinsEarnedText.setVisibility(View.GONE);
@@ -129,6 +131,8 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
 
         return view;
     }
+
+
 
     private void loadUserAndBattle() {
         UserRepository.getInstance(requireContext()).getUserById(currentUserId, new UserRepository.UserCallback() {
@@ -179,6 +183,10 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
         bossHpBar.setMax(battle.getBoss().getMaxHp());
         bossHpBar.setProgress(battle.getBoss().getCurrentHp());
 
+        bossLevelText.setText("Level: " + battle.getBoss().getLevel());
+        bossHpText.setText("HP: " + battle.getBoss().getCurrentHp() + "/" + battle.getBoss().getMaxHp());
+
+
         remainingAttacksText.setText("Remaining attacks: " + battle.getRemainingAttacks() + "/5");
 
         attackButton.setOnClickListener(v -> handleAttack());
@@ -207,6 +215,9 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
         }
 
         bossHpBar.setProgress(battle.getBoss().getCurrentHp());
+
+        bossHpText.setText("HP: " + battle.getBoss().getCurrentHp() + "/" + battle.getBoss().getMaxHp());
+
         remainingAttacksText.setText("Remaining attacks: " + battle.getRemainingAttacks() + "/5");
 
         battleRepository.updateBattle(battle, t -> {});
@@ -220,11 +231,54 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
         treasureChestImage.setVisibility(View.VISIBLE);
         coinsEarnedText.setVisibility(View.VISIBLE);
 
+        if (battle == null || user == null) return;
+
+        // --- Provera da li je pobedio ---
+        boolean userWon = battle.getBoss().isDefeated();
+
+        // Prikaz poruke
+        String message = userWon ? "Pobedio si!" : "Izgubio si!";
+        Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
+
+        // --- Potroši temporary opremu ---
         consumeTemporaryEquipment(user);
+
+        // --- Dodeli nagrade ako je pobedio ili delimično ako nije ---
         giveReward();
 
-        battleRepository.deleteBattle(battle.getBattleId(), t -> {});
+        // --- Sačuvaj borbu, ali je ne briši ---
+       // battle.setFinished(true); // opcionalno, možeš ga setovati da znaš da je završena
+        battleRepository.updateBattle(battle, t -> {});
+
+        // --- Napredovanje bossa ---
+        if (userWon) {
+            int nextLevel = battle.getBoss().getLevel() + 1;
+            saveBossLevel(nextLevel);
+        } else {
+            // Ako korisnik nije pobedio, HP bossa se pamti za sledeći pokušaj
+            persistBossState(battle.getBoss().getLevel(), battle.getBoss().getCurrentHp());
+        }
+
+        // --- Ažuriraj korisnika ---
+        UserRepository.getInstance(requireContext()).updateUser(user);
     }
+
+
+//    private void showResults() {
+//        attackButton.setEnabled(false);
+//        treasureChestImage.setVisibility(View.VISIBLE);
+//        coinsEarnedText.setVisibility(View.VISIBLE);
+//
+//        consumeTemporaryEquipment(user);
+//        giveReward();
+//
+//        //battleRepository.deleteBattle(battle.getBattleId(), t -> {});
+//
+//        // TODO: AKOOOO TI TREBA DA ZNAS ZNAS DA LI JE ZAVRSENA BORBA zbog istorije
+//
+//       // battle.setFinished(true); <-- setujes na true i dodas polje u battle
+//        battleRepository.updateBattle(battle, t -> {});
+//    }
 
     private void giveReward() {
         if (user == null || battle == null) return;

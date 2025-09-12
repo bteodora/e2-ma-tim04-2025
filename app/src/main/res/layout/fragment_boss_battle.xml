@@ -16,7 +16,33 @@
         android:src="@drawable/boss"
         android:contentDescription="Boss Image" />
 
+    <!-- Boss level -->
+
+    <!-- Boss HP text -->
+
+
     <!-- Boss HP bar -->
+
+    <TextView
+        android:id="@+id/bossLevelText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/bossHpBar"
+        android:layout_marginBottom="46dp"
+        android:text="Level: 1"
+        android:textColor="@android:color/black"
+        android:textSize="16sp" />
+
+    <TextView
+        android:id="@+id/bossHpText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/bossHpBar"
+        android:layout_marginTop="-66dp"
+        android:text="HP: 100/100"
+        android:textColor="@android:color/black"
+        android:textSize="16sp" />
+
     <ProgressBar
         android:id="@+id/bossHpBar"
         style="@android:style/Widget.ProgressBar.Horizontal"
