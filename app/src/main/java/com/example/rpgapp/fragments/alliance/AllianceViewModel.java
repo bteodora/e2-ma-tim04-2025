@@ -116,19 +116,6 @@ public class AllianceViewModel extends AndroidViewModel {
             });
         }
     }
-    public void updateAlliance(Alliance alliance) {
-        allianceRepository.updateAlliance(alliance, new UserRepository.RequestCallback() {
-            @Override
-            public void onSuccess() {
-                actionStatus.postValue(true);
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                actionStatus.postValue(false);
-            }
-        });
-    }
 
     public LiveData<Boolean> isMissionStarted() {
         return Transformations.map(getCurrentAlliance(), alliance ->

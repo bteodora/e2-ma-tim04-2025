@@ -13,7 +13,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.rpgapp.R;
@@ -27,10 +26,8 @@ public class AllianceInfoFragment extends Fragment {
     private TextView allianceName, leaderName;
     private RecyclerView recyclerViewMembers;
     private UserAdapter membersAdapter;
-    private Button buttonDisband, buttonLeave, buttonSpecialMission;
+    private Button buttonDisband, buttonLeave;
     private User currentUser;
-    private SpecialMissionViewModel specialMissionViewModel;
-
 
     @Nullable
     @Override
@@ -42,16 +39,14 @@ public class AllianceInfoFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        viewModel = new ViewModelProvider(requireActivity()).get(AllianceViewModel.class);
-        specialMissionViewModel = new ViewModelProvider(requireActivity()).get(SpecialMissionViewModel.class);
-
-        // Inicijalizacija view-a
         allianceName = view.findViewById(R.id.textViewAllianceName);
         leaderName = view.findViewById(R.id.textViewLeaderName);
         recyclerViewMembers = view.findViewById(R.id.recyclerViewMembers);
         buttonDisband = view.findViewById(R.id.buttonDisbandAlliance);
         buttonLeave = view.findViewById(R.id.buttonLeaveAlliance);
-        buttonSpecialMission = view.findViewById(R.id.buttonSpecialMission);
+
+        // ✅ Deljeni ViewModel sa parent fragmentom ili Activity
+        viewModel = new ViewModelProvider(requireActivity()).get(AllianceViewModel.class);
 
         setupRecyclerView();
         setupClickListeners();
@@ -69,57 +64,28 @@ public class AllianceInfoFragment extends Fragment {
                 .setMessage("Are you sure you want to disband this alliance? This action cannot be undone.")
                 .setPositiveButton("Disband", (dialog, which) -> viewModel.disbandAlliance())
                 .setNegativeButton("Cancel", null)
-                .show());
+                .show()
+        );
 
         buttonLeave.setOnClickListener(v -> new AlertDialog.Builder(getContext())
                 .setTitle("Leave Alliance")
                 .setMessage("Are you sure you want to leave this alliance?")
                 .setPositiveButton("Leave", (dialog, which) -> viewModel.leaveAlliance())
                 .setNegativeButton("Cancel", null)
-                .show());
-
-        buttonSpecialMission.setOnClickListener(v -> {
-            Alliance alliance = viewModel.getCurrentAlliance().getValue();
-            User user = viewModel.getLoggedInUser().getValue();
-
-            if (alliance != null && user != null) {
-                boolean isLeader = user.getUserId().equals(alliance.getLeaderId());
-
-                // Provera aktivne misije preko SpecialMissionViewModel
-                specialMissionViewModel.hasActiveMission(alliance.getAllianceId())
-                        .observe(getViewLifecycleOwner(), hasActive -> {
-                            if (Boolean.FALSE.equals(hasActive)) {
-                                // Ako nema aktivne misije i korisnik je lider
-                                if (isLeader) {
-                                    specialMissionViewModel.startSpecialMission(alliance);
-                                    Toast.makeText(getContext(), "Počela je specijalna misija!", Toast.LENGTH_SHORT).show();
-                                }
-
-                                // Navigacija na fragment specijalne misije
-                                Navigation.findNavController(v)
-                                        .navigate(R.id.action_allianceInfo_to_specialMission);
-
-                            } else {
-                                // Ako postoji aktivna misija
-                                Toast.makeText(getContext(), "Savez već ima aktivnu misiju!", Toast.LENGTH_SHORT).show();
-                            }
-                        });
-            }
-        });
-
-
+                .show()
+        );
     }
 
     private void observeViewModel() {
         viewModel.getLoggedInUser().observe(getViewLifecycleOwner(), user -> {
-            this.currentUser = user;
+            currentUser = user;
             updateButtonVisibility();
         });
 
         viewModel.getCurrentAlliance().observe(getViewLifecycleOwner(), alliance -> {
             if (alliance != null) {
                 allianceName.setText(alliance.getName());
-                leaderName.setText("Leader: ".concat(alliance.getLeaderUsername()));
+                leaderName.setText("Leader: " + alliance.getLeaderUsername());
                 updateButtonVisibility();
             }
         });
@@ -139,20 +105,18 @@ public class AllianceInfoFragment extends Fragment {
     }
 
     private void updateButtonVisibility() {
-        Alliance currentAlliance = viewModel.getCurrentAlliance().getValue();
+        Alliance alliance = viewModel.getCurrentAlliance().getValue();
 
-        if (currentUser == null || currentAlliance == null) {
+        if (currentUser == null || alliance == null) {
             buttonDisband.setVisibility(View.GONE);
             buttonLeave.setVisibility(View.GONE);
-            buttonSpecialMission.setVisibility(View.GONE);
             return;
         }
 
-        boolean isLeader = currentUser.getUserId().equals(currentAlliance.getLeaderId());
-        boolean isMissionStarted = currentAlliance.isMissionStarted();
+        boolean isLeader = currentUser.getUserId().equals(alliance.getLeaderId());
+        boolean isMissionStarted = alliance.isMissionStarted();
 
         buttonDisband.setVisibility(isLeader && !isMissionStarted ? View.VISIBLE : View.GONE);
         buttonLeave.setVisibility(!isLeader && !isMissionStarted ? View.VISIBLE : View.GONE);
-        buttonSpecialMission.setVisibility((isLeader || isMissionStarted) ? View.VISIBLE : View.GONE);
     }
 }

@@ -9,6 +9,7 @@ import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
+
 import com.example.rpgapp.database.SpecialMissionRepository;
 import com.example.rpgapp.database.UserRepository;
 import com.example.rpgapp.model.Alliance;
@@ -208,6 +209,7 @@ public class SpecialMissionViewModel extends AndroidViewModel {
             }
         });
     }
+
 
 
     private int calculateNextBossRewardCoins(int previousBossLevel) {
