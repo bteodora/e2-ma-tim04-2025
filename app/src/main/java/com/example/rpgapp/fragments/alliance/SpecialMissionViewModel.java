@@ -63,30 +63,6 @@ public class SpecialMissionViewModel extends AndroidViewModel {
         }, delayMillis);
     }
 
-//public void loadMission(String allianceId) {
-//    firestore.collection("specialMissions")
-//            .whereEqualTo("allianceId", allianceId)
-//            .addSnapshotListener((snapshot, e) -> {
-//                if (isUpdatingLocally) return;
-//                if (e != null) {
-//                    Log.e("SpecialMissionVM", "Firestore error", e);
-//                    Toast.makeText(getApplication(), "Firestore error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-//                    return;
-//                }
-//
-//                if (snapshot == null || snapshot.isEmpty()) {
-//                    Log.d("SpecialMissionVM", "No mission found for allianceId: " + allianceId);
-//                    currentMission.postValue(null); // UI zna da nema aktivne misije
-//                    return;
-//                }
-//
-//                SpecialMission mission = snapshot.getDocuments().get(0).toObject(SpecialMission.class);
-//                Log.d("SpecialMissionVM", "Mission loaded: " + mission);
-//                currentMission.postValue(mission);
-//            });
-//}
-
-
 
     public void startSpecialMission(Alliance alliance) {
         if (alliance == null || alliance.getMemberIds() == null) return;
@@ -139,7 +115,7 @@ public class SpecialMissionViewModel extends AndroidViewModel {
 
         // 4. Update misije
         mission.reduceBossHP(hpReduction);
-        mission.increaseUserProgress(userId, 1);
+        mission.increaseUserProgress(userId, hpReduction); //bilo 1
         mission.increaseAllianceProgress(hpReduction);
 
         // 5. Snimi nazad izmenjeni task u listu
@@ -166,25 +142,6 @@ public class SpecialMissionViewModel extends AndroidViewModel {
                     Log.e("SpecialMissionVM", "Error updating mission", e);
                 });
     }
-
-
-    // ✅ Update celog dokumenta, ne podkolekcije
-//        FirebaseFirestore.getInstance()
-//                .collection("specialMissions")
-//                .document(missionId)
-//                .update("tasks", tasks)
-//                .addOnSuccessListener(aVoid -> {
-//                    _taskCompletedLiveData.setValue(task);
-//                    currentMission.postValue(mission);
-//                    Log.d("SpecialMissionVM", "Task progress updated for user: " + userId);
-//                })
-//                .addOnFailureListener(e -> {
-//                    Log.e("SpecialMissionVM", "Error updating task progress", e);
-//                });
-
-
-
-
 
 
 
