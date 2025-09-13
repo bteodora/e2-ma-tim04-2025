@@ -440,37 +440,43 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
         // 1. Pretvori mapu u listu
         List<UserWeapon> weaponsList = new ArrayList<>(user.getUserWeapons().values());
 
-        // 2. Napravi adapter za prikaz u listi sa slikom i imenom
-        WeaponListAdapter adapter = new WeaponListAdapter(requireContext(), weaponsList);
+        // 2. Napravi niz imena oružja za prikaz u AlertDialog-u
+        String[] weaponNames = new String[weaponsList.size()];
+        for (int i = 0; i < weaponsList.size(); i++) {
+            weaponNames[i] = weaponsList.get(i).getName();
+        }
 
         // 3. Kreiraj AlertDialog
         androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(requireContext());
         builder.setTitle("Izaberite oružje");
-        builder.setAdapter(adapter, (dialog, which) -> {
+
+        builder.setItems(weaponNames, (dialog, which) -> {
             UserWeapon selectedWeapon = weaponsList.get(which);
 
-            // Postavi aktivno oružje u borbi
-            if (battle != null) battle.setActiveWeapon(selectedWeapon);
+            // --- Postavi aktivno oružje ---
+            if (battle != null) {
+                battle.setActiveWeapon(selectedWeapon);
 
-            // Prikazi ikonu izabranog oružja
+                // --- Update user PP bar sa bonusom od oružja ---
+                int totalPP = calculateTotalPP(user);
+                userPpBar.setMax(Math.max(totalPP, 1));
+                userPpBar.setProgress(totalPP);
+            }
+
+            // --- Prikazi ikonu izabranog oružja ---
             activeWeaponIcon.setVisibility(View.VISIBLE);
             activeWeaponIcon.setImageResource(selectedWeapon.getImageResourceId());
 
             Toast.makeText(requireContext(), "Aktivirano: " + selectedWeapon.getName(), Toast.LENGTH_SHORT).show();
         });
 
+        // 4. Dodaj Cancel dugme
         builder.setNegativeButton("Cancel", null);
+
+        // 5. Prikazi dialog
         builder.show();
-
-
-        // Debug Toast: prikaži sva korisnikova oružja
-        StringBuilder sb = new StringBuilder("Tvoja oružja:\n");
-        for (UserWeapon w : weaponsList) {
-            sb.append(w.getName()).append(" (ImageId: ").append(w.getImageResourceId()).append(")\n");
-        }
-        Toast.makeText(requireContext(), sb.toString(), Toast.LENGTH_LONG).show();
-
     }
+
 
 
 

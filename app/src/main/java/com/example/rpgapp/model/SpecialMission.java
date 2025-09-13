@@ -35,14 +35,24 @@ public class SpecialMission {
         this.allianceId=allianceId;
     }
 
+//    private void generateTasks() {
+//        tasks.add(new MissionTask("Kupovina u prodavnici", 2, 5*14, 2));
+//        tasks.add(new MissionTask("Udarac u regularnoj borbi", 2, 10*14, 10));
+//        tasks.add(new MissionTask("Laki/Normalni/Važni zadaci", 1, 10*14, 10));
+//        tasks.add(new MissionTask("Ostali zadaci", 4, 6*14, 6));
+//        tasks.add(new MissionTask("Bez nerešenih zadataka", 10, 1*14, 1));
+//        tasks.add(new MissionTask("Poruka u savezu", 4, 14*14, 4));
+//    }
+
     private void generateTasks() {
-        tasks.add(new MissionTask("Kupovina u prodavnici", 2, 5*14, 2));
-        tasks.add(new MissionTask("Udarac u regularnoj borbi", 2, 10*14, 10));
-        tasks.add(new MissionTask("Laki/Normalni/Važni zadaci", 1, 10*14, 10));
-        tasks.add(new MissionTask("Ostali zadaci", 4, 6*14, 6));
-        tasks.add(new MissionTask("Bez nerešenih zadataka", 10, 1*14, 1));
-        tasks.add(new MissionTask("Poruka u savezu", 4, 14*14, 4));
+        tasks.add(new MissionTask("Kupovina u prodavnici", 2, 5, 5));                // max 5
+        tasks.add(new MissionTask("Udarac u regularnoj borbi", 2, 10, 10));          // max 10
+        tasks.add(new MissionTask("Laki/Normalni/Važni zadaci", 1, 10, 10));         // max 10
+        tasks.add(new MissionTask("Ostali zadaci", 4, 6, 6));                        // max 6
+        tasks.add(new MissionTask("Bez nerešenih zadataka", 10, 1, 1));              // max 1
+        tasks.add(new MissionTask("Poruka u savezu", 4, 14, 1));                     // max 1 po danu → ukupno 14 za dve nedelje
     }
+
 
     public void reduceBossHP(int amount) { bossHP = Math.max(0, bossHP - amount); }
     public void increaseUserProgress(String userId, int amount) {

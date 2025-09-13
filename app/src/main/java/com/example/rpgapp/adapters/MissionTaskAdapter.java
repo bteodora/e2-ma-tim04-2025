@@ -48,7 +48,7 @@ public class MissionTaskAdapter extends RecyclerView.Adapter<MissionTaskAdapter.
 
         // Prikaz ukupnog i današnjeg napretka
         String progressText = task.getCurrentCompletions(userId) + "/" + task.getMaxCompletions()
-                + " (danas " + task.getTodayProgress(userId) + "/" + task.getDailyMax() + ")";
+                + " (max " + task.getTodayProgress(userId) + "/" + task.getDailyMax() + ")";
         holder.textViewProgress.setText(progressText);
 
         if (task.isCompleted(userId) || task.getTodayProgress(userId) >= task.getDailyMax()) {
