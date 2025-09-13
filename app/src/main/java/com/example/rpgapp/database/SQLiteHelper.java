@@ -47,6 +47,28 @@ public class SQLiteHelper extends SQLiteOpenHelper {
     public static final String COLUMN_ALLIANCE_INVITES_JSON = "alliance_invites_json";
     public static final String COLUMN_FCM_TOKEN = "fcm_token";
 
+    private static final String DB_CREATE_USERS = "create table "
+            + TABLE_USERS + "("
+            + COLUMN_USER_ID + " text primary key, "
+            + COLUMN_USERNAME + " text not null, "
+            + COLUMN_AVATAR_ID + " text, "
+            + COLUMN_LEVEL + " integer, "
+            + COLUMN_TITLE_USER + " text, "
+            + COLUMN_XP + " integer, "
+            + COLUMN_POWER_POINTS + " integer, "
+            + COLUMN_COINS + " integer, "
+            + COLUMN_REGISTRATION_TIMESTAMP + " integer, "
+            + COLUMN_BADGES_JSON + " text, "
+            + COLUMN_EQUIPPED_ITEMS_JSON + " text, "
+            + COLUMN_WEAPONS_JSON + " text,"
+            + COLUMN_ITEMS_JSON + " text,"
+            + COLUMN_FRIENDS_JSON + " text,"
+            + COLUMN_FRIEND_REQUESTS_JSON+ " text,"
+            + COLUMN_ALLIANCE_ID + " text,"
+            + COLUMN_ALLIANCE_INVITES_JSON + " text,"
+            + COLUMN_FCM_TOKEN + " text"
+            + ")";
+
     //--------------- ALLIANCE ---------------------
     public static final String TABLE_ALLIANCES = "ALLIANCES";
     public static final String COLUMN_ALLIANCE_PK_ID = "_id";
@@ -72,28 +94,6 @@ public class SQLiteHelper extends SQLiteOpenHelper {
             + COLUMN_CREATED_AT + " integer"
             + ")";
 
-    private static final String DB_CREATE_USERS = "create table "
-            + TABLE_USERS + "("
-            + COLUMN_USER_ID + " text primary key, "
-            + COLUMN_USERNAME + " text not null, "
-            + COLUMN_AVATAR_ID + " text, "
-            + COLUMN_LEVEL + " integer, "
-            + COLUMN_TITLE_USER + " text, "
-            + COLUMN_XP + " integer, "
-            + COLUMN_POWER_POINTS + " integer, "
-            + COLUMN_COINS + " integer, "
-            + COLUMN_REGISTRATION_TIMESTAMP + " integer, "
-            + COLUMN_BADGES_JSON + " text, "
-            + COLUMN_EQUIPPED_ITEMS_JSON + " text, "
-            + COLUMN_WEAPONS_JSON + " text,"
-            + COLUMN_ITEMS_JSON + " text,"
-            + COLUMN_FRIENDS_JSON + " text,"
-            + COLUMN_FRIEND_REQUESTS_JSON+ " text,"
-            + COLUMN_ALLIANCE_ID + " text,"
-            + COLUMN_ALLIANCE_INVITES_JSON + " text,"
-            + COLUMN_FCM_TOKEN + " text"
-            + ")";
-
     //--------------- TASK ---------------------
     public static final String TABLE_TASKS = "TASKS";
     public static final String COLUMN_TASK_ID = "task_id";
@@ -115,8 +115,6 @@ public class SQLiteHelper extends SQLiteOpenHelper {
     public static final String COLUMN_RECURRING = "recurring";
     public static final String COLUMN_RECURRING_ID = "recurring_id";
     public static final String COLUMN_TASK_USER_ID = "user_id";
-    public static final String COLUMN_CATEGORY_USER_ID = "user_id";
-
 
     private static final String DB_CREATE_TASKS = "CREATE TABLE " + TABLE_TASKS + "("
             + COLUMN_TASK_ID + " TEXT PRIMARY KEY, "
@@ -140,12 +138,13 @@ public class SQLiteHelper extends SQLiteOpenHelper {
             + COLUMN_TASK_USER_ID + " TEXT, "
             + "FOREIGN KEY(" + COLUMN_TASK_USER_ID + ") REFERENCES " + TABLE_USERS + "(" + COLUMN_USER_ID + ")"
             + ")";
-    //--------------- CATEGORY ---------------------
 
+    //--------------- CATEGORY ---------------------
     public static final String TABLE_CATEGORIES = "CATEGORIES";
     public static final String COLUMN_CATEGORY_ID = "category_id";
     public static final String COLUMN_CATEGORY_NAME = "name";
     public static final String COLUMN_CATEGORY_COLOR = "color";
+    public static final String COLUMN_CATEGORY_USER_ID = "user_id";
 
     private static final String DB_CREATE_CATEGORIES = "CREATE TABLE " + TABLE_CATEGORIES + "("
             + COLUMN_CATEGORY_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
@@ -155,22 +154,6 @@ public class SQLiteHelper extends SQLiteOpenHelper {
             + "FOREIGN KEY(" + COLUMN_CATEGORY_USER_ID + ") REFERENCES " + TABLE_USERS + "(" + COLUMN_USER_ID + "), "
             + "UNIQUE(" + COLUMN_CATEGORY_USER_ID + ", " + COLUMN_CATEGORY_COLOR + ")"
             + ")";
-
-    //--------------- SPECIAL MISSION ---------------------
-    public static final String TABLE_SPECIAL_MISSIONS = "SPECIAL_MISSIONS";
-    public static final String COLUMN_MISSION_ID = "mission_id";
-    public static final String COLUMN_ALLIANCE_ID_FK = "alliance_id";
-    // public static final String COLUMN_BOSS_HP = "boss_hp";
-    public static final String COLUMN_MAX_BOSS_HP = "max_boss_hp";
-    public static final String COLUMN_USER_PROGRESS_JSON = "user_progress_json"; // JSON mapa userId -> progress
-    public static final String COLUMN_ALLIANCE_PROGRESS = "alliance_progress";
-    public static final String COLUMN_TASKS_JSON = "tasks_json"; // JSON lista zadataka sa napretkom
-    public static final String COLUMN_START_TIME = "start_time";
-    public static final String COLUMN_DURATION = "duration";
-    public static final String COLUMN_IS_ACTIVE = "is_active";
-
-
-    //--------------- BATTLE ---------------------
 
     //--------------- BATTLE ---------------------
     public static final String TABLE_BOSS_BATTLES = "boss_battles";
@@ -184,7 +167,6 @@ public class SQLiteHelper extends SQLiteOpenHelper {
     public static final String COLUMN_ACTIVE_WEAPON = "active_weapon"; // JSON
     public static final String COLUMN_USER_BATTLE_ID = "user_id";
 
-    // SQL CREATE TABLE
     private static final String DB_CREATE_BOSS_BATTLES = "CREATE TABLE " + TABLE_BOSS_BATTLES + " ("
             + COLUMN_BATTLE_ID + " TEXT PRIMARY KEY, "
             + COLUMN_USER_BATTLE_ID + " TEXT NOT NULL, "
@@ -197,7 +179,6 @@ public class SQLiteHelper extends SQLiteOpenHelper {
             + COLUMN_ACTIVE_WEAPON + " TEXT, "
             + "FOREIGN KEY(" + COLUMN_USER_BATTLE_ID + ") REFERENCES " + TABLE_USERS + "(" + COLUMN_USER_ID + ")"
             + ");";
-
 
     //--------------- SPECIAL MISSION ---------------------
     public static final String TABLE_SPECIAL_MISSIONS = "SPECIAL_MISSIONS";
@@ -239,16 +220,13 @@ public class SQLiteHelper extends SQLiteOpenHelper {
         db.execSQL(DB_CREATE_CATEGORIES);
         db.execSQL(DB_CREATE_BOSS_BATTLES);
         db.execSQL(DB_CREATE_SPECIAL_MISSIONS);
-
-
-
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         Log.i("REZ_DB", "ON UPGRADE SQLITE HELPER");
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_PRODUCTS);
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_USERS); 
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_USERS);
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_TASKS);
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_ALLIANCES);
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_CATEGORIES);
@@ -257,5 +235,4 @@ public class SQLiteHelper extends SQLiteOpenHelper {
 
         onCreate(db);
     }
-
 }
