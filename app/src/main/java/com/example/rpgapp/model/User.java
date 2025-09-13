@@ -1,7 +1,11 @@
 package com.example.rpgapp.model;
 
 import com.google.firebase.firestore.Exclude;
+
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 
@@ -224,4 +228,83 @@ public class User {
     @Exclude
     public String getUserId() { return userId; }
     public void setUserId(String userId) { this.userId = userId; }
+
+    public int calculateTaskXp(Task task) {
+        // XP težine + bitnosti
+        return task.getDifficultyXp() + task.getImportanceXp();
+    }
+
+
+
+    public boolean increaseXp(Task task, List<Task> userTasks) {
+        if (task == null) return false;
+
+        int taskXp = calculateTaskXp(task);
+
+        // Trenutni datum
+        SimpleDateFormat sdfDay = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        SimpleDateFormat sdfWeek = new SimpleDateFormat("yyyy-ww", Locale.getDefault()); // nedelja
+        SimpleDateFormat sdfMonth = new SimpleDateFormat("yyyy-MM", Locale.getDefault());
+
+        String taskDay = task.getDueDate() != null ? task.getDueDate() : task.getStartDate();
+        String taskDayFormatted = taskDay; // assume "yyyy-MM-dd"
+
+        // Brojanje zadataka iste težine i bitnosti u kvoti
+        int dailyCount = 0;
+        int weeklyCount = 0;
+        int monthlyCount = 0;
+
+        Calendar cal = Calendar.getInstance();
+        for (Task t : userTasks) {
+            if ("urađen".equalsIgnoreCase(t.getStatus())) {
+                String tDay = t.getDueDate() != null ? t.getDueDate() : t.getStartDate();
+                if (tDay == null) continue;
+
+                try {
+                    // dnevna kvota
+                    if (sdfDay.format(sdfDay.parse(tDay)).equals(taskDayFormatted) &&
+                            t.getDifficultyXp() == task.getDifficultyXp() &&
+                            t.getImportanceXp() == task.getImportanceXp()) {
+                        dailyCount++;
+                    }
+
+                    // nedeljna kvota
+                    if (sdfWeek.format(sdfDay.parse(tDay)).equals(sdfWeek.format(sdfDay.parse(taskDayFormatted))) &&
+                            t.getDifficultyXp() == task.getDifficultyXp()) {
+                        weeklyCount++;
+                    }
+
+                    // mesečna kvota
+                    if (sdfMonth.format(sdfDay.parse(tDay)).equals(sdfMonth.format(sdfDay.parse(taskDayFormatted))) &&
+                            t.getImportanceXp() == 100) { // specijalan
+                        monthlyCount++;
+                    }
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        // Provera kvota
+        if ((task.getDifficultyXp() == 1 && task.getImportanceXp() == 1 && dailyCount >= 5) ||
+                (task.getDifficultyXp() == 3 && task.getImportanceXp() == 3 && dailyCount >= 5) ||
+                (task.getDifficultyXp() == 7 && task.getImportanceXp() == 10 && dailyCount >= 2) ||
+                (task.getDifficultyXp() == 20 && weeklyCount >= 1) ||
+                (task.getImportanceXp() == 100 && monthlyCount >= 1)) {
+            return false; // prekoračeno
+        }
+
+        // Dodela XP
+        this.xp += taskXp;
+        checkLevelUp(); // automatski level up ako treba
+
+        return true;
+    }
+    public void checkLevelUp(){
+
+        //logika za level up
+    }
+
+
 }

@@ -130,6 +130,32 @@ public class AllianceViewModel extends AndroidViewModel {
         });
     }
 
+    public LiveData<Boolean> isMissionStarted() {
+        return Transformations.map(getCurrentAlliance(), alliance ->
+                alliance != null && alliance.isMissionStarted()
+        );
+    }
+
+    public void setMissionStarted(boolean started) {
+        Alliance alliance = currentAlliance.getValue();
+        if (alliance == null) return;
+
+        allianceRepository.updateMissionStarted(alliance.getAllianceId(), started, new UserRepository.RequestCallback() {
+            @Override
+            public void onSuccess() {
+                // osveži LiveData da UI odmah reaguje
+                alliance.setMissionStarted(started);
+                currentAlliance.postValue(alliance);
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                // možeš dodati log ili actionStatus
+            }
+        });
+    }
+
+
     @Override
     protected void onCleared() {
         super.onCleared();

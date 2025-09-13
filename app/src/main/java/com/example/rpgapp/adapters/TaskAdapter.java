@@ -83,15 +83,14 @@ public class TaskAdapter extends ArrayAdapter<Task> {
             actionButton.setVisibility(View.VISIBLE);
             actionButton.setText("Mark Done");
             actionButton.setOnClickListener(v -> {
-                // Promeni status taska
-                currentTask.setStatus("urađen");
 
-                // Sačuvaj promenu u bazi
-                TaskRepository.getInstance(context).updateTask(currentTask);
+                // Pozovi repozitorijum da ažurira status
+                TaskRepository.getInstance(context).updateTaskStatus(currentTask, "urađen", context);
 
-                // Osveži listu da dugme nestane
                 notifyDataSetChanged();
             });
+
+
         }
 
 

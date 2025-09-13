@@ -2,10 +2,10 @@ package com.example.rpgapp.fragments.alliance;
 
 import android.os.Bundle;
 import android.os.Handler;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -21,9 +21,13 @@ import com.example.rpgapp.R;
 import com.example.rpgapp.adapters.MemberProgressAdapter;
 import com.example.rpgapp.adapters.MissionTaskAdapter;
 import com.example.rpgapp.database.UserRepository;
+import com.example.rpgapp.fragments.alliance.AllianceViewModel;
+import com.example.rpgapp.fragments.alliance.SpecialMissionViewModel;
+import com.example.rpgapp.model.Alliance;
 import com.example.rpgapp.model.MissionTask;
 import com.example.rpgapp.model.SpecialMission;
 import com.example.rpgapp.model.User;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -34,29 +38,39 @@ public class SpecialMissionFragment extends Fragment {
     private SpecialMissionViewModel viewModel;
     private UserRepository userRepository;
     private String currentUserId;
+    private User currentUser;
 
-    private TextView textViewBossHP, textViewUserProgress, textViewAllianceProgress, textViewTimeLeft;
+    private TextView textViewBossHP, textViewUserProgress, textViewAllianceProgress, textViewTimeLeft, textViewMembersTitle;
     private ProgressBar progressBarBossHP;
-    private RecyclerView recyclerViewTasks;
+    private RecyclerView recyclerViewTasks, recyclerViewMembersProgress;
     private MissionTaskAdapter taskAdapter;
-
-    private RecyclerView recyclerViewMembersProgress;
     private MemberProgressAdapter memberProgressAdapter;
+    private Button btnStartMission;
 
     private Handler missionHandler = new Handler();
     private Runnable missionRunnable;
-    private static final long MISSION_CHECK_INTERVAL = 1000 * 60; // proverava svake minute
+    private AllianceViewModel allianceViewModel;
+
+    private static final long MISSION_CHECK_INTERVAL = 1000 * 60;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_special_mission, container, false);
+        return inflater.inflate(R.layout.fragment_special_missions, container, false);
     }
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        bindViews(view);
+        setupRepositoriesAndViewModels();
+        setupAdapters();
+        setupInitialUI();
+        observeUserAndAlliance();
+    }
+
+    private void bindViews(View view) {
         textViewBossHP = view.findViewById(R.id.textViewBossHP);
         textViewUserProgress = view.findViewById(R.id.textViewUserProgress);
         textViewAllianceProgress = view.findViewById(R.id.textViewAllianceProgress);
@@ -64,84 +78,148 @@ public class SpecialMissionFragment extends Fragment {
         recyclerViewTasks = view.findViewById(R.id.recyclerViewTasks);
         textViewTimeLeft = view.findViewById(R.id.textViewTimeLeft);
         recyclerViewMembersProgress = view.findViewById(R.id.recyclerViewMembersProgress);
+        btnStartMission = view.findViewById(R.id.btnStartMission);
+        textViewMembersTitle = view.findViewById(R.id.textViewMembersTitle);
+    }
 
+    private void setupInitialUI() {
+        textViewBossHP.setText("Učitavanje misije...");
+        textViewBossHP.setVisibility(View.VISIBLE);
+        btnStartMission.setVisibility(View.GONE);
+        hideMissionUI();
+    }
+
+    private void setupRepositoriesAndViewModels() {
         userRepository = UserRepository.getInstance(requireContext());
-        currentUserId = userRepository.getLoggedInUser() != null ? userRepository.getLoggedInUser().getUserId() : null;
+        currentUserId = userRepository.getLoggedInUser() != null
+                ? userRepository.getLoggedInUser().getUserId()
+                : null;
 
         viewModel = new ViewModelProvider(requireActivity()).get(SpecialMissionViewModel.class);
-        AllianceViewModel allianceViewModel = new ViewModelProvider(requireActivity()).get(AllianceViewModel.class);
+        allianceViewModel = new ViewModelProvider(requireActivity()).get(AllianceViewModel.class);
+    }
 
+    private void setupAdapters() {
         memberProgressAdapter = new MemberProgressAdapter();
         recyclerViewMembersProgress.setLayoutManager(new LinearLayoutManager(getContext()));
         recyclerViewMembersProgress.setAdapter(memberProgressAdapter);
 
-        allianceViewModel.getCurrentAlliance().observe(getViewLifecycleOwner(), alliance -> {
-            if (alliance != null) {
-                Toast.makeText(getContext(), "Učitavam misiju za savez: " + alliance.getAllianceId(), Toast.LENGTH_SHORT).show();
-                Log.d("SpecialMissionFragment", "Učitavam misiju za savez: " + alliance.getAllianceId());
-                viewModel.loadMission(alliance.getAllianceId());
-            }
-        });
-
-        allianceViewModel.members.observe(getViewLifecycleOwner(), members -> {
-            SpecialMission mission = viewModel.getCurrentMission().getValue();
-            Map<String, Integer> progressMap = mission != null ? mission.getUserTaskProgress() : new HashMap<>();
-            memberProgressAdapter.setMembersAndProgress(members, progressMap);
-        });
-
+//        taskAdapter = new MissionTaskAdapter(position -> {
+//            SpecialMission mission = viewModel.getCurrentMission().getValue();
+//            if (mission != null && currentUserId != null && mission.getTasks() != null
+//                    && position < mission.getTasks().size()) {
+//                MissionTask task = mission.getTasks().get(position);
+//                if (task.incrementProgress(currentUserId)) {
+//                    int hpReduction = viewModel.calculateHpReduction(task);
+//                    viewModel.completeTask(position, hpReduction, 1, currentUserId);
+//                    memberProgressAdapter.updateProgress(mission.getUserTaskProgress());
+//                }
+//            }
+//        }, currentUserId);
         taskAdapter = new MissionTaskAdapter(position -> {
-            if (currentUserId != null) {
-                SpecialMission mission = viewModel.getCurrentMission().getValue();
-                if (mission != null && mission.getTasks() != null && position < mission.getTasks().size()) {
-                    MissionTask task = mission.getTasks().get(position);
-                    boolean valid = task.incrementProgress(currentUserId);
-                    if (valid) {
-                        int hpReduction = calculateHpReduction(task);
-                        viewModel.completeTask(position, hpReduction, 1, currentUserId);
-                        memberProgressAdapter.updateProgress(mission.getUserTaskProgress());
-                    }
-                }
+            SpecialMission mission = viewModel.getCurrentMission().getValue();
+            if (mission != null && currentUserId != null) {
+                viewModel.completeTask(position,  mission.getMissionId(), currentUserId);
             }
         }, currentUserId);
 
         recyclerViewTasks.setLayoutManager(new LinearLayoutManager(getContext()));
         recyclerViewTasks.setAdapter(taskAdapter);
+    }
 
+    private void observeUserAndAlliance() {
+        allianceViewModel.getLoggedInUser().observe(getViewLifecycleOwner(), user -> {
+            currentUser = user;
+            allianceViewModel.getCurrentAlliance().observe(getViewLifecycleOwner(), alliance -> {
+                if (currentUser == null || alliance == null) return;
+
+                FirebaseFirestore.getInstance()
+                        .collection("alliances")
+                        .document(alliance.getAllianceId())
+                        .addSnapshotListener((snapshot, e) -> {
+                            if (e != null || snapshot == null) return;
+                            Boolean missionStarted = snapshot.getBoolean("missionStarted");
+                            allianceViewModel.setMissionStarted(missionStarted != null && missionStarted);
+                        });
+
+                boolean isLeader = currentUser.getUserId().equals(alliance.getLeaderId());
+                setupMissionObserver(btnStartMission, isLeader);
+                setupStartMissionButton(btnStartMission, alliance, isLeader);
+            });
+
+            allianceViewModel.members.observe(getViewLifecycleOwner(), members -> {
+                SpecialMission mission = viewModel.getCurrentMission().getValue();
+                Map<String, Integer> progressMap = mission != null ? mission.getUserTaskProgress() : new HashMap<>();
+                memberProgressAdapter.setMembersAndProgress(members, progressMap);
+            });
+
+            allianceViewModel.getCurrentAlliance().observe(getViewLifecycleOwner(), alliance -> {
+                if (alliance != null) viewModel.loadMission(alliance.getAllianceId(), 1000);
+            });
+        });
+    }
+
+    private void setupMissionObserver(Button btnStartMission, boolean isLeader) {
         viewModel.getCurrentMission().observe(getViewLifecycleOwner(), mission -> {
-            if (mission != null) {
-                updateUI(mission);
+            if (mission == null) {
+                // Nema aktivne misije
+                hideMissionUI();
+                textViewBossHP.setVisibility(View.VISIBLE);
+                textViewBossHP.setText("Nema aktivne misije");
+
+                // Prikazi dugme samo ako je lider
+                btnStartMission.setVisibility(isLeader ? View.VISIBLE : View.GONE);
+            } else if (mission.isActive()) {
+                btnStartMission.setVisibility(View.GONE);
+                showMissionUI(mission);
                 startMissionTimer();
             } else {
-                stopMissionTimer();
+                hideMissionUI();
+                textViewBossHP.setVisibility(View.VISIBLE);
+                textViewBossHP.setText("Nema aktivne misije");
+                btnStartMission.setVisibility(isLeader ? View.VISIBLE : View.GONE);
             }
         });
     }
 
-    private int calculateHpReduction(MissionTask task) {
-        String name = task.getName();
 
-        // Veoma lak, Laki, Normalni ili Važni zadatak
-        if (name.equals("Veoma lak") || name.equals("Laki") || name.equals("Normalni") || name.equals("Važni")) {
-            if (name.equals("Laki") || name.equals("Normalni")) return 2; // udvostručeno
-            return 1; // Veoma lak ili Važni
-        }
+    private void setupStartMissionButton(Button btnStartMission, Alliance alliance, boolean isLeader) {
+        btnStartMission.setOnClickListener(v -> {
+            if (!isLeader) return;
 
-        // Ostali zadaci
-        switch (name) {
-            case "Kupovina u prodavnici":
-            case "Udarac u regularnoj borbi":
-                return 2;
-            case "Ostali zadaci":
-                return 4;
-            case "Bez nerešenih zadataka":
-                return 10;
-            case "Poruka u savezu":
-                return 4;
-            default:
-                return 1;
-        }
+            SpecialMission mission = viewModel.getCurrentMission().getValue();
+            if (mission == null || !mission.isActive()) {
+                // Kreiraj novu misiju
+                viewModel.startSpecialMission(alliance);
+                allianceViewModel.setMissionStarted(true); // odmah obeleži da je misija startovana
+            } else {
+                Toast.makeText(getContext(), "Savez već ima aktivnu misiju!", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
+    private void showMissionUI(SpecialMission mission) {
+        textViewBossHP.setVisibility(View.VISIBLE);
+        textViewUserProgress.setVisibility(View.VISIBLE);
+        textViewAllianceProgress.setVisibility(View.VISIBLE);
+        progressBarBossHP.setVisibility(View.VISIBLE);
+        textViewTimeLeft.setVisibility(View.VISIBLE);
+        recyclerViewTasks.setVisibility(View.VISIBLE);
+        recyclerViewMembersProgress.setVisibility(View.VISIBLE);
+        textViewMembersTitle.setVisibility(View.VISIBLE);
+        updateUI(mission);
+    }
+
+    private void hideMissionUI() {
+        textViewBossHP.setVisibility(View.GONE);
+        textViewUserProgress.setVisibility(View.GONE);
+        textViewAllianceProgress.setVisibility(View.GONE);
+        progressBarBossHP.setVisibility(View.GONE);
+        textViewTimeLeft.setVisibility(View.GONE);
+        recyclerViewTasks.setVisibility(View.GONE);
+        recyclerViewMembersProgress.setVisibility(View.GONE);
+        textViewMembersTitle.setVisibility(View.GONE);
+    }
 
     private void updateUI(SpecialMission mission) {
         if (mission == null) return;
@@ -163,7 +241,6 @@ public class SpecialMissionFragment extends Fragment {
         textViewTimeLeft.setText(timeLeft > 0 ? "Preostalo dana: " + TimeUnit.MILLISECONDS.toDays(timeLeft) : "Misija je završena");
 
         memberProgressAdapter.updateProgress(mission.getUserTaskProgress());
-
         if (mission.getTasks() != null && !mission.getTasks().isEmpty()) {
             taskAdapter.setTasks(mission.getTasks());
         }
@@ -171,29 +248,26 @@ public class SpecialMissionFragment extends Fragment {
 
     private void startMissionTimer() {
         stopMissionTimer();
-
         missionRunnable = new Runnable() {
             @Override
             public void run() {
                 SpecialMission mission = viewModel.getCurrentMission().getValue();
                 if (mission != null) {
                     long timeLeft = mission.getDurationMillis() - (System.currentTimeMillis() - mission.getStartTime());
-                    textViewTimeLeft.setText(timeLeft > 0 ?
-                            "Preostalo dana: " + TimeUnit.MILLISECONDS.toDays(timeLeft) :
-                            "Misija je završena");
+                    textViewTimeLeft.setText(timeLeft > 0 ? "Preostalo dana: " + TimeUnit.MILLISECONDS.toDays(timeLeft) : "Misija je završena");
 
                     if (!mission.isActive() || timeLeft <= 0) {
                         viewModel.claimRewards();
+                        allianceViewModel.setMissionStarted(false);
+                        viewModel.forceEndMission(mission.getAllianceId());
                         stopMissionTimer();
                         Toast.makeText(getContext(), "Misija je završena!", Toast.LENGTH_SHORT).show();
                         return;
                     }
-
                     missionHandler.postDelayed(this, MISSION_CHECK_INTERVAL);
                 }
             }
         };
-
         missionHandler.post(missionRunnable);
     }
 

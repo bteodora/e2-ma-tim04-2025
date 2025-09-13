@@ -31,6 +31,10 @@ public class SpecialMission {
         generateTasks();
     }
 
+    public SpecialMission(String allianceId) {
+        this.allianceId=allianceId;
+    }
+
     private void generateTasks() {
         tasks.add(new MissionTask("Kupovina u prodavnici", 2, 5*14, 2));
         tasks.add(new MissionTask("Udarac u regularnoj borbi", 2, 10*14, 10));
@@ -49,7 +53,28 @@ public class SpecialMission {
     }
 
     public void increaseAllianceProgress(int amount) { allianceProgress += amount; }
-    public void endMission() { isActive = false; }
+    public void endMission() {
+        // Proveri razloge završetka
+        long elapsed = System.currentTimeMillis() - startTime;
+
+        if (bossHP <= 0) {
+            // Boss je pobijeđen
+            completedBossCount++;
+            System.out.println("Misija završena – boss pobijeđen!");
+        } else if (elapsed >= durationMillis) {
+            // Isteklo vreme
+            System.out.println("Misija završena – isteklo vreme!");
+        } else {
+            // Ručno prekinuta
+            System.out.println("Misija završena – ručno prekinuta!");
+        }
+
+        // Na kraju je svakako neaktivna
+        this.isActive = false;
+
+        // Ovde možeš dodati logiku za nagrade ili upis u bazu
+    }
+
 
     // ---------- GETTERS / SETTERS ----------
     public String getMissionId() { return missionId; }
@@ -87,4 +112,33 @@ public class SpecialMission {
 
     public int getCompletedBossCount() { return completedBossCount; }
     public void incrementCompletedBossCount() { completedBossCount++; }
+
+
+
+    public SpecialMission deepCopy() {
+        SpecialMission copy = new SpecialMission();
+        copy.setMissionId(this.missionId);
+        copy.setAllianceId(this.allianceId);
+        copy.setMaxBossHP(this.maxBossHP);
+        copy.setBossHP(this.bossHP);
+        copy.setUserProgress(this.userProgress);
+        copy.setAllianceProgress(this.allianceProgress);
+        copy.setStartTime(this.startTime);
+        copy.setDurationMillis(this.durationMillis);
+        copy.setActive(this.isActive);
+        copy.completedBossCount = this.completedBossCount;
+
+        // Kopiranje liste zadataka
+        List<MissionTask> taskCopies = new ArrayList<>();
+        for (MissionTask task : this.tasks) {
+            taskCopies.add(task.deepCopy());
+        }
+        copy.setTasks(taskCopies);
+
+        // Kopiranje mape progres-a korisnika
+        copy.setUserTaskProgress(new HashMap<>(this.userTaskProgress));
+
+        return copy;
+    }
+
 }

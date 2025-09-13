@@ -1,5 +1,7 @@
 package com.example.rpgapp.model;
 
+import com.example.rpgapp.R;
+
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 
@@ -8,8 +10,26 @@ public class UserWeapon {
     public int level;
     public double currentBoost;
     public BonusType boostType;
+
+    private String name;
+    private int imageResourceId;
     public UserWeapon() {}
 
+    public String getName() {
+        return name != null ? name : "Weapon Lvl " + level;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public int getImageResourceId() {
+        return imageResourceId != 0 ? imageResourceId : R.drawable.ic_face;
+    }
+
+    public void setImageResourceId(int imageResourceId) {
+        this.imageResourceId = imageResourceId;
+    }
     public String getWeaponId() {
         return weaponId;
     }

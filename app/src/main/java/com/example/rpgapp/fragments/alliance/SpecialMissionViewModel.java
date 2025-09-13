@@ -2,6 +2,7 @@ package com.example.rpgapp.fragments.alliance;
 
 import android.app.Application;
 import android.util.Log;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
@@ -13,14 +14,24 @@ import com.example.rpgapp.database.UserRepository;
 import com.example.rpgapp.model.Alliance;
 import com.example.rpgapp.model.SpecialMission;
 import com.example.rpgapp.model.MissionTask;
+import com.example.rpgapp.model.Task;
+import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 public class SpecialMissionViewModel extends AndroidViewModel {
 
     private final SpecialMissionRepository repository;
     private final MutableLiveData<SpecialMission> currentMission = new MutableLiveData<>();
+    private FirebaseFirestore firestore = FirebaseFirestore.getInstance();
+    // LiveData da obavesti fragment kada je task kompletiran
+    private final MutableLiveData<MissionTask> _taskCompletedLiveData = new MutableLiveData<>();
+    public LiveData<MissionTask> taskCompletedLiveData = _taskCompletedLiveData;
+
 
     public SpecialMissionViewModel(@NonNull Application application) {
         super(application);
@@ -31,76 +42,109 @@ public class SpecialMissionViewModel extends AndroidViewModel {
         return currentMission;
     }
 
-    public void loadMission(String allianceId) {
-        SpecialMission mission = repository.getMission(allianceId).getValue();
-        currentMission.setValue(mission);
+
+    public void loadMission(String allianceId, long delayMillis) {
+        new android.os.Handler().postDelayed(() -> {
+            firestore.collection("specialMissions")
+                    .whereEqualTo("allianceId", allianceId)
+                    .get()
+                    .addOnSuccessListener(querySnapshot -> {
+                        if (!querySnapshot.isEmpty()) {
+                            SpecialMission mission = querySnapshot.getDocuments().get(0).toObject(SpecialMission.class);
+                            currentMission.postValue(mission);
+                            Log.d("SpecialMissionVM", "Mission loaded after delay: " + mission);
+                        } else {
+                            currentMission.postValue(null);
+                            Log.d("SpecialMissionVM", "No mission found after delay for allianceId: " + allianceId);
+                        }
+                    })
+                    .addOnFailureListener(e -> Log.e("SpecialMissionVM", "Failed to load mission after delay", e));
+        }, delayMillis);
     }
+
 
     public void startSpecialMission(Alliance alliance) {
         if (alliance == null || alliance.getMemberIds() == null) return;
 
         // Kreiraj novu misiju prema broju članova saveza
         SpecialMission mission = new SpecialMission(alliance.getMemberIds().size());
+        String missionId = firestore.collection("specialMissions").document().getId(); // kreiraj ID unapred
+        mission.setMissionId(missionId);
         mission.setAllianceId(alliance.getAllianceId());
+        mission.setActive(true);
 
-        // Sačuvaj misiju u repozitorijumu
-        repository.saveMission(mission, new UserRepository.RequestCallback() {
-            @Override
-            public void onSuccess() {
-                currentMission.postValue(mission);
-                Log.d("SpecialMissionVM", "Special mission started successfully");
-            }
+        firestore.collection("specialMissions")
+                .document(missionId)
+                .set(mission)
+                .addOnSuccessListener(docRef -> {
+                    //Log.d("SpecialMissionVM", "Special mission started with ID: " + docRef.getId());
+                    currentMission.postValue(mission);
 
-            @Override
-            public void onFailure(Exception e) {
-                Log.e("SpecialMissionVM", "Failed to start special mission", e);
-            }
-        });
+                    // Obavesti saveza da je misija pokrenuta
+                    firestore.collection("alliances")
+                            .document(alliance.getAllianceId())
+                            .update("missionStarted", true);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("SpecialMissionVM", "Failed to start special mission", e);
+                    Toast.makeText(getApplication(), "Failed to start special mission", Toast.LENGTH_SHORT).show();
+                });
     }
 
-
-    public void completeTask(int taskIndex, int userProgressIncrement, int allianceProgressIncrement, String userId) {
+    public void completeTask(int taskIndex, String missionId, String userId) {
         SpecialMission mission = currentMission.getValue();
         if (mission == null || userId == null) return;
 
-        // Automatski izračunaj HP reduction
-        int hpReduction = calculateHpReduction(mission.getTasks().get(taskIndex));
+        // 1. Uzmemo task
+        List<MissionTask> tasks = mission.getTasks();
+        if (tasks == null || taskIndex >= tasks.size()) return;
 
-        // Update mission progress
-        MissionTask task = mission.getTasks().get(taskIndex);
-        boolean valid = task.incrementProgress(userId); // proveri da li je task uspešno urađen
-        if (!valid) return;
+        MissionTask task = tasks.get(taskIndex);
+        if (task == null) return;
 
+        // 2. Inkrement progres
+        boolean valid = task.incrementProgress(userId);
+        if (!valid) {
+            Log.d("SpecialMissionVM", "Task max completions reached for user: " + userId);
+            return;
+        }
+
+        // 3. Izračunaj koliko HP-a boss gubi
+        int hpReduction = task.getHpReductionPerCompletion();
+
+        // 4. Update misije
         mission.reduceBossHP(hpReduction);
-        mission.increaseUserProgress(userId, userProgressIncrement);
+        mission.increaseUserProgress(userId, hpReduction); //bilo 1
         mission.increaseAllianceProgress(hpReduction);
 
-        currentMission.setValue(mission);
+        // 5. Snimi nazad izmenjeni task u listu
+        tasks.set(taskIndex, task);
+        mission.setTasks(tasks);
 
-        // Sačuvaj promene u repo
-        repository.updateMission(mission, new UserRepository.RequestCallback() {
-            @Override
-            public void onSuccess() { }
-
-            @Override
-            public void onFailure(Exception e) { e.printStackTrace(); }
-        });
-
-        // Ako je boss pobijen
+        // 6. Proveri da li je boss mrtav
         if (mission.getBossHP() <= 0) {
             mission.endMission();
             mission.setActive(false);
-            repository.updateMission(mission, new UserRepository.RequestCallback() {
-                @Override
-                public void onSuccess() { }
-
-                @Override
-                public void onFailure(Exception e) { e.printStackTrace(); }
-            });
         }
+
+        // 7. Snimi sve izmene u Firestore
+        FirebaseFirestore.getInstance()
+                .collection("specialMissions")
+                .document(missionId)
+                .set(mission)  // snima celu misiju sa svim poljima
+                .addOnSuccessListener(aVoid -> {
+                    _taskCompletedLiveData.setValue(task);
+                    currentMission.postValue(mission);
+                    Log.d("SpecialMissionVM", "Task + mission progress updated for user: " + userId);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("SpecialMissionVM", "Error updating mission", e);
+                });
     }
 
-    private int calculateHpReduction(MissionTask task) {
+
+
+    public int calculateHpReduction(MissionTask task) {
         String name = task.getName();
 
         // Veoma lak, Laki, Normalni ili Važni zadatak
@@ -165,14 +209,6 @@ public class SpecialMissionViewModel extends AndroidViewModel {
         });
     }
 
-    // U SpecialMissionViewModel
-    public LiveData<Boolean> hasActiveMission(String allianceId) {
-        MutableLiveData<Boolean> liveData = new MutableLiveData<>();
-        repository.getMission(allianceId).observeForever(mission -> {
-            liveData.postValue(mission != null && mission.isActive());
-        });
-        return liveData;
-    }
 
     private int calculateNextBossRewardCoins(int previousBossLevel) {
         // prvi boss = 200, svaki naredni +20%
@@ -210,6 +246,12 @@ public class SpecialMissionViewModel extends AndroidViewModel {
         mission.endMission();
         mission.incrementCompletedBossCount(); // povećaj broj pobedjenih bossova
 
+        FirebaseFirestore.getInstance()
+                .collection("alliances")
+                .document(mission.getAllianceId())
+                .update("missionStarted", false);
+
+
         // 5️⃣ Sačuvaj promene u repozitorijumu
         repository.updateMission(mission, new UserRepository.RequestCallback() {
             @Override
@@ -224,8 +266,60 @@ public class SpecialMissionViewModel extends AndroidViewModel {
         });
     }
 
+    public LiveData<Boolean> hasActiveMission(String allianceId) {
+        MutableLiveData<Boolean> result = new MutableLiveData<>();
+        repository.getMission(allianceId).observeForever(mission -> {
+            result.postValue(mission != null && mission.isActive());
+        });
+        return result;
+    }
 
 
+    public void startMission(Alliance alliance) {
+        if (alliance == null) return;
+
+        SpecialMission newMission = new SpecialMission(alliance.getMemberIds().size());
+        newMission.setAllianceId(alliance.getAllianceId());
+
+        repository.saveMission(newMission, new UserRepository.RequestCallback() {
+            @Override
+            public void onSuccess() {
+                currentMission.postValue(newMission);
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
+    public LiveData<SpecialMission> refreshCurrentMission(String allianceId) {
+        MutableLiveData<SpecialMission> liveData = new MutableLiveData<>();
+        firestore.collection("specialMissions")
+                .whereEqualTo("allianceId", allianceId)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    if (!querySnapshot.isEmpty()) {
+                        SpecialMission mission = querySnapshot.getDocuments().get(0).toObject(SpecialMission.class);
+                        liveData.setValue(mission);
+                    } else {
+                        liveData.setValue(null);
+                    }
+                });
+        return liveData;
+    }
+
+
+    public void forceEndMission(String allianceId) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("specialMissions")
+                .document(allianceId)
+                .update("isActive", false);
+
+        db.collection("alliances")
+                .document(allianceId)
+                .update("missionStarted", false);
+    }
 
 
 }

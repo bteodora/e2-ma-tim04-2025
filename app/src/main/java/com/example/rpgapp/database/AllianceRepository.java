@@ -328,5 +328,17 @@ public class AllianceRepository {
                 });
     }
 
+    public void updateMissionStarted(String allianceId, boolean missionStarted, UserRepository.RequestCallback callback) {
+        if (allianceId == null) {
+            callback.onFailure(new Exception("AllianceId is null"));
+            return;
+        }
+
+        db.collection("alliances").document(allianceId)
+                .update("missionStarted", missionStarted)
+                .addOnSuccessListener(aVoid -> callback.onSuccess())
+                .addOnFailureListener(callback::onFailure);
+    }
+
 
 }

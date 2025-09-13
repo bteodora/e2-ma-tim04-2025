@@ -23,8 +23,8 @@
         android:layout_height="20dp"
         android:progress="0"
         android:max="10"
-        android:progressTint="@color/purple_500"
-        android:backgroundTint="@color/gray" />
+        android:progressTint="@color/pink_300"
+        android:backgroundTint="@color/blue_300" />
 
     <!-- Tekstualni prikaz napretka -->
     <TextView

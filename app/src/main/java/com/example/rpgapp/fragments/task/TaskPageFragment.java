@@ -150,7 +150,9 @@ public class TaskPageFragment extends Fragment {
                     return;
                 }
                 String selectedStatus = availableStatuses.get(position);
-                updateTaskStatus(selectedStatus);
+                //updateTaskStatus(selectedStatus);
+                TaskRepository taskRepo = TaskRepository.getInstance(requireContext());
+                taskRepo.updateTaskStatus(task, selectedStatus, requireContext());
             }
 
             @Override
@@ -158,7 +160,7 @@ public class TaskPageFragment extends Fragment {
         });
     }
 
-private void updateTaskStatus(String selectedStatus) {
+    private void updateTaskStatus(String selectedStatus) {
     if (currentTask == null) return;
 
     String currentStatus = currentTask.getStatus().toLowerCase();

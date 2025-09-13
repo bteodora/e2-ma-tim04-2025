@@ -6,6 +6,8 @@ import androidx.viewpager2.adapter.FragmentStateAdapter;
 
 import com.example.rpgapp.fragments.alliance.AllianceChatFragment;
 import com.example.rpgapp.fragments.alliance.AllianceInfoFragment;
+import com.example.rpgapp.fragments.alliance.SpecialMissionFragment;
+
 
 public class AlliancePagerAdapter extends FragmentStateAdapter {
     public AlliancePagerAdapter(@NonNull Fragment fragment) {
@@ -20,6 +22,8 @@ public class AlliancePagerAdapter extends FragmentStateAdapter {
                 return new AllianceInfoFragment(); // Prvi tab je sada Info/Members
             case 1:
                 return new AllianceChatFragment(); // Drugi tab je Chat
+            case 2:
+                return new SpecialMissionFragment();
             default:
                 return new AllianceInfoFragment();
         }
@@ -27,6 +31,6 @@ public class AlliancePagerAdapter extends FragmentStateAdapter {
 
     @Override
     public int getItemCount() {
-        return 2; // Sada imamo samo 2 taba
+        return 3; // Sada imamo samo 2 taba
     }
 }

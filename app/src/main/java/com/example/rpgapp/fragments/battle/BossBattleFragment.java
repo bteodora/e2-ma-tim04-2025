@@ -7,6 +7,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,6 +22,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.example.rpgapp.R;
+import com.example.rpgapp.adapters.WeaponListAdapter;
 import com.example.rpgapp.database.BattleRepository;
 import com.example.rpgapp.database.UserRepository;
 import com.example.rpgapp.model.Battle;
@@ -53,7 +55,7 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
 
     private ImageView bossImageView, treasureChestImage, activeWeaponIcon;
     private ProgressBar bossHpBar, userPpBar;
-    private TextView successRateText, remainingAttacksText, coinsEarnedText;
+    private TextView successRateText, remainingAttacksText, coinsEarnedText, bossLevelText, bossHpText;
     private Button attackButton, selectWeaponButton;
 
     private SensorManager sensorManager;
@@ -69,8 +71,18 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        FirebaseAuth auth = FirebaseAuth.getInstance();
-        currentUserId = (auth.getCurrentUser() != null) ? auth.getCurrentUser().getUid() : null;
+
+        // Dobavljanje ulogovanog korisnika iz UserRepository, isto kao u TaskPageFragment
+        user = UserRepository.getInstance(requireContext()).getLoggedInUser();
+
+        if (user == null) {
+            Toast.makeText(requireContext(), "Niste ulogovani.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (user != null) {
+            currentUserId = user.getUserId();
+        }
 
         battleRepository = new BattleRepository();
     }
@@ -83,7 +95,7 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
 
         View view = inflater.inflate(R.layout.fragment_boss_battle, container, false);
 
-        // bind UI
+        // --- Bind UI ---
         bossImageView = view.findViewById(R.id.bossImageView);
         treasureChestImage = view.findViewById(R.id.treasureChestImage);
         bossHpBar = view.findViewById(R.id.bossHpBar);
@@ -94,17 +106,35 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
         attackButton = view.findViewById(R.id.attackButton);
         selectWeaponButton = view.findViewById(R.id.selectWeaponButton);
         activeWeaponIcon = view.findViewById(R.id.activeWeaponIcon);
+        bossLevelText = view.findViewById(R.id.bossLevelText);
+        bossHpText = view.findViewById(R.id.bossHpText);
 
+        // --- Hide neki elementi na startu ---
         coinsEarnedText.setVisibility(View.GONE);
         treasureChestImage.setVisibility(View.GONE);
         activeWeaponIcon.setVisibility(View.GONE);
 
-        if (currentUserId == null) {
+        // --- Provera da li je user ulogovan ---
+        if (user == null) {
             Toast.makeText(requireContext(), "Niste ulogovani.", Toast.LENGTH_SHORT).show();
             return view;
         }
 
-        // Load user
+        // --- Učitavanje User + Battle (izdvojeno u posebnu metodu) ---
+        loadUserAndBattle();
+
+        // --- Senzor za pokrete ---
+        sensorManager = (SensorManager) requireActivity().getSystemService(Context.SENSOR_SERVICE);
+        if (sensorManager != null) {
+            accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        }
+
+        return view;
+    }
+
+
+
+    private void loadUserAndBattle() {
         UserRepository.getInstance(requireContext()).getUserById(currentUserId, new UserRepository.UserCallback() {
             @Override
             public void onUserLoaded(User loadedUser) {
@@ -117,18 +147,18 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
                 user = loadedUser;
                 int bossLevel = loadBossLevelOrDefault(1);
 
-                battleRepository.getBattlesForCurrentUser(new OnCompleteListener<List<Battle>>() {
-                    @Override
-                    public void onComplete(@NonNull Task<List<Battle>> task) {
-                        if (task.isSuccessful() && !task.getResult().isEmpty()) {
-                            battle = task.getResult().get(0);
-                            restoreBossHpIfExists();
-                        } else {
-                            battle = new Battle(user, bossLevel, successRate);
-                            battleRepository.addBattle(battle, t -> {});
-                        }
-                        requireActivity().runOnUiThread(BossBattleFragment.this::setupUi);
+                battleRepository.getBattlesForCurrentUser(task -> {
+                    if (task.isSuccessful() && !task.getResult().isEmpty()) {
+                        battle = task.getResult().get(0);
+                        battle.setUser(user);
+                        restoreBossHpIfExists();
+                    } else {
+                        battle = new Battle(user, bossLevel, successRate);
+                        battleRepository.addBattle(battle, t -> {});
                     }
+
+                    // --- POSTAVI UI tek kada su user i battle učitani ---
+                    requireActivity().runOnUiThread(() -> setupUi());
                 });
             }
 
@@ -138,20 +168,24 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
                         Toast.makeText(requireContext(), "Error loading user: " + e.getMessage(), Toast.LENGTH_SHORT).show());
             }
         });
-
-        sensorManager = (SensorManager) requireActivity().getSystemService(Context.SENSOR_SERVICE);
-        if (sensorManager != null) accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-
-        return view;
     }
 
+
+
     private void setupUi() {
+
+        if (user == null || battle == null) return;
+
         int totalPP = calculateTotalPP(user);
         userPpBar.setMax(Math.max(totalPP, 1));
         userPpBar.setProgress(totalPP);
 
         bossHpBar.setMax(battle.getBoss().getMaxHp());
         bossHpBar.setProgress(battle.getBoss().getCurrentHp());
+
+        bossLevelText.setText("Level: " + battle.getBoss().getLevel());
+        bossHpText.setText("HP: " + battle.getBoss().getCurrentHp() + "/" + battle.getBoss().getMaxHp());
+
 
         remainingAttacksText.setText("Remaining attacks: " + battle.getRemainingAttacks() + "/5");
 
@@ -168,7 +202,7 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
 
 
     private void handleAttack() {
-        if (isAttackInProgress || battle == null || battle.isFinished()) return;
+        if (isAttackInProgress || battle == null || battle.isFinished() || user == null) return;
         isAttackInProgress = true;
 
         boolean hit = battle.attack();
@@ -181,6 +215,9 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
         }
 
         bossHpBar.setProgress(battle.getBoss().getCurrentHp());
+
+        bossHpText.setText("HP: " + battle.getBoss().getCurrentHp() + "/" + battle.getBoss().getMaxHp());
+
         remainingAttacksText.setText("Remaining attacks: " + battle.getRemainingAttacks() + "/5");
 
         battleRepository.updateBattle(battle, t -> {});
@@ -194,11 +231,54 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
         treasureChestImage.setVisibility(View.VISIBLE);
         coinsEarnedText.setVisibility(View.VISIBLE);
 
+        if (battle == null || user == null) return;
+
+        // --- Provera da li je pobedio ---
+        boolean userWon = battle.getBoss().isDefeated();
+
+        // Prikaz poruke
+        String message = userWon ? "Pobedio si!" : "Izgubio si!";
+        Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
+
+        // --- Potroši temporary opremu ---
         consumeTemporaryEquipment(user);
+
+        // --- Dodeli nagrade ako je pobedio ili delimično ako nije ---
         giveReward();
 
-        battleRepository.deleteBattle(battle.getBattleId(), t -> {});
+        // --- Sačuvaj borbu, ali je ne briši ---
+       // battle.setFinished(true); // opcionalno, možeš ga setovati da znaš da je završena
+        battleRepository.updateBattle(battle, t -> {});
+
+        // --- Napredovanje bossa ---
+        if (userWon) {
+            int nextLevel = battle.getBoss().getLevel() + 1;
+            saveBossLevel(nextLevel);
+        } else {
+            // Ako korisnik nije pobedio, HP bossa se pamti za sledeći pokušaj
+            persistBossState(battle.getBoss().getLevel(), battle.getBoss().getCurrentHp());
+        }
+
+        // --- Ažuriraj korisnika ---
+        UserRepository.getInstance(requireContext()).updateUser(user);
     }
+
+
+//    private void showResults() {
+//        attackButton.setEnabled(false);
+//        treasureChestImage.setVisibility(View.VISIBLE);
+//        coinsEarnedText.setVisibility(View.VISIBLE);
+//
+//        consumeTemporaryEquipment(user);
+//        giveReward();
+//
+//        //battleRepository.deleteBattle(battle.getBattleId(), t -> {});
+//
+//        // TODO: AKOOOO TI TREBA DA ZNAS ZNAS DA LI JE ZAVRSENA BORBA zbog istorije
+//
+//       // battle.setFinished(true); <-- setujes na true i dodas polje u battle
+//        battleRepository.updateBattle(battle, t -> {});
+//    }
 
     private void giveReward() {
         if (user == null || battle == null) return;
@@ -357,33 +437,41 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
             return;
         }
 
-        // Pretvori mapu u listu
+        // 1. Pretvori mapu u listu
         List<UserWeapon> weaponsList = new ArrayList<>(user.getUserWeapons().values());
-        String[] weaponNames = new String[weaponsList.size()];
-        for (int i = 0; i < weaponsList.size(); i++) {
-            UserWeapon w = weaponsList.get(i);
-            weaponNames[i] = "Weapon " + w.getLevel(); // ili ime ako postoji
+
+        // 2. Napravi adapter za prikaz u listi sa slikom i imenom
+        WeaponListAdapter adapter = new WeaponListAdapter(requireContext(), weaponsList);
+
+        // 3. Kreiraj AlertDialog
+        androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(requireContext());
+        builder.setTitle("Izaberite oružje");
+        builder.setAdapter(adapter, (dialog, which) -> {
+            UserWeapon selectedWeapon = weaponsList.get(which);
+
+            // Postavi aktivno oružje u borbi
+            if (battle != null) battle.setActiveWeapon(selectedWeapon);
+
+            // Prikazi ikonu izabranog oružja
+            activeWeaponIcon.setVisibility(View.VISIBLE);
+            activeWeaponIcon.setImageResource(selectedWeapon.getImageResourceId());
+
+            Toast.makeText(requireContext(), "Aktivirano: " + selectedWeapon.getName(), Toast.LENGTH_SHORT).show();
+        });
+
+        builder.setNegativeButton("Cancel", null);
+        builder.show();
+
+
+        // Debug Toast: prikaži sva korisnikova oružja
+        StringBuilder sb = new StringBuilder("Tvoja oružja:\n");
+        for (UserWeapon w : weaponsList) {
+            sb.append(w.getName()).append(" (ImageId: ").append(w.getImageResourceId()).append(")\n");
         }
+        Toast.makeText(requireContext(), sb.toString(), Toast.LENGTH_LONG).show();
 
-        // AlertDialog sa listom oružja
-        new androidx.appcompat.app.AlertDialog.Builder(requireContext())
-                .setTitle("Select Weapon")
-                .setItems(weaponNames, (dialog, which) -> {
-                    // Aktiviraj izabrano oružje u borbi
-                    UserWeapon selectedWeapon = weaponsList.get(which);
-                    if (battle != null) {
-                        battle.setActiveWeapon(selectedWeapon);
-                    }
-
-                    // Prikaži ikoncu aktivnog oružja
-                    activeWeaponIcon.setVisibility(View.VISIBLE);
-                    activeWeaponIcon.setImageResource(R.drawable.ic_face); // zameni sa odgovarajućom slikom
-
-                    Toast.makeText(requireContext(), "Aktivirano oružje: " + weaponNames[which], Toast.LENGTH_SHORT).show();
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
     }
+
 
 
 
