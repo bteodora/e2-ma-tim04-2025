@@ -1,23 +1,61 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     tools:context=".fragments.alliance.AllianceFragment">
 
-    <TextView
-        android:id="@+id/textViewNotInAlliance"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="You are not in an alliance."
-        android:layout_gravity="center"
-        android:layout_marginTop="50dp"
-        android:textAppearance="?attr/textAppearanceHeadline6"
+    <LinearLayout
+        android:id="@+id/layout_no_alliance"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="32dp"
         android:visibility="gone"
-        tools:visibility="visible"/>
+        tools:visibility="visible">
 
+        <ImageView
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:src="@drawable/ic_settings"
+            app:tint="@color/textColorSecondary"
+            android:layout_marginBottom="16dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Join an Alliance"
+            android:textAppearance="?attr/textAppearanceHeadline5"
+            android:layout_marginBottom="8dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Team up with friends to conquer greater challenges!"
+            android:textAppearance="?attr/textAppearanceBody1"
+            android:gravity="center"
+            android:textColor="@color/textColorSecondary"
+            android:layout_marginBottom="32dp"/>
+
+        <Button
+            android:id="@+id/buttonCreateAlliance"
+            style="@style/PixelButtonStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Found an Alliance"/>
+
+        <Button
+            android:id="@+id/buttonViewInvites"
+            style="@style/PixelButtonOutlinedStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="View Invites"/>
+
+    </LinearLayout>
 
     <LinearLayout
         android:id="@+id/layout_alliance_content"
@@ -27,12 +65,71 @@
         android:visibility="visible"
         tools:visibility="gone">
 
-        <com.google.android.material.tabs.TabLayout
-            android:id="@+id/tabLayout"
+        <LinearLayout
+            style="@style/PixelPanelFilledStyle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:tabGravity="fill"
-            app:tabMode="fixed" />
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:paddingTop="16dp"
+            android:paddingBottom="16dp">
+
+            <TextView
+                android:id="@+id/textViewAllianceName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceHeadline5"
+                tools:text="The Crimson Guard"/>
+            <TextView
+                android:id="@+id/textViewAllianceMembers"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceSubtitle1"
+                android:textColor="@color/textColorSecondary"
+                tools:text="15 Members"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/layout_tabs"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
+
+            <Button
+                android:id="@+id/buttonTabMembers"
+                style="@style/PixelButtonOutlinedStyle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp"
+                android:text="Members"/>
+
+            <Button
+                android:id="@+id/buttonTabChat"
+                style="@style/PixelButtonOutlinedStyle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="4dp"
+                android:layout_marginEnd="4dp"
+                android:text="Chat"/>
+
+            <Button
+                android:id="@+id/buttonTabQuests"
+                style="@style/PixelButtonOutlinedStyle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="4dp"
+                android:text="Missions"/>
+        </LinearLayout>
+
+        <View
+            style="@style/PixelDividerFadeStyle"
+            android:layout_width="match_parent"
+            android:layout_height="16dp"/>
 
         <androidx.viewpager2.widget.ViewPager2
             android:id="@+id/viewPager"
@@ -42,4 +139,4 @@
 
     </LinearLayout>
 
-</LinearLayout>
+</FrameLayout>

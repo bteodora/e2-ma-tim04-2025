@@ -84,8 +84,7 @@ public class AllianceInfoFragment extends Fragment {
 
         viewModel.getCurrentAlliance().observe(getViewLifecycleOwner(), alliance -> {
             if (alliance != null) {
-                allianceName.setText(alliance.getName());
-                leaderName.setText("Leader: " + alliance.getLeaderUsername());
+                leaderName.setText(alliance.getLeaderUsername());
                 updateButtonVisibility();
             }
         });

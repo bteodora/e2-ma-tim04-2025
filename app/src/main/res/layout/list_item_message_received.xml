@@ -23,6 +23,7 @@
         android:layout_alignParentStart="true"
         android:background="@drawable/bg_message_received"
         android:padding="12dp"
+        android:textColor="@color/textColorPrimary"
         tools:text="Ovo je poruka od nekog drugog."/>
     <TextView
         android:id="@+id/textViewMessageTimestamp"
