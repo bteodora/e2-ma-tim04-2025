@@ -1,7 +1,9 @@
 package com.example.rpgapp.fragments.profile;
 
+import android.content.res.Resources;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,11 +19,14 @@ import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.charts.PieChart;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.data.BarData;
+import com.github.mikephil.charting.data.BarDataSet;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.data.PieData;
+import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter;
 import com.github.mikephil.charting.utils.ColorTemplate;
+import androidx.core.content.ContextCompat;
 
 import java.util.ArrayList;
 
@@ -33,6 +38,7 @@ public class StatisticsFragment extends Fragment {
     private BarChart chartCategory;
     private LineChart chartXpLast7Days;
     private LineChart chartAvgDifficulty;
+    private TextView textViewMissionsStarted, textViewMissionsCompleted;
 
     @Nullable
     @Override
@@ -56,34 +62,45 @@ public class StatisticsFragment extends Fragment {
         chartCategory = view.findViewById(R.id.chartCategory);
         chartXpLast7Days = view.findViewById(R.id.chartXpLast7Days);
         chartAvgDifficulty = view.findViewById(R.id.chartAvgDifficulty);
+        textViewMissionsStarted = view.findViewById(R.id.textViewMissionsStarted);
+        textViewMissionsCompleted = view.findViewById(R.id.textViewMissionsCompleted);
     }
 
     private void observeViewModel() {
         viewModel.activeDaysStreak.observe(getViewLifecycleOwner(), s -> textViewActiveDays.setText(s));
         viewModel.longestSuccessStreak.observe(getViewLifecycleOwner(), s -> textViewLongestStreak.setText(s));
 
-        viewModel.taskSummaryData.observe(getViewLifecycleOwner(), taskSummary -> {
-            if (taskSummary != null) {
-                setupPieChart(taskSummary);
+        viewModel.taskSummaryData.observe(getViewLifecycleOwner(), this::setupPieChart);
+        viewModel.categoryData.observe(getViewLifecycleOwner(), this::setupBarChart);
+        viewModel.xpLast7DaysData.observe(getViewLifecycleOwner(), dataWithLabels -> {
+            if (dataWithLabels != null && dataWithLabels.lineData != null) {
+                setupLineChart(chartXpLast7Days, dataWithLabels.lineData);
+
+                XAxis xAxis = chartXpLast7Days.getXAxis();
+                xAxis.setValueFormatter(new IndexAxisValueFormatter(dataWithLabels.labels));
+                xAxis.setLabelCount(dataWithLabels.labels.size());
+                xAxis.setGranularity(1f);
+
+                chartXpLast7Days.invalidate();
+            } else {
+                chartXpLast7Days.clear();
+                chartXpLast7Days.invalidate();
             }
         });
 
-        viewModel.categoryData.observe(getViewLifecycleOwner(), barData -> {
-            // Dodajemo proveru i ovde, za svaki slučaj
-            if (barData != null) {
-                setupBarChart(barData);
-            }
-        });
+        viewModel.avgDifficultyData.observe(getViewLifecycleOwner(), dataWithLabels -> {
+            if (dataWithLabels != null && dataWithLabels.lineData != null) {
+                setupLineChart(chartAvgDifficulty, dataWithLabels.lineData);
 
-        viewModel.xpLast7DaysData.observe(getViewLifecycleOwner(), data -> {
-            if (data != null) {
-                setupLineChart(chartXpLast7Days, data, "XP Gained");
-            }
-        });
+                XAxis xAxis = chartAvgDifficulty.getXAxis();
+                xAxis.setValueFormatter(new IndexAxisValueFormatter(dataWithLabels.labels));
+                xAxis.setLabelCount(dataWithLabels.labels.size());
+                xAxis.setGranularity(1f);
 
-        viewModel.avgDifficultyData.observe(getViewLifecycleOwner(), data -> {
-            if (data != null) {
-                setupLineChart(chartAvgDifficulty, data, "Avg. Difficulty");
+                chartAvgDifficulty.invalidate();
+            } else {
+                chartAvgDifficulty.clear();
+                chartAvgDifficulty.invalidate();
             }
         });
 
@@ -93,6 +110,14 @@ public class StatisticsFragment extends Fragment {
                 xAxis.setValueFormatter(new IndexAxisValueFormatter(labels));
                 chartCategory.invalidate();
             }
+        });
+
+        viewModel.missionsStartedCount.observe(getViewLifecycleOwner(), count -> {
+            textViewMissionsStarted.setText(count);
+        });
+
+        viewModel.missionsCompletedCount.observe(getViewLifecycleOwner(), count -> {
+            textViewMissionsCompleted.setText(count);
         });
     }
 
@@ -104,33 +129,36 @@ public class StatisticsFragment extends Fragment {
         }
 
         PieData data = summary.pieData;
-        String totalTasks = String.valueOf(summary.totalTasks);
+        int accentColor = ContextCompat.getColor(requireContext(), R.color.colorAccent);
 
-        chartTaskSummary.setCenterText("Total\n" + totalTasks);
+        chartTaskSummary.setCenterText("Total\n" + summary.totalTasks);
         chartTaskSummary.setCenterTextSize(20f);
-        chartTaskSummary.setCenterTextColor(Color.WHITE);
+        chartTaskSummary.setCenterTextColor(accentColor);
 
         chartTaskSummary.getDescription().setEnabled(false);
         chartTaskSummary.setDrawHoleEnabled(true);
         chartTaskSummary.setHoleColor(Color.TRANSPARENT);
-        chartTaskSummary.getLegend().setEnabled(true);
-        chartTaskSummary.getLegend().setTextColor(Color.WHITE);
+        chartTaskSummary.getLegend().setTextColor(accentColor);
         chartTaskSummary.getLegend().setTextSize(12f);
 
         data.setValueTextSize(12f);
-        data.setDrawValues(true);
+        data.setValueTextColor(accentColor);
+
+        // ((PieDataSet)data.getDataSet()).setColors(ColorTemplate.MATERIAL_COLORS);
 
         chartTaskSummary.setData(data);
         chartTaskSummary.animateY(1000);
         chartTaskSummary.invalidate();
     }
 
-    private void setupLineChart(LineChart chart, LineData data, String label) {
+    private void setupLineChart(LineChart chart, LineData data) {
         if (data == null) {
             chart.clear();
             chart.invalidate();
             return;
         }
+
+        int accentColor = ContextCompat.getColor(requireContext(), R.color.colorAccent);
 
         chart.getDescription().setEnabled(false);
         chart.getLegend().setEnabled(false);
@@ -138,18 +166,22 @@ public class StatisticsFragment extends Fragment {
 
         XAxis xAxis = chart.getXAxis();
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
-        xAxis.setTextColor(Color.WHITE);
+        xAxis.setTextColor(accentColor);
         xAxis.setDrawGridLines(false);
 
-        chart.getAxisLeft().setTextColor(Color.WHITE);
+        chart.getAxisLeft().setTextColor(accentColor);
         chart.getAxisLeft().setDrawGridLines(true);
 
         if (data.getDataSetCount() > 0) {
             LineDataSet dataSet = (LineDataSet) data.getDataSetByIndex(0);
             dataSet.setLineWidth(2.5f);
-            dataSet.setColor(ColorTemplate.getHoloBlue());
-            dataSet.setCircleColor(Color.WHITE);
+            dataSet.setColor(accentColor);
+            dataSet.setCircleColor(accentColor);
             dataSet.setDrawValues(false);
+
+            dataSet.setDrawFilled(true);
+            dataSet.setFillColor(accentColor);
+            dataSet.setFillAlpha(100);
         }
 
         chart.setData(data);
@@ -163,21 +195,26 @@ public class StatisticsFragment extends Fragment {
             chartCategory.invalidate();
             return;
         }
+        int accentColor = ContextCompat.getColor(requireContext(), R.color.colorAccent);
 
         XAxis xAxis = chartCategory.getXAxis();
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
         xAxis.setDrawGridLines(false);
-        xAxis.setTextColor(Color.WHITE);
+        xAxis.setTextColor(accentColor);
 
         ArrayList<String> labels = viewModel.categoryLabels.getValue();
         if (labels != null) {
             xAxis.setValueFormatter(new IndexAxisValueFormatter(labels));
         }
 
-        chartCategory.getAxisLeft().setTextColor(Color.WHITE);
+        chartCategory.getAxisLeft().setTextColor(accentColor);
         chartCategory.getAxisRight().setEnabled(false);
         chartCategory.getDescription().setEnabled(false);
         chartCategory.getLegend().setEnabled(false);
+
+        if (data.getDataSetCount() > 0) {
+            data.setValueTextColor(accentColor);
+        }
 
         chartCategory.setData(data);
         chartCategory.invalidate();

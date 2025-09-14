@@ -188,6 +188,8 @@ public class TaskRepository {
             values.put(SQLiteHelper.COLUMN_RECURRING_ID, task.getRecurringId());
             // user_id
             values.put(SQLiteHelper.COLUMN_TASK_USER_ID, getCurrentUserId());
+            values.put(SQLiteHelper.COLUMN_CREATION_TIMESTAMP, task.getCreationTimestamp());
+            values.put(SQLiteHelper.COLUMN_LAST_ACTION_TIMESTAMP, task.getLastActionTimestamp());
 
 
             database.insertWithOnConflict(SQLiteHelper.TABLE_TASKS, null, values, SQLiteDatabase.CONFLICT_REPLACE);
@@ -257,12 +259,17 @@ public class TaskRepository {
         task.setRecurring(cursor.getInt(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_RECURRING)) == 1);
         task.setRecurringId(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_RECURRING_ID)));
         task.setUserId(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_TASK_USER_ID)));
+        task.setCreationTimestamp(cursor.getLong(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_CREATION_TIMESTAMP)));
+        task.setLastActionTimestamp(cursor.getLong(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_LAST_ACTION_TIMESTAMP)));
 
 
         return task;
     }
     public void addTask(Task task) {
         if (task.getTaskId() == null) task.setTaskId(UUID.randomUUID().toString());
+        long currentTime = System.currentTimeMillis();
+        task.setCreationTimestamp(currentTime);
+        task.setLastActionTimestamp(currentTime);
 
         // Firestore
         db.collection("tasks").document(task.getTaskId()).set(task);
@@ -331,6 +338,7 @@ public class TaskRepository {
                         t.setDescription(task.getDescription());
                         t.setStatus(task.getStatus());
                         t.setCategory(task.getCategory());
+                        t.setLastActionTimestamp(System.currentTimeMillis());
                         cacheTaskToSQLite(t); // sačuvaj izmene u SQLite
                         db.collection("tasks").document(t.getTaskId()).set(t); // Firestore update
                     }
@@ -396,6 +404,8 @@ public class TaskRepository {
                 }
                 break;
         }
+
+        task.setLastActionTimestamp(System.currentTimeMillis());
 
         // Ako je urađen, dodeli XP korisniku
         if ("urađen".equals(selectedStatusLower)) {

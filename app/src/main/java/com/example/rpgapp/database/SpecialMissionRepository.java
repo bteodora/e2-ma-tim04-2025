@@ -6,6 +6,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
@@ -14,6 +15,7 @@ import com.example.rpgapp.model.Alliance;
 import com.example.rpgapp.model.MissionTask;
 import com.example.rpgapp.model.SpecialMission;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -215,5 +217,58 @@ public class SpecialMissionRepository {
         db.collection("alliances")
                 .document(allianceId)
                 .update("missionStarted", false);
+    }
+
+    private SpecialMission cursorToMission(Cursor cursor) {
+        if (cursor == null || cursor.isAfterLast()) {
+            return null;
+        }
+        String allianceId = cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_ALLIANCE_ID_FK));
+        int maxHP = cursor.getInt(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_MAX_BOSS_HP));
+
+        SpecialMission mission = new SpecialMission(maxHP);
+        mission.setMissionId(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_MISSION_ID)));
+        mission.setAllianceId(allianceId);
+        mission.setBossHP(cursor.getInt(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_BOSS_HP)));
+        mission.setAllianceProgress(cursor.getInt(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_ALLIANCE_PROGRESS)));
+
+        String userProgressJson = cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_USER_PROGRESS_JSON));
+        Type userProgressType = new TypeToken<Map<String, Integer>>(){}.getType();
+        mission.setUserTaskProgress(gson.fromJson(userProgressJson, userProgressType));
+
+        String tasksJson = cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_TASKS_JSON));
+        Type tasksType = new TypeToken<List<MissionTask>>(){}.getType();
+        mission.setTasks(gson.fromJson(tasksJson, tasksType));
+
+        mission.setStartTime(cursor.getLong(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_START_TIME)));
+        mission.setDurationMillis(cursor.getLong(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_DURATION)));
+        mission.setActive(cursor.getInt(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_IS_ACTIVE)) == 1);
+
+        return mission;
+    }
+
+
+    public LiveData<List<SpecialMission>> getAllMissions() {
+        MutableLiveData<List<SpecialMission>> liveData = new MutableLiveData<>();
+
+        FirebaseFirestore.getInstance()
+                .collection("specialMissions")
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<SpecialMission> allMissions = new ArrayList<>();
+                    if (queryDocumentSnapshots != null) {
+                        for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+                            SpecialMission mission = doc.toObject(SpecialMission.class);
+                            mission.setMissionId(doc.getId());
+                            allMissions.add(mission);
+                        }
+                    }
+                    liveData.postValue(allMissions);
+                })
+                .addOnFailureListener(e -> {
+                    liveData.postValue(new ArrayList<>());
+                });
+
+        return liveData;
     }
 }
