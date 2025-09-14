@@ -27,8 +27,11 @@ public class AllianceViewModel extends AndroidViewModel {
     public LiveData<Boolean> getActionStatus() { return actionStatus; }
     public void resetActionStatus() { actionStatus.setValue(null); }
 
-    private MutableLiveData<List<Message>> messages = new MutableLiveData<>();
-    public LiveData<List<Message>> getMessages() { return messages; }
+    private final LiveData<List<Message>> messages;
+
+    public LiveData<List<Message>> getMessages() {
+        return messages;
+    }
 
     public AllianceViewModel(@NonNull Application application) {
         super(application);
@@ -65,14 +68,11 @@ public class AllianceViewModel extends AndroidViewModel {
             return memberProfiles;
         });
 
-        currentAlliance.observeForever(alliance -> {
+        messages = Transformations.switchMap(currentAlliance, alliance -> {
             if (alliance != null) {
-                allianceRepository.listenForMessages(alliance.getAllianceId(), messageList -> {
-                    messages.postValue(messageList);
-                });
+                return allianceRepository.listenForMessagesLiveData(alliance.getAllianceId());
             } else {
-                allianceRepository.stopListeningForMessages();
-                messages.postValue(new ArrayList<>());
+                return new MutableLiveData<>(new ArrayList<>());
             }
         });
     }
