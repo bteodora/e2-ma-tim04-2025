@@ -413,12 +413,14 @@ public class TaskRepository {
             if (userRepo != null) {
                 User currentUser = userRepo.getLoggedInUser();
                 if (currentUser != null) {
-                    List<Task> todaysTasks = getAllTasksLiveData().getValue(); // svi zadaci korisnika
-                    boolean xpAdded = currentUser.increaseXp(task, todaysTasks);
+                    List<Task> allUserTasks = getAllTasksLiveData().getValue();
+
+                    int finalXpGained = currentUser.getFinalXpForTask(task);
+                    boolean xpWasAdded = currentUser.increaseXp(task, allUserTasks);
                     userRepo.updateUser(currentUser);
 
-                    if (xpAdded) {
-                        Toast.makeText(context, "Osvojili ste " + task.getTotalXp() + " XP!", Toast.LENGTH_SHORT).show();
+                    if (xpWasAdded) {
+                        Toast.makeText(context, "Osvojili ste " + finalXpGained + " XP!", Toast.LENGTH_SHORT).show();
                     } else {
                         Toast.makeText(context, "Kvota za XP je prekoračena", Toast.LENGTH_SHORT).show();
                     }
