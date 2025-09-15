@@ -9,7 +9,10 @@ import android.widget.Toast;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.lifecycle.ViewModelStoreOwner;
 
+import com.example.rpgapp.fragments.alliance.SpecialMissionViewModel;
 import com.example.rpgapp.model.Task;
 import com.example.rpgapp.model.User;
 import com.google.firebase.auth.FirebaseAuth;
@@ -357,6 +360,74 @@ public class TaskRepository {
         return categories;
     }
     // --- UPDATE STATUSA TASKA ---
+//    public void updateTaskStatus(Task task, String selectedStatus, Context context) {
+//        if (task == null) return;
+//
+//        String currentStatus = task.getStatus().toLowerCase();
+//        String selectedStatusLower = selectedStatus.toLowerCase();
+//
+//        if ("urađen".equals(currentStatus) || "neurađen".equals(currentStatus) ||
+//                "otkazan".equals(currentStatus) || isTaskPast(task)) {
+//            if (context != null) {
+//                Toast.makeText(context, "Ovaj zadatak se ne može menjati", Toast.LENGTH_SHORT).show();
+//            }
+//            return;
+//        }
+//
+//        // Pravila promene statusa
+//        switch (currentStatus) {
+//            case "aktivan":
+//                if ("urađen".equals(selectedStatusLower) || "otkazan".equals(selectedStatusLower) ||
+//                        ("pauziran".equals(selectedStatusLower) && task.isRecurring()) ||
+//                        "aktivan".equals(selectedStatusLower)) {
+//                    task.setStatus(selectedStatusLower);
+//                } else {
+//                    if (context != null) {
+//                        Toast.makeText(context, "Nevažeća promena statusa", Toast.LENGTH_SHORT).show();
+//                    }
+//                    return;
+//                }
+//                break;
+//            case "pauziran":
+//                if ("aktivan".equals(selectedStatusLower) || "pauziran".equals(selectedStatusLower)) {
+//                    task.setStatus(selectedStatusLower);
+//                } else {
+//                    if (context != null) {
+//                        Toast.makeText(context, "Nevažeća promena statusa", Toast.LENGTH_SHORT).show();
+//                    }
+//                    return;
+//                }
+//                break;
+//        }
+//
+//        // Ako je urađen, dodeli XP korisniku
+//        if ("urađen".equals(selectedStatusLower)) {
+//            UserRepository userRepo = UserRepository.getInstance(context);
+//            if (userRepo != null) {
+//                User currentUser = userRepo.getLoggedInUser();
+//                if (currentUser != null) {
+//                    List<Task> todaysTasks = getAllTasksLiveData().getValue(); // svi zadaci korisnika
+//                    boolean xpAdded = currentUser.increaseXp(task, todaysTasks);
+//                    userRepo.updateUser(currentUser);
+//
+//                    if (xpAdded) {
+//                        Toast.makeText(context, "Osvojili ste " + task.getTotalXp() + " XP!", Toast.LENGTH_SHORT).show();
+//                    } else {
+//                        Toast.makeText(context, "Kvota za XP je prekoračena", Toast.LENGTH_SHORT).show();
+//                    }
+//                }
+//            }
+//        }
+//
+//
+//        // Update u Firestore i SQLite
+//        updateTask(task);
+//
+//        if (context != null) {
+//            Toast.makeText(context, "Status zadatka ažuriran", Toast.LENGTH_SHORT).show();
+//        }
+//    }
+    // --- UPDATE STATUSA TASKA ---
     public void updateTaskStatus(Task task, String selectedStatus, Context context) {
         if (task == null) return;
 
@@ -397,13 +468,14 @@ public class TaskRepository {
                 break;
         }
 
-        // Ako je urađen, dodeli XP korisniku
+        // Ako je urađen, dodeli XP i smanji HP bossa
         if ("urađen".equals(selectedStatusLower)) {
+            // XP
             UserRepository userRepo = UserRepository.getInstance(context);
             if (userRepo != null) {
                 User currentUser = userRepo.getLoggedInUser();
                 if (currentUser != null) {
-                    List<Task> todaysTasks = getAllTasksLiveData().getValue(); // svi zadaci korisnika
+                    List<Task> todaysTasks = getAllTasksLiveData().getValue();
                     boolean xpAdded = currentUser.increaseXp(task, todaysTasks);
                     userRepo.updateUser(currentUser);
 
@@ -414,8 +486,17 @@ public class TaskRepository {
                     }
                 }
             }
-        }
 
+            // Specijalna misija – automatski smanji HP bossa
+            String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+            if (userId != null && context != null) {
+                SpecialMissionViewModel vm = new ViewModelProvider(
+                        (ViewModelStoreOwner) context // context mora biti FragmentActivity
+                ).get(SpecialMissionViewModel.class);
+
+                vm.handleNormalTaskCompletion(task, userId);
+            }
+        }
 
         // Update u Firestore i SQLite
         updateTask(task);
@@ -424,6 +505,7 @@ public class TaskRepository {
             Toast.makeText(context, "Status zadatka ažuriran", Toast.LENGTH_SHORT).show();
         }
     }
+
 
     // --- PRIVATNA POMOĆNA METODA ---
     private boolean isTaskPast(Task task) {

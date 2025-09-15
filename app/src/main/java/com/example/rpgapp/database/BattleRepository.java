@@ -33,15 +33,27 @@ public class BattleRepository {
     }
 
     // --- Dodavanje borbe ---
+//    public void addBattle(Battle battle, OnCompleteListener<Void> listener) {
+//        String userId = getCurrentUserId();
+//        if (userId == null) return;
+//
+//        battle.setUserId(userId); // postavljamo userId
+//        battlesRef.document(battle.getBattleId())
+//                .set(battle)
+//                .addOnCompleteListener(listener);
+//    }
     public void addBattle(Battle battle, OnCompleteListener<Void> listener) {
         String userId = getCurrentUserId();
         if (userId == null) return;
 
-        battle.setUserId(userId); // postavljamo userId
-        battlesRef.document(battle.getBattleId())
-                .set(battle)
-                .addOnCompleteListener(listener);
+        battle.setUserId(userId);
+        battlesRef.add(battle)
+                .addOnCompleteListener(task -> {
+                    if (listener != null) listener.onComplete(task.isSuccessful() ?
+                            Tasks.forResult(null) : Tasks.forException(task.getException()));
+                });
     }
+
 
     // --- Dohvatanje borbi trenutno ulogovanog korisnika ---
     public void getBattlesForCurrentUser(OnCompleteListener<List<Battle>> listener) {

@@ -40,6 +40,7 @@ import com.google.zxing.qrcode.QRCodeWriter;
 
 import java.text.NumberFormat;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -89,7 +90,7 @@ public class ProfileFragment extends Fragment {
         textViewProfileXp = view.findViewById(R.id.textViewProfileXp);
         textViewProfileCoins = view.findViewById(R.id.textViewProfileCoins);
         textViewProfilePP = view.findViewById(R.id.textViewProfilePP);
-        textViewBadgesCount = view.findViewById(R.id.textViewBadgesCount);
+
         layout_coins = view.findViewById(R.id.layout_coins);
         layout_power_points = view.findViewById(R.id.layout_power_points);
         layout_inventory_section = view.findViewById(R.id.layout_inventory_section);
@@ -533,17 +534,50 @@ public class ProfileFragment extends Fragment {
                 .show();
     }
 
-    private void populateBadges(User user) {
-        int badges = 0;
+//    private void populateBadges(User user) {
+//        int badges = 0;
+//
+//        // Ako je korisnik učestvovao u specijalnoj misiji
+//        MissionTask mission = viewModel.getCurrentSpecialMission().getValue();
+//        if (mission != null && mission.getUserTotalProgress().containsKey(user.getUserId())) {
+//            badges = mission.getUserTotalProgress().get(user.getUserId());
+//        }
+//
+//        textViewBadgesCount.setText("Badges: " + badges);
+//    }
 
-        // Ako je korisnik učestvovao u specijalnoj misiji
-        MissionTask mission = viewModel.getCurrentSpecialMission().getValue();
-        if (mission != null && mission.getUserTotalProgress().containsKey(user.getUserId())) {
-            badges = mission.getUserTotalProgress().get(user.getUserId());
+    private void populateBadges(User user) {
+        LinearLayout badgesContainer = getView().findViewById(R.id.layout_badges_container);
+        badgesContainer.removeAllViews();
+
+        List<String> badges = user.getBadges();
+        if (badges == null || badges.isEmpty()) {
+            TextView noBadgesText = new TextView(getContext());
+            noBadgesText.setText("No badges yet");
+            badgesContainer.addView(noBadgesText);
+            return;
         }
 
-        textViewBadgesCount.setText("Badges: " + badges);
+        for (String badgeName : badges) {
+            ImageView badgeView = new ImageView(getContext());
+
+            int resId = getResources().getIdentifier(
+                    badgeName.replace(".png", ""), // npr. badge_bronze
+                    "drawable",
+                    getContext().getPackageName()
+            );
+
+            if (resId != 0) {
+                badgeView.setImageResource(resId);
+                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                        100, 100); // veličina ikone
+                params.setMargins(8, 8, 8, 8);
+                badgeView.setLayoutParams(params);
+                badgesContainer.addView(badgeView);
+            }
+        }
     }
+
 
     private void populateAvatar(User user) {
         if (!isAdded()) {

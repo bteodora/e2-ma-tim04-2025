@@ -96,6 +96,13 @@ public class MissionTask {
     public void setDailyMax(int dailyMax) { this.dailyMax = dailyMax; }
     public void setUserTotalProgress(Map<String, Integer> userTotalProgress) { this.userTotalProgress = userTotalProgress; }
     public void setUserDailyProgress(Map<String, Map<String, Integer>> userDailyProgress) { this.userDailyProgress = userDailyProgress; }
+    public MissionTask(String name) {
+        this(); // generiše taskId
+        this.name = name;
+        this.hpReductionPerCompletion = 1;
+        this.maxCompletions = Integer.MAX_VALUE;
+        this.dailyMax = Integer.MAX_VALUE;
+    }
 
 
     public MissionTask deepCopy() {

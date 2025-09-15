@@ -12,6 +12,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
 
 import com.example.rpgapp.R;
@@ -19,9 +20,11 @@ import com.example.rpgapp.database.CategoryRepository;
 import com.example.rpgapp.database.TaskRepository;
 import com.example.rpgapp.database.UserRepository;
 import com.example.rpgapp.databinding.FragmentTaskPageBinding;
+import com.example.rpgapp.fragments.alliance.SpecialMissionViewModel;
 import com.example.rpgapp.model.Category;
 import com.example.rpgapp.model.Task;
 import com.example.rpgapp.model.User;
+import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -159,61 +162,6 @@ public class TaskPageFragment extends Fragment {
             public void onNothingSelected(AdapterView<?> parent) {}
         });
     }
-
-    private void updateTaskStatus(String selectedStatus) {
-    if (currentTask == null) return;
-
-    String currentStatus = currentTask.getStatus().toLowerCase();
-    String selectedStatusLower = selectedStatus.toLowerCase();
-
-    if ("urađen".equals(currentStatus) || "neurađen".equals(currentStatus) ||
-            "otkazan".equals(currentStatus) || isTaskPast(currentTask)) {
-        Toast.makeText(requireContext(), "Ovaj zadatak se ne može menjati", Toast.LENGTH_SHORT).show();
-        loadTask(currentTask.getTaskId());
-        return;
-    }
-
-    // Pravila promene statusa
-    switch (currentStatus) {
-        case "aktivan":
-            if ("urađen".equals(selectedStatusLower) || "otkazan".equals(selectedStatusLower) ||
-                    ("pauziran".equals(selectedStatusLower) && currentTask.isRecurring()) ||
-                    "aktivan".equals(selectedStatusLower)) {
-                currentTask.setStatus(selectedStatusLower);
-            } else {
-                Toast.makeText(requireContext(), "Nevažeća promena statusa", Toast.LENGTH_SHORT).show();
-                loadTask(currentTask.getTaskId());
-                return;
-            }
-            break;
-        case "pauziran":
-            if ("aktivan".equals(selectedStatusLower) || "pauziran".equals(selectedStatusLower)) {
-                currentTask.setStatus(selectedStatusLower);
-            } else {
-                Toast.makeText(requireContext(), "Nevažeća promena statusa", Toast.LENGTH_SHORT).show();
-                loadTask(currentTask.getTaskId());
-                return;
-            }
-            break;
-    }
-
-    // Ako je zadatak sada urađen, dodeli XP korisniku
-    if ("urađen".equals(selectedStatusLower)) {
-        UserRepository userRepo = UserRepository.getInstance(requireContext());
-        User currentUser = userRepo.getLoggedInUser();
-        if (currentUser != null) {
-            currentUser.addXp(currentTask.getTotalXp()); // Saberi XP
-            userRepo.updateUser(currentUser); // Snimi promene
-            Toast.makeText(requireContext(), "Osvojili ste " + currentTask.getTotalXp() + " XP!", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-
-    TaskRepository.getInstance(getContext()).updateTask(currentTask);
-    Toast.makeText(requireContext(), "Status zadatka ažuriran", Toast.LENGTH_SHORT).show();
-    loadTask(currentTask.getTaskId());
-}
-
 
     private void autoMarkTaskAsUnfinished(Task task) {
         if (!"aktivan".equals(task.getStatus().toLowerCase()) || task.isRecurring()) return;

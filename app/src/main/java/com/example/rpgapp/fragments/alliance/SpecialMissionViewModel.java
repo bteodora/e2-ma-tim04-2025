@@ -17,6 +17,7 @@ import com.example.rpgapp.model.SpecialMission;
 import com.example.rpgapp.model.MissionTask;
 import com.example.rpgapp.model.Task;
 import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.HashMap;
@@ -33,15 +34,18 @@ public class SpecialMissionViewModel extends AndroidViewModel {
     private final MutableLiveData<MissionTask> _taskCompletedLiveData = new MutableLiveData<>();
     public LiveData<MissionTask> taskCompletedLiveData = _taskCompletedLiveData;
 
-
+    public LiveData<SpecialMission> getCurrentMission() {
+        return currentMission;
+    }
+    public void setCurrentMission(SpecialMission mission) {
+        currentMission.postValue(mission);
+    }
     public SpecialMissionViewModel(@NonNull Application application) {
         super(application);
         repository = SpecialMissionRepository.getInstance(application);
     }
 
-    public LiveData<SpecialMission> getCurrentMission() {
-        return currentMission;
-    }
+
 
 
     public void loadMission(String allianceId, long delayMillis) {
@@ -145,29 +149,158 @@ public class SpecialMissionViewModel extends AndroidViewModel {
 
 
 
-    public int calculateHpReduction(MissionTask task) {
-        String name = task.getName();
+    // Za obične korisničke Task-ove
+    public int calculateHpReductionFromTask(Task task) {
+        if (task == null || task.getTitle() == null) return 0;
 
-        // Veoma lak, Laki, Normalni ili Važni zadatak
-        if (name.equals("Veoma lak") || name.equals("Laki") || name.equals("Normalni") || name.equals("Važni")) {
-            if (name.equals("Laki") || name.equals("Normalni")) return 2; // udvostručeno
-            return 1; // Veoma lak ili Važni
+        String title = task.getTitle().trim().toLowerCase();
+
+        if (title.equals("veoma lak") || title.equals("važni")) {
+            return 1;
+        }
+        if (title.equals("laki") || title.equals("normalni")) {
+            return 2;
         }
 
-        // Ostali zadaci
+        return 0; // ako nije nijedan od poznatih
+    }
+    // Za MissionTask-ove
+    public int calculateHpReductionFromMissionTask(MissionTask missionTask) {
+        if (missionTask == null || missionTask.getName() == null) return 0;
+
+        String name = missionTask.getName().trim().toLowerCase();
+
         switch (name) {
-            case "Kupovina u prodavnici":
-            case "Udarac u regularnoj borbi":
+            case "kupovina u prodavnici":
+            case "udarac u regularnoj borbi":
                 return 2;
-            case "Ostali zadaci":
-                return 4;
-            case "Bez nerešenih zadataka":
-                return 10;
-            case "Poruka u savezu":
+            case "ostali zadaci":
+            case "poruka u savezu":
                 return 4;
             default:
-                return 1;
+                return 10;
         }
+    }
+
+    // U SpecialMissionViewModel
+    public static class TaskResult {
+        public int hpReduction;
+        public String missionTaskName; // naziv MissionTask-a koji će biti update-ovan
+
+        public TaskResult(int hpReduction, String missionTaskName) {
+            this.hpReduction = hpReduction;
+            this.missionTaskName = missionTaskName;
+        }
+    }
+
+    /**
+     * Mapira običan Task na odgovarajući MissionTask i vraća koliko HP-a boss gubi.
+     */
+    private TaskResult mapTaskToMissionTask(Task task) {
+        if (task == null || task.getTitle() == null) return new TaskResult(0, null);
+
+        String title = task.getTitle().trim().toLowerCase();
+        int hpReduction;
+        String missionTaskName;
+
+        switch (title) {
+            case "kupovina u prodavnici":
+                hpReduction = 2;
+                missionTaskName = "Kupovina u prodavnici";
+                break;
+            case "udarac u regularnoj borbi":
+                hpReduction = 2;
+                missionTaskName = "Udarac u regularnoj borbi";
+                break;
+            case "laki":
+            case "normalni":
+            case "važni":
+                hpReduction = 1;
+                missionTaskName = "Laki/Normalni/Važni zadaci";
+                break;
+            case "ostali zadaci":
+                hpReduction = 4;
+                missionTaskName = "Ostali zadaci";
+                break;
+            case "bez nerešenih zadataka":
+                hpReduction = 10;
+                missionTaskName = "Bez nerešenih zadataka";
+                break;
+            case "poruka u savezu":
+                hpReduction = 4;
+                missionTaskName = "Poruka u savezu";
+                break;
+            default:
+                hpReduction = 0;
+                missionTaskName = null;
+        }
+
+        return new TaskResult(hpReduction, missionTaskName);
+    }
+
+
+    public void handleNormalTaskCompletion(Task task, String userId) {
+        SpecialMission mission = currentMission.getValue();
+        if (mission == null || !mission.isActive()) return;
+
+        TaskResult result = mapTaskToMissionTask(task);
+        if (result.hpReduction == 0 || result.missionTaskName == null) return;
+
+        // Pronađi odgovarajući MissionTask
+        MissionTask missionTask = mission.getTasks().stream()
+                .filter(t -> t.getName().equals(result.missionTaskName))
+                .findFirst()
+                .orElse(null);
+
+        if (missionTask == null) return;
+
+        // Inkrement progres
+        if (!missionTask.incrementProgress(userId)) return;
+
+        // Update misije
+        mission.reduceBossHP(result.hpReduction);
+        mission.increaseUserProgress(userId, result.hpReduction);
+        mission.increaseAllianceProgress(result.hpReduction);
+
+        FirebaseFirestore.getInstance()
+                .collection("specialMissions")
+                .document(mission.getMissionId())
+                .set(mission)
+                .addOnSuccessListener(aVoid -> {
+                    _taskCompletedLiveData.setValue(missionTask);
+                    currentMission.postValue(mission);
+                    Log.d("SpecialMissionVM", "Task + mission progress updated for user: " + userId);
+                })
+                .addOnFailureListener(e -> Log.e("SpecialMissionVM", "Error updating mission from task completion", e));
+    }
+
+//    public boolean areAllTasksCompleted() {
+//        SpecialMission mission = currentMission.getValue();
+//        if (mission == null) return false;
+//        return mission.getTasks().stream()
+//                .allMatch(t -> t.isCompleted(currentUserId)); // currentUserId možeš čuvati u VM
+//    }
+
+    public void reduceHP(int amount, String userId, MissionTask task) {
+        SpecialMission mission = currentMission.getValue();
+        if (mission == null) return;
+
+        // Smanjenje HP bossa
+        mission.reduceBossHP(amount);
+        mission.increaseUserProgress(userId, amount);
+        mission.increaseAllianceProgress(amount);
+
+        // Update task progres
+        task.incrementProgress(userId);
+
+        // Snimi u Firestore
+        firestore.collection("specialMissions")
+                .document(mission.getMissionId())
+                .set(mission)
+                .addOnSuccessListener(aVoid -> {
+                    _taskCompletedLiveData.setValue(task);
+                    currentMission.postValue(mission);
+                });
     }
 
     public void checkMissionStatus(SpecialMission mission) {
@@ -223,6 +356,7 @@ public class SpecialMissionViewModel extends AndroidViewModel {
         if (mission == null || mission.isActive()) return;
 
         UserRepository userRepo = UserRepository.getInstance(getApplication());
+        FirebaseFirestore db = FirebaseFirestore.getInstance(); // ⬅ ovde definišeš db
 
         // 1️⃣ Izračunaj nagradu za sledećeg bossa
         int previousBossLevel = mission.getCompletedBossCount(); // broj već pobedjenih bossova
@@ -234,27 +368,33 @@ public class SpecialMissionViewModel extends AndroidViewModel {
 
         // 2️⃣ Prođi kroz sve članove saveza
         for (String userId : mission.getUserTaskProgress().keySet()) {
+
+            // 2a️⃣ Dobij bedž za korisnika
+            int newBossCount = previousBossLevel + 1; // novi boss koji je pobedjen
+            String badgeImage = getBadgeForBossCount(newBossCount);
+
             Map<String, Object> reward = new HashMap<>();
             reward.put("coins", coinsReward);
             reward.put("potions", potionsReward);
             reward.put("clothes", clothesReward);
-            reward.put("badge", mission.getUserTaskProgress().get(userId)); // broj uspešno urađenih specijalnih zadataka
 
-            // 3️⃣ Sačuvaj nagrade za korisnika
+            // 2b️⃣ Dodaj bedž u Firestore
+            db.collection("users").document(userId)
+                    .update("badges", FieldValue.arrayUnion(badgeImage));
+
+            // 2c️⃣ Sačuvaj ostale nagrade preko repozitorijuma
             userRepo.updateUserReward(userId, reward);
         }
 
-        // 4️⃣ Obeleži misiju kao završenu
+        // 3️⃣ Obeleži misiju kao završenu
         mission.endMission();
         mission.incrementCompletedBossCount(); // povećaj broj pobedjenih bossova
 
-        FirebaseFirestore.getInstance()
-                .collection("alliances")
+        db.collection("alliances")
                 .document(mission.getAllianceId())
                 .update("missionStarted", false);
 
-
-        // 5️⃣ Sačuvaj promene u repozitorijumu
+        // 4️⃣ Sačuvaj promene u repozitorijumu
         repository.updateMission(mission, new UserRepository.RequestCallback() {
             @Override
             public void onSuccess() {
@@ -267,6 +407,18 @@ public class SpecialMissionViewModel extends AndroidViewModel {
             }
         });
     }
+
+
+    private String getBadgeForBossCount(int count) {
+        switch (count) {
+            case 1: return "badge_bronze.png";
+            case 2: return "badge_silver.png";
+            case 3: return "badge_gold.png";
+            case 4: return "badge_platinum.png";
+            default: return "badge_legendary.png";
+        }
+    }
+
 
     public LiveData<Boolean> hasActiveMission(String allianceId) {
         MutableLiveData<Boolean> result = new MutableLiveData<>();

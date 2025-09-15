@@ -65,6 +65,22 @@ public class Battle {
     public int getRemainingAttacks() { return remainingAttacks; }
     public boolean isFinished() { return finished; }
 
+    public Battle(User user, Boss existingBoss) {
+        this.user = user;
+        this.boss = existingBoss; // HP i level se zadržavaju
+        this.successRate =  successRate;
+        this.remainingAttacks = 5; // reset napada
+        this.finished = false;
+    }
+
+    public void setFinished(boolean finished) {
+        this.finished = finished;
+    }
+    public void setRemainingAttacks(int remainingAttacks) {
+
+        this.remainingAttacks = 5;
+    }
+
     public Map<String, UserItem> getActiveItems() { return activeItems; }
     public void setActiveItems(Map<String, UserItem> activeItems) { this.activeItems = activeItems; }
 
@@ -167,7 +183,7 @@ public class Battle {
         if (boss.isDefeated()) {
             coinsEarned = (int)(baseCoins * Math.pow(1.2, bossLevel - 1));
             droppedItem = dropEquipment();
-        } else if (boss.getMaxHp() <= bossHpBeforeFight / 2) {
+        } else if (boss.getMaxHp() <= boss.getCurrentHp() / 2) {
             // ako je umanjeno 50% HP-a
             coinsEarned = (int)((baseCoins * Math.pow(1.2, bossLevel - 1)) / 2);
             droppedItem = dropEquipment() && new Random().nextBoolean(); // 50% šansa
@@ -202,7 +218,7 @@ public class Battle {
         if (boss.isDefeated()) {
             // Bos mrtav -> puna nagrada
             coinsEarned = (int)(baseCoins * Math.pow(1.2, bossLevel - 1));
-        } else if (boss.getMaxHp() <= bossHpBeforeFight / 2) {
+        } else if (boss.getMaxHp() <= boss.getCurrentHp() / 2) {
             // Bos preživeo ali je skinuto > 50% HP -> pola nagrade
             coinsEarned = (int)((baseCoins * Math.pow(1.2, bossLevel - 1)) / 2);
         } else {

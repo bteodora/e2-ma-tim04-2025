@@ -7,8 +7,10 @@ import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.rpgapp.R;
+import com.example.rpgapp.fragments.alliance.SpecialMissionViewModel;
 import com.example.rpgapp.model.MissionTask;
 
 import java.util.ArrayList;
@@ -24,9 +26,11 @@ public class MissionTaskAdapter extends RecyclerView.Adapter<MissionTaskAdapter.
         void onTaskCompleted(int position);
     }
 
-    public MissionTaskAdapter(TaskClickListener listener, String userId) {
+    private SpecialMissionViewModel missionVM;
+    public MissionTaskAdapter(TaskClickListener listener, String userId, SpecialMissionViewModel missionV) {
         this.listener = listener;
         this.userId = userId;
+        this.missionVM = missionVM;
     }
 
     @NonNull
@@ -59,16 +63,10 @@ public class MissionTaskAdapter extends RecyclerView.Adapter<MissionTaskAdapter.
             holder.buttonComplete.setText("Complete");
         }
 
-//        holder.buttonComplete.setOnClickListener(v -> {
-//            boolean incremented = task.incrementProgress(userId);
-//            if (incremented) {
-//                listener.onTaskCompleted(position);
-//            }
-//            notifyItemChanged(position);
-//        });
 
         holder.buttonComplete.setOnClickListener(v -> {
             listener.onTaskCompleted(position);
+           // reduceSpecialMissionHP(task, userId);
         });
 
     }

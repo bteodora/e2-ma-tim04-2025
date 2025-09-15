@@ -20,13 +20,19 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.example.rpgapp.R;
 import com.example.rpgapp.adapters.WeaponListAdapter;
 import com.example.rpgapp.database.BattleRepository;
+import com.example.rpgapp.database.SpecialMissionRepository;
 import com.example.rpgapp.database.UserRepository;
+import com.example.rpgapp.fragments.alliance.SpecialMissionViewModel;
 import com.example.rpgapp.model.Battle;
 import com.example.rpgapp.model.BonusType;
+import com.example.rpgapp.model.Boss;
+import com.example.rpgapp.model.MissionTask;
+import com.example.rpgapp.model.SpecialMission;
 import com.example.rpgapp.model.User;
 import com.example.rpgapp.model.UserItem;
 import com.example.rpgapp.model.UserWeapon;
@@ -40,6 +46,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
 
 public class BossBattleFragment extends Fragment implements SensorEventListener {
 
@@ -67,10 +74,14 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
     private boolean isAttackInProgress = false;
 
     private TaskService taskService;
+    private SpecialMissionViewModel specialMissionViewModel;
+    private SpecialMission activeMission;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+
 
         // Dobavljanje ulogovanog korisnika iz UserRepository, isto kao u TaskPageFragment
         user = UserRepository.getInstance(requireContext()).getLoggedInUser();
@@ -92,6 +103,14 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
+
+
+        specialMissionViewModel = new ViewModelProvider(requireActivity())
+                .get(SpecialMissionViewModel.class);
+
+        specialMissionViewModel.getCurrentMission().observe(getViewLifecycleOwner(), mission -> {
+            activeMission = mission; // čuvamo lokalno
+        });
 
         View view = inflater.inflate(R.layout.fragment_boss_battle, container, false);
 
@@ -159,6 +178,32 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
 
                     // --- POSTAVI UI tek kada su user i battle učitani ---
                     requireActivity().runOnUiThread(() -> setupUi());
+
+                    // --- Učitaj specijalnu misiju za ulogovanog korisnika ---
+                    SpecialMissionRepository.getInstance(requireContext())
+                            .getActiveMissionForUser(currentUserId, new SpecialMissionRepository.MissionCallback() {
+                                @Override
+                                public void onMissionLoaded(SpecialMission mission) {
+                                    specialMissionViewModel.setCurrentMission(mission);
+                                    activeMission = mission;
+                                    requireActivity().runOnUiThread(() -> {
+                                        if (mission != null) {
+                                            Toast.makeText(requireContext(),
+                                                    "Active mission loaded: " + mission.getMissionId(),
+                                                    Toast.LENGTH_SHORT).show();
+                                        }
+                                    });
+                                }
+
+                                @Override
+                                public void onError(Exception e) {
+                                    requireActivity().runOnUiThread(() ->
+                                            Toast.makeText(requireContext(), "Error loading mission: " + e.getMessage(),
+                                                    Toast.LENGTH_SHORT).show());
+                                }
+                            });
+
+
                 });
             }
 
@@ -198,33 +243,85 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
             successRateText.setText("Chance to hit: " + successRate + "%");
             if (battle != null) battle.setSuccessRate(successRate);
         });
+
+        // --- Onemogući attack dok se misija ne učita --- **************************************************
+        specialMissionViewModel.getCurrentMission().observe(getViewLifecycleOwner(), mission -> {
+            activeMission = mission;
+            attackButton.setEnabled(activeMission != null);
+        });
+
+
     }
 
+
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+
+//        // Jednom postavi observer
+//        specialMissionViewModel.getCurrentMission().observe(getViewLifecycleOwner(), mission -> {
+//            activeMission = mission;
+//        });
+    }
 
     private void handleAttack() {
         if (isAttackInProgress || battle == null || battle.isFinished() || user == null) return;
         isAttackInProgress = true;
 
         boolean hit = battle.attack();
+
+        // --- UI update ---
+        bossHpBar.setProgress(battle.getBoss().getCurrentHp());
+        bossHpText.setText("HP: " + battle.getBoss().getCurrentHp() + "/" + battle.getBoss().getMaxHp());
+        remainingAttacksText.setText("Remaining attacks: " + battle.getRemainingAttacks() + "/5");
+
         if (hit) {
             bossImageView.setImageResource(R.drawable.boss_borba);
             bossImageView.postDelayed(() -> bossImageView.setImageResource(R.drawable.boss), 300);
             Toast.makeText(getContext(), "Hit!", Toast.LENGTH_SHORT).show();
+
+            if (activeMission == null) { Toast.makeText(getContext(),
+                    "Iznad ActiveMission ID: null"+
+                            ", tasks count: " ,
+                    Toast.LENGTH_LONG).show();}
+
+            // --- Active mission update ---
+            if (activeMission != null) {
+
+                Toast.makeText(getContext(),
+                        "Ispod ActiveMission ID: " + activeMission.getMissionId() +
+                                ", tasks count: " + activeMission.getTasks().size(),
+                        Toast.LENGTH_LONG).show();
+
+                for (int i = 0; i < activeMission.getTasks().size(); i++) {
+                    MissionTask task = activeMission.getTasks().get(i);
+                    if ("Udarac u regularnoj borbi".equals(task.getName())) {
+                        specialMissionViewModel.completeTask(i, activeMission.getMissionId(), currentUserId);
+                        break;
+                    }
+                }
+            }
         } else {
             Toast.makeText(getContext(), "Miss!", Toast.LENGTH_SHORT).show();
         }
 
-        bossHpBar.setProgress(battle.getBoss().getCurrentHp());
+        // --- Ako su napadi potrošeni, završi borbu ---
+        if (battle.getRemainingAttacks() == 0) {
 
-        bossHpText.setText("HP: " + battle.getBoss().getCurrentHp() + "/" + battle.getBoss().getMaxHp());
+            battle.setFinished(true);
+            battleRepository.updateBattle(battle, t -> {});
+            showResults();
+        } else {
+            // Sačuvaj stanje borbe da može da se nastavi
+            persistBossState(battle.getBoss().getLevel(), battle.getBoss().getCurrentHp());
+            battleRepository.updateBattle(battle, t -> {});
+        }
 
-        remainingAttacksText.setText("Remaining attacks: " + battle.getRemainingAttacks() + "/5");
-
-        battleRepository.updateBattle(battle, t -> {});
-
-        if (battle.isFinished()) showResults();
         isAttackInProgress = false;
     }
+
+
 
     private void showResults() {
         attackButton.setEnabled(false);
@@ -233,52 +330,33 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
 
         if (battle == null || user == null) return;
 
-        // --- Provera da li je pobedio ---
         boolean userWon = battle.getBoss().isDefeated();
-
-        // Prikaz poruke
         String message = userWon ? "Pobedio si!" : "Izgubio si!";
         Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
 
-        // --- Potroši temporary opremu ---
         consumeTemporaryEquipment(user);
-
-        // --- Dodeli nagrade ako je pobedio ili delimično ako nije ---
         giveReward();
 
-        // --- Sačuvaj borbu, ali je ne briši ---
-       // battle.setFinished(true); // opcionalno, možeš ga setovati da znaš da je završena
-        battleRepository.updateBattle(battle, t -> {});
-
-        // --- Napredovanje bossa ---
         if (userWon) {
             int nextLevel = battle.getBoss().getLevel() + 1;
             saveBossLevel(nextLevel);
-        } else {
-            // Ako korisnik nije pobedio, HP bossa se pamti za sledeći pokušaj
-            persistBossState(battle.getBoss().getLevel(), battle.getBoss().getCurrentHp());
         }
 
-        // --- Ažuriraj korisnika ---
+        // --- Napravi novu borbu sa istim bossom, istim HP i resetovanim napadima ---
+        Boss oldBoss = battle.getBoss();
+        Battle newBattle = new Battle(user, oldBoss); // konstruktor koji prima postojećeg bossa
+        newBattle.setRemainingAttacks(5); // RESETUJ remaining attacks
+        newBattle.setFinished(false);
+        battle = newBattle;
+
+        battleRepository.addBattle(battle, t -> {});
+        requireActivity().runOnUiThread(this::setupUi);
+
         UserRepository.getInstance(requireContext()).updateUser(user);
     }
 
 
-//    private void showResults() {
-//        attackButton.setEnabled(false);
-//        treasureChestImage.setVisibility(View.VISIBLE);
-//        coinsEarnedText.setVisibility(View.VISIBLE);
-//
-//        consumeTemporaryEquipment(user);
-//        giveReward();
-//
-//        //battleRepository.deleteBattle(battle.getBattleId(), t -> {});
-//
-//        // TODO: AKOOOO TI TREBA DA ZNAS ZNAS DA LI JE ZAVRSENA BORBA zbog istorije
-//
-//       // battle.setFinished(true); <-- setujes na true i dodas polje u battle
-//        battleRepository.updateBattle(battle, t -> {});
-//    }
+
 
     private void giveReward() {
         if (user == null || battle == null) return;
@@ -417,9 +495,11 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
     }
 
     private int loadBossLevelOrDefault(int def) {
-        return requireContext().getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
-                .getInt(SP_BOSS_LEVEL, def);
+        SharedPreferences sp = requireContext().getSharedPreferences(SP_NAME, Context.MODE_PRIVATE);
+        if (!sp.contains(SP_BOSS_LEVEL)) return def;
+        return sp.getInt(SP_BOSS_LEVEL, def);
     }
+
 
     private void restoreBossHpIfExists() {
         if (battle == null) return;

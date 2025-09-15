@@ -216,4 +216,46 @@ public class SpecialMissionRepository {
                 .document(allianceId)
                 .update("missionStarted", false);
     }
+
+    public interface MissionCallback {
+        void onMissionLoaded(SpecialMission mission);
+        void onError(Exception e);
+    }
+
+    public void getActiveMissionForUser(String userId, MissionCallback callback) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        // 1. Pronađi saveze gde je user član
+        db.collection("alliances")
+                .whereArrayContains("memberIds", userId)
+                .get()
+                .addOnCompleteListener(allianceTask -> {
+                    if (!allianceTask.isSuccessful() || allianceTask.getResult().isEmpty()) {
+                        callback.onMissionLoaded(null); // Nema saveza za korisnika
+                        return;
+                    }
+
+                    // Pretpostavljamo da je korisnik u samo jednom savezu ili uzimamo prvi
+                    String allianceId = allianceTask.getResult().getDocuments().get(0).getId();
+
+                    // 2. Pronađi aktivnu misiju za taj savez
+                    db.collection("specialMissions")
+                            .whereEqualTo("allianceId", allianceId)
+                            .whereEqualTo("active", true)
+                            .limit(1)
+                            .get()
+                            .addOnCompleteListener(missionTask -> {
+                                if (missionTask.isSuccessful() && !missionTask.getResult().isEmpty()) {
+                                    SpecialMission mission = missionTask.getResult().getDocuments().get(0)
+                                            .toObject(SpecialMission.class);
+                                    callback.onMissionLoaded(mission);
+                                } else {
+                                    callback.onMissionLoaded(null);
+                                }
+                            })
+                            .addOnFailureListener(e -> callback.onError(e));
+                })
+                .addOnFailureListener(e -> callback.onError(e));
+    }
+
 }
