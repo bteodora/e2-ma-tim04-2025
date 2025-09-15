@@ -20,6 +20,10 @@ public class Boss {
         }
         return hp;
     }
+    public void setCurrentHp(int hp) {
+        this.currentHp = Math.max(0, Math.min(hp, maxHp));
+    }
+
 
     public int getLevel() { return level; }
     public int getMaxHp() { return maxHp; }

@@ -78,8 +78,10 @@ public class Battle {
     }
     public void setRemainingAttacks(int remainingAttacks) {
 
-        this.remainingAttacks = 5;
+        this.remainingAttacks = remainingAttacks;
     }
+
+
 
     public Map<String, UserItem> getActiveItems() { return activeItems; }
     public void setActiveItems(Map<String, UserItem> activeItems) { this.activeItems = activeItems; }

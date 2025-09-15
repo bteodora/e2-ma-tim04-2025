@@ -164,7 +164,19 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
                 }
 
                 user = loadedUser;
-                int bossLevel = loadBossLevelOrDefault(1);
+               // int bossLevel = loadBossLevelOrDefault(1);
+                int bossLevel;
+
+                SharedPreferences sp = requireContext().getSharedPreferences(SP_NAME, Context.MODE_PRIVATE);
+
+                if (sp.contains(SP_BOSS_LEVEL)) {
+                    // Učitavamo prethodni level
+                    bossLevel = sp.getInt(SP_BOSS_LEVEL, 1);
+                } else {
+                    // Prvi put startuje na level 1
+                    bossLevel = 1;
+                    saveBossLevel(bossLevel); // sačuvaj prvi put
+                }
 
                 battleRepository.getBattlesForCurrentUser(task -> {
                     if (task.isSuccessful() && !task.getResult().isEmpty()) {
@@ -189,7 +201,7 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
                                     requireActivity().runOnUiThread(() -> {
                                         if (mission != null) {
                                             Toast.makeText(requireContext(),
-                                                    "Active mission loaded: " + mission.getMissionId(),
+                                                    "Svakim udarcem resavate zadatke iz specijalne misije!",
                                                     Toast.LENGTH_SHORT).show();
                                         }
                                     });
@@ -259,41 +271,21 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-//        // Jednom postavi observer
-//        specialMissionViewModel.getCurrentMission().observe(getViewLifecycleOwner(), mission -> {
-//            activeMission = mission;
-//        });
     }
+
 
     private void handleAttack() {
         if (isAttackInProgress || battle == null || battle.isFinished() || user == null) return;
         isAttackInProgress = true;
 
         boolean hit = battle.attack();
-
-        // --- UI update ---
-        bossHpBar.setProgress(battle.getBoss().getCurrentHp());
-        bossHpText.setText("HP: " + battle.getBoss().getCurrentHp() + "/" + battle.getBoss().getMaxHp());
-        remainingAttacksText.setText("Remaining attacks: " + battle.getRemainingAttacks() + "/5");
-
         if (hit) {
             bossImageView.setImageResource(R.drawable.boss_borba);
             bossImageView.postDelayed(() -> bossImageView.setImageResource(R.drawable.boss), 300);
             Toast.makeText(getContext(), "Hit!", Toast.LENGTH_SHORT).show();
 
-            if (activeMission == null) { Toast.makeText(getContext(),
-                    "Iznad ActiveMission ID: null"+
-                            ", tasks count: " ,
-                    Toast.LENGTH_LONG).show();}
-
             // --- Active mission update ---
             if (activeMission != null) {
-
-                Toast.makeText(getContext(),
-                        "Ispod ActiveMission ID: " + activeMission.getMissionId() +
-                                ", tasks count: " + activeMission.getTasks().size(),
-                        Toast.LENGTH_LONG).show();
-
                 for (int i = 0; i < activeMission.getTasks().size(); i++) {
                     MissionTask task = activeMission.getTasks().get(i);
                     if ("Udarac u regularnoj borbi".equals(task.getName())) {
@@ -302,26 +294,22 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
                     }
                 }
             }
+
         } else {
             Toast.makeText(getContext(), "Miss!", Toast.LENGTH_SHORT).show();
         }
 
-        // --- Ako su napadi potrošeni, završi borbu ---
-        if (battle.getRemainingAttacks() == 0) {
+        bossHpBar.setProgress(battle.getBoss().getCurrentHp());
 
-            battle.setFinished(true);
-            battleRepository.updateBattle(battle, t -> {});
-            showResults();
-        } else {
-            // Sačuvaj stanje borbe da može da se nastavi
-            persistBossState(battle.getBoss().getLevel(), battle.getBoss().getCurrentHp());
-            battleRepository.updateBattle(battle, t -> {});
-        }
+        bossHpText.setText("HP: " + battle.getBoss().getCurrentHp() + "/" + battle.getBoss().getMaxHp());
 
+        remainingAttacksText.setText("Remaining attacks: " + battle.getRemainingAttacks() + "/5");
+
+        battleRepository.updateBattle(battle, t -> {});
+
+        if (battle.isFinished()) showResults();
         isAttackInProgress = false;
     }
-
-
 
     private void showResults() {
         attackButton.setEnabled(false);
@@ -330,32 +318,35 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
 
         if (battle == null || user == null) return;
 
+        // --- Provera da li je pobedio ---
         boolean userWon = battle.getBoss().isDefeated();
+
+        // Prikaz poruke
         String message = userWon ? "Pobedio si!" : "Izgubio si!";
         Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
 
+        // --- Potroši temporary opremu ---
         consumeTemporaryEquipment(user);
+
+        // --- Dodeli nagrade ako je pobedio ili delimično ako nije ---
         giveReward();
 
+        // --- Sačuvaj borbu, ali je ne briši ---
+        // battle.setFinished(true); // opcionalno, možeš ga setovati da znaš da je završena
+        battleRepository.updateBattle(battle, t -> {});
+
+        // --- Napredovanje bossa ---
         if (userWon) {
             int nextLevel = battle.getBoss().getLevel() + 1;
             saveBossLevel(nextLevel);
+        } else {
+            // Ako korisnik nije pobedio, HP bossa se pamti za sledeći pokušaj
+            persistBossState(battle.getBoss().getLevel(), battle.getBoss().getCurrentHp());
         }
 
-        // --- Napravi novu borbu sa istim bossom, istim HP i resetovanim napadima ---
-        Boss oldBoss = battle.getBoss();
-        Battle newBattle = new Battle(user, oldBoss); // konstruktor koji prima postojećeg bossa
-        newBattle.setRemainingAttacks(5); // RESETUJ remaining attacks
-        newBattle.setFinished(false);
-        battle = newBattle;
-
-        battleRepository.addBattle(battle, t -> {});
-        requireActivity().runOnUiThread(this::setupUi);
-
+        // --- Ažuriraj korisnika ---
         UserRepository.getInstance(requireContext()).updateUser(user);
     }
-
-
 
 
     private void giveReward() {
@@ -500,17 +491,15 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
         return sp.getInt(SP_BOSS_LEVEL, def);
     }
 
-
     private void restoreBossHpIfExists() {
         if (battle == null) return;
         SharedPreferences sp = requireContext().getSharedPreferences(SP_NAME, Context.MODE_PRIVATE);
         int savedHp = sp.getInt(SP_BOSS_HP, -1);
         if (savedHp >= 0) {
-            int max = battle.getBoss().getMaxHp();
-            int hp = Math.min(savedHp, max);
-            battle.getBoss().reduceHp(max - hp);
+            battle.getBoss().setCurrentHp(savedHp); // direktno postavljanje
         }
     }
+
     private void showWeaponSelectionDialog() {
         if (user == null || user.getUserWeapons() == null || user.getUserWeapons().isEmpty()) {
             Toast.makeText(requireContext(), "Nemate oružje.", Toast.LENGTH_SHORT).show();
