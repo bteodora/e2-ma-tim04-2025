@@ -312,8 +312,9 @@ public class TaskRepository {
                 if (userRepo != null) {
                     User currentUser = userRepo.getLoggedInUser();
                     if (currentUser != null) {
-                        List<Task> allUserTasks = loadTasksFromSQLiteInternal(); // Koristimo internu metodu
+                        List<Task> allUserTasks = loadTasksFromSQLiteInternal();
                         int finalXpGained = currentUser.getFinalXpForTask(task);
+                        task.setTotalXp(finalXpGained);
                         boolean xpWasAdded = currentUser.increaseXp(task, allUserTasks);
                         userRepo.updateUser(currentUser);
                         new Handler(Looper.getMainLooper()).post(() -> {
