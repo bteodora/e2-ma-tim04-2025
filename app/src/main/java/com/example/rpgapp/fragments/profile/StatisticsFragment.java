@@ -7,6 +7,7 @@ import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -39,6 +40,8 @@ public class StatisticsFragment extends Fragment {
     private LineChart chartXpLast7Days;
     private LineChart chartAvgDifficulty;
     private TextView textViewMissionsStarted, textViewMissionsCompleted;
+    private TextView textViewUserTitle, textViewUserPowerPoints, textViewUserXp;
+    private ProgressBar progressBarUserXp;
 
     @Nullable
     @Override
@@ -64,6 +67,10 @@ public class StatisticsFragment extends Fragment {
         chartAvgDifficulty = view.findViewById(R.id.chartAvgDifficulty);
         textViewMissionsStarted = view.findViewById(R.id.textViewMissionsStarted);
         textViewMissionsCompleted = view.findViewById(R.id.textViewMissionsCompleted);
+        textViewUserTitle = view.findViewById(R.id.textViewUserTitle);
+        textViewUserPowerPoints = view.findViewById(R.id.textViewUserPowerPoints);
+        textViewUserXp = view.findViewById(R.id.textViewUserXp);
+        progressBarUserXp = view.findViewById(R.id.progressBarUserXp);
     }
 
     private void observeViewModel() {
@@ -72,6 +79,23 @@ public class StatisticsFragment extends Fragment {
 
         viewModel.taskSummaryData.observe(getViewLifecycleOwner(), this::setupPieChart);
         viewModel.categoryData.observe(getViewLifecycleOwner(), this::setupBarChart);
+        viewModel.userTitle.observe(getViewLifecycleOwner(), title -> {
+            textViewUserTitle.setText(title);
+        });
+
+        viewModel.userPowerPoints.observe(getViewLifecycleOwner(), pp -> {
+            textViewUserPowerPoints.setText(pp);
+        });
+
+        viewModel.userXpDisplay.observe(getViewLifecycleOwner(), xpText -> {
+            textViewUserXp.setText(xpText);
+        });
+        viewModel.userXpMax.observe(getViewLifecycleOwner(), max -> {
+            progressBarUserXp.setMax(max);
+        });
+        viewModel.userXpProgress.observe(getViewLifecycleOwner(), progress -> {
+            progressBarUserXp.setProgress(progress);
+        });
         viewModel.xpLast7DaysData.observe(getViewLifecycleOwner(), dataWithLabels -> {
             if (dataWithLabels != null && dataWithLabels.lineData != null) {
                 setupLineChart(chartXpLast7Days, dataWithLabels.lineData);

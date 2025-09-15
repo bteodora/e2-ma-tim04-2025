@@ -138,11 +138,12 @@ public class Task {
     public void setUserId(String userId) {
         this.userId = userId;
     }
-
+    @Exclude
     public boolean isOneTime() {
         return "jednokratni".equalsIgnoreCase(frequency);
     }
 
+    @Exclude
     public boolean isRepeating() {
         return "ponavljajući".equalsIgnoreCase(frequency);
     }
@@ -162,6 +163,8 @@ public class Task {
     public void setCreationTimestamp(long creationTimestamp) {
         this.creationTimestamp = creationTimestamp;
     }
+
+
 
     @Exclude
     public long getCompletionTimestamp() {

@@ -61,6 +61,11 @@ public class StatisticsViewModel extends AndroidViewModel {
     public LiveData<String> missionsStartedCount = _missionsStartedCount;
     private MutableLiveData<String> _missionsCompletedCount = new MutableLiveData<>("0");
     public LiveData<String> missionsCompletedCount = _missionsCompletedCount;
+    public MutableLiveData<String> userTitle = new MutableLiveData<>();
+    public MutableLiveData<String> userPowerPoints = new MutableLiveData<>();
+    public MutableLiveData<String> userXpDisplay = new MutableLiveData<>();
+    public MutableLiveData<Integer> userXpProgress = new MutableLiveData<>();
+    public MutableLiveData<Integer> userXpMax = new MutableLiveData<>();
 
     public StatisticsViewModel(@NonNull Application application) {
         super(application);
@@ -73,9 +78,23 @@ public class StatisticsViewModel extends AndroidViewModel {
         userRepository.getLoggedInUserLiveData().observeForever(user -> {
             if (user != null) {
                 loadMissionStats(user.getUserId());
+
+                userTitle.postValue(user.getTitle());
+                userPowerPoints.postValue(String.valueOf(user.getPowerPoints()));
+
+                long currentXp = user.getXp();
+                long requiredXp = user.getRequiredXpForNextLevel();
+
+                userXpDisplay.postValue(currentXp + " / " + requiredXp + " XP");
+
+                userXpMax.postValue((int) requiredXp);
+                userXpProgress.postValue((int) currentXp);
+
             } else {
-                _missionsStartedCount.postValue("0");
-                _missionsCompletedCount.postValue("0");
+                userTitle.postValue("");
+                userPowerPoints.postValue("0");
+                userXpDisplay.postValue("0 / 0 XP");
+                userXpProgress.postValue(0);
             }
         });
     }
