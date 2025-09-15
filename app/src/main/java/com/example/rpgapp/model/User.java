@@ -4,6 +4,7 @@ import com.google.firebase.firestore.Exclude;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -35,7 +36,7 @@ public class User {
     private List<String> allianceInvites;
     private String fcmToken;
 
-    private void reduceLifespan() {
+    public void reduceLifespan() {
         userItems.entrySet().removeIf(entry -> {
             UserItem item = entry.getValue();
             if (item.bonusType != BonusType.PERMANENT_PP) {
@@ -85,7 +86,11 @@ public class User {
         return registrationTimestamp;
     }
 
-    public User() {}
+    public User() {
+        this.equipped = new HashMap<>();
+        this.userItems = new HashMap<>();
+        this.userWeapons = new HashMap<>();
+    }
 
     public User(String username, String avatarId) {
         this.username = username;

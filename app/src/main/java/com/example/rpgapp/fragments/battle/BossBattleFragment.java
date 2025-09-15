@@ -193,16 +193,23 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
         selectWeaponButton.setOnClickListener(v -> showWeaponSelectionDialog());
 
         taskService = TaskService.getInstance(requireContext());
+        taskService = TaskService.getInstance(requireContext());
         taskService.getSuccessRate().observe(getViewLifecycleOwner(), rate -> {
-            successRate = clamp((int) Math.round(rate), 1, 100);
+            int baseSuccessRate = (int) Math.round(rate);
+            successRate = calculateSuccessRate(user, baseSuccessRate);
+
             successRateText.setText("Chance to hit: " + successRate + "%");
             if (battle != null) battle.setSuccessRate(successRate);
         });
     }
 
-
     private void handleAttack() {
-        if (isAttackInProgress || battle == null || battle.isFinished() || user == null) return;
+        if (isAttackInProgress || battle == null || user == null || battle.getRemainingAttacks() <= 0) {
+            if (battle != null && battle.isFinished()) {
+                showResults();
+            }
+            return;
+        }
         isAttackInProgress = true;
 
         boolean hit = battle.attack();
@@ -215,14 +222,39 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
         }
 
         bossHpBar.setProgress(battle.getBoss().getCurrentHp());
-
         bossHpText.setText("HP: " + battle.getBoss().getCurrentHp() + "/" + battle.getBoss().getMaxHp());
 
+        if (battle.getRemainingAttacks() == 0 && !battle.getBoss().isDefeated()) {
+            if (user.getEquipped() != null) {
+                for (UserItem item : user.getEquipped().values()) {
+                    if (item.getBonusType() == BonusType.ATTACK_NUM) {
+                        if (item.isBonusTriggered()) {
+                            Toast.makeText(getContext(), "Bonus: Dobili ste dodatni napad!", Toast.LENGTH_LONG).show();
+                            battle.setRemainingAttacks(1);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Ažuriraj tekst o broju preostalih napada
         remainingAttacksText.setText("Remaining attacks: " + battle.getRemainingAttacks() + "/5");
 
+        // Ažuriraj stanje borbe u bazi
         battleRepository.updateBattle(battle, t -> {});
 
-        if (battle.isFinished()) showResults();
+        // Proveri da li je borba SADA završena (tek nakon provere za bonus)
+        if (battle.isFinished()) {
+            // Koristimo malu pauzu kako bi korisnik stigao da pročita Toast poruku
+            // pre nego što se prikažu rezultati borbe.
+            if (getView() != null) {
+                getView().postDelayed(this::showResults, 1200);
+            } else {
+                showResults(); // U slučaju da je view uništen
+            }
+        }
+
         isAttackInProgress = false;
     }
 
@@ -233,33 +265,24 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
 
         if (battle == null || user == null) return;
 
-        // --- Provera da li je pobedio ---
         boolean userWon = battle.getBoss().isDefeated();
 
-        // Prikaz poruke
         String message = userWon ? "Pobedio si!" : "Izgubio si!";
         Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
 
-        // --- Potroši temporary opremu ---
-        consumeTemporaryEquipment(user);
+        user.reduceLifespan();
 
-        // --- Dodeli nagrade ako je pobedio ili delimično ako nije ---
         giveReward();
 
-        // --- Sačuvaj borbu, ali je ne briši ---
-       // battle.setFinished(true); // opcionalno, možeš ga setovati da znaš da je završena
         battleRepository.updateBattle(battle, t -> {});
 
-        // --- Napredovanje bossa ---
         if (userWon) {
             int nextLevel = battle.getBoss().getLevel() + 1;
             saveBossLevel(nextLevel);
         } else {
-            // Ako korisnik nije pobedio, HP bossa se pamti za sledeći pokušaj
             persistBossState(battle.getBoss().getLevel(), battle.getBoss().getCurrentHp());
         }
 
-        // --- Ažuriraj korisnika ---
         UserRepository.getInstance(requireContext()).updateUser(user);
     }
 
@@ -347,24 +370,65 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
                 .edit().putLong("user_coins", user.getCoins()).apply();
     }
 
-    // === Helpers ===
     private int calculateTotalPP(User u) {
-        int total = u.getPowerPoints();
+        double basePP = u.getPowerPoints();
+        double finalPP = basePP;
 
-        // Dodaj bonus od odeće/equipment-a
+        double permanentMultiplier = 1.0;
+
         if (u.getEquipped() != null) {
-            for (UserItem it : u.getEquipped().values()) {
-                if (it.getBonusType() == BonusType.PERMANENT_PP || it.getBonusType() == BonusType.TEMPORARY_PP)
-                    total += (int) it.getCurrentBonus();
+            for (UserItem item : u.getEquipped().values()) {
+                if (item.getBonusType() == BonusType.PERMANENT_PP) {
+                    permanentMultiplier *= (1.0 + item.getCurrentBonus());
+                }
             }
         }
 
-        // Dodaj bonus od trenutno aktivnog oružja u borbi
-        if (battle != null && battle.getActiveWeapon() != null) {
-            total += battle.getActiveWeapon().getBonusPP();
+        if (u.getUserWeapons() != null) {
+            for (UserWeapon weapon : u.getUserWeapons().values()) {
+                if (weapon.getBoostType() == BonusType.PERMANENT_PP) {
+                    permanentMultiplier *= (1.0 + weapon.getCurrentBoost());
+                }
+            }
         }
 
-        return Math.max(total, 0);
+        if (battle != null && battle.getActiveWeapon() != null && battle.getActiveWeapon().getBoostType() == BonusType.PERMANENT_PP) {
+
+            permanentMultiplier *= (1.0 + battle.getActiveWeapon().getCurrentBoost());
+        }
+
+
+        finalPP = basePP * permanentMultiplier;
+
+        double temporaryBonusValue = 0.0;
+
+        if (u.getEquipped() != null) {
+            for (UserItem item : u.getEquipped().values()) {
+                if (item.getBonusType() == BonusType.TEMPORARY_PP) {
+                    temporaryBonusValue += (basePP * item.getCurrentBonus());
+                }
+            }
+        }
+
+        if (battle != null && battle.getActiveWeapon() != null && battle.getActiveWeapon().getBoostType() == BonusType.TEMPORARY_PP) {
+            temporaryBonusValue += (basePP * battle.getActiveWeapon().getCurrentBoost());
+        }
+
+        finalPP += temporaryBonusValue;
+
+        return (int) Math.round(finalPP);
+    }
+
+    private int calculateSuccessRate(User u, int baseRate) {
+        double finalRate = baseRate;
+        if (u.getEquipped() != null) {
+            for (UserItem item : u.getEquipped().values()) {
+                if (item.getBonusType() == BonusType.SUCCESS_PERCENTAGE) {
+                    finalRate += item.getCurrentBonus();
+                }
+            }
+        }
+        return clamp((int) Math.round(finalRate), 1, 100);
     }
 
 
