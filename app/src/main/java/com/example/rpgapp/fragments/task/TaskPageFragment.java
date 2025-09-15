@@ -22,6 +22,8 @@ import com.example.rpgapp.database.UserRepository;
 import com.example.rpgapp.databinding.FragmentTaskPageBinding;
 import com.example.rpgapp.fragments.alliance.SpecialMissionViewModel;
 import com.example.rpgapp.model.Category;
+import com.example.rpgapp.model.MissionTask;
+import com.example.rpgapp.model.SpecialMission;
 import com.example.rpgapp.model.Task;
 import com.example.rpgapp.model.User;
 import com.google.firebase.auth.FirebaseAuth;
@@ -38,7 +40,16 @@ public class TaskPageFragment extends Fragment {
     private String taskId;
     private Task currentTask;
 
+    private SpecialMissionViewModel specialMissionViewModel;
+    private String currentUserId;
     private static final int MAX_DAYS_PAST = 3; // limit od 3 dana
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        specialMissionViewModel = new ViewModelProvider(requireActivity()).get(SpecialMissionViewModel.class);
+        currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+    }
 
     @Nullable
     @Override
@@ -154,6 +165,12 @@ public class TaskPageFragment extends Fragment {
                 }
                 String selectedStatus = availableStatuses.get(position);
                 //updateTaskStatus(selectedStatus);
+
+                // POZIV SAMO AKO JE STATUS "urađen"
+                if ("urađen".equalsIgnoreCase(selectedStatus)) {
+                    completeTaskForSpecialMission(currentTask);
+                }
+
                 TaskRepository taskRepo = TaskRepository.getInstance(requireContext());
                 taskRepo.updateTaskStatus(task, selectedStatus, requireContext());
             }
@@ -162,6 +179,51 @@ public class TaskPageFragment extends Fragment {
             public void onNothingSelected(AdapterView<?> parent) {}
         });
     }
+
+    private void completeTaskForSpecialMission(Task task) {
+        if (specialMissionViewModel.getCurrentMission().getValue() == null) return;
+
+        SpecialMission activeMission = specialMissionViewModel.getCurrentMission().getValue();
+        String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
+        for (int i = 0; i < activeMission.getTasks().size(); i++) {
+            MissionTask missionTask = activeMission.getTasks().get(i);
+
+            int hpToAward = 0;
+
+            if ("Laki/Normalni/Važni zadaci".equals(missionTask.getName())) {
+                boolean isEasyOrNormal = "Veoma lak".equals(task.getDifficultyText()) ||
+                        "Lak".equals(task.getDifficultyText()) ||
+                        "Normalan".equals(task.getDifficultyText()) ||
+                        "Važan".equals(task.getImportanceText());
+
+                if (isEasyOrNormal) {
+                    hpToAward = 1;
+                    if ("Lak".equals(task.getDifficultyText()) || "Normalan".equals(task.getDifficultyText())) {
+                        hpToAward *= 2; // multiplicator
+                    }
+                } else {
+                    hpToAward = 4; // ostali zadaci
+                }
+
+            } else if ("Ostali zadaci".equals(missionTask.getName())) {
+                hpToAward = 4;
+            }
+
+            // **Poziv completeTask se sada uvek izvršava za sve zadatke**
+            specialMissionViewModel.completeTask(i, activeMission.getMissionId(), currentUserId);
+
+            Toast.makeText(requireContext(),
+                    "Task iz specijalne misije rešen! HP: " + hpToAward,
+                    Toast.LENGTH_SHORT).show();
+            break;
+        }
+
+        TaskRepository.getInstance(requireContext()).updateTaskStatus(task, "urađen", requireContext());
+    }
+
+
+
 
     private void autoMarkTaskAsUnfinished(Task task) {
         if (!"aktivan".equals(task.getStatus().toLowerCase()) || task.isRecurring()) return;

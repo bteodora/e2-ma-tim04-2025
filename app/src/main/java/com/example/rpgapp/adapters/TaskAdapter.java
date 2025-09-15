@@ -12,10 +12,16 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.fragment.app.FragmentActivity;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.example.rpgapp.R;
 import com.example.rpgapp.database.TaskRepository;
+import com.example.rpgapp.fragments.alliance.SpecialMissionViewModel;
+import com.example.rpgapp.model.MissionTask;
+import com.example.rpgapp.model.SpecialMission;
 import com.example.rpgapp.model.Task;
+import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -87,6 +93,10 @@ public class TaskAdapter extends ArrayAdapter<Task> {
                 // Pozovi repozitorijum da ažurira status
                 TaskRepository.getInstance(context).updateTaskStatus(currentTask, "urađen", context);
 
+
+                //----------Specijalna misija
+                completeSpecialMissionTask(currentTask);
+
                 notifyDataSetChanged();
             });
 
@@ -113,6 +123,56 @@ public class TaskAdapter extends ArrayAdapter<Task> {
 
 
         return listItem;
+    }
+
+    private void completeSpecialMissionTask(Task task) {
+        SpecialMissionViewModel specialMissionViewModel =
+                new ViewModelProvider((FragmentActivity) getContext()).get(SpecialMissionViewModel.class);
+
+        if (specialMissionViewModel.getCurrentMission().getValue() == null) return;
+
+        SpecialMission activeMission = specialMissionViewModel.getCurrentMission().getValue();
+        String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
+        for (int i = 0; i < activeMission.getTasks().size(); i++) {
+            MissionTask missionTask = activeMission.getTasks().get(i);
+            int hpToAward = 0;
+
+            switch (missionTask.getName()) {
+                case "Laki/Normalni/Važni zadaci":
+                    boolean isEasyOrNormal = "Veoma lak".equals(task.getDifficultyText()) ||
+                            "Lak".equals(task.getDifficultyText()) ||
+                            "Normalan".equals(task.getDifficultyText()) ||
+                            "Važan".equals(task.getImportanceText());
+
+                    if (isEasyOrNormal) {
+                        hpToAward = 1;
+                        if ("Lak".equals(task.getDifficultyText()) || "Normalan".equals(task.getDifficultyText())) {
+                            hpToAward *= 2; // multiplicator
+                            specialMissionViewModel.completeTask(i, activeMission.getMissionId(), currentUserId); // prvi poziv
+                        }
+                    }
+                    break;
+
+                case "Ostali zadaci":
+                    hpToAward = 4;
+                    break;
+
+                case "Bez nerešenih zadataka":
+                    boolean allDone = TaskRepository.getInstance(getContext())
+                            .areAllTasksCompletedDuringMission(); // napravi ovu metodu
+                    if (allDone) hpToAward = 10;
+                    break;
+            }
+
+            // Poziv za svaki task (osim već pozvanog multiplicatora)
+            specialMissionViewModel.completeTask(i, activeMission.getMissionId(), currentUserId);
+
+            Toast.makeText(getContext(),
+                    "Task iz specijalne misije rešen! HP: " + hpToAward,
+                    Toast.LENGTH_SHORT).show();
+            break;
+        }
     }
 
 

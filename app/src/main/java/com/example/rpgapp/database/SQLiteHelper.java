@@ -14,7 +14,7 @@ public class SQLiteHelper extends SQLiteOpenHelper {
     public static final String COLUMN_IMAGE = "image";
 
     private static final String DATABASE_NAME = "rpgapp_final.db";
-    private static final int DATABASE_VERSION = 12;
+    private static final int DATABASE_VERSION = 13;
 
     private static final String DB_CREATE = "create table "
             + TABLE_PRODUCTS + "("
@@ -108,6 +108,9 @@ public class SQLiteHelper extends SQLiteOpenHelper {
     public static final String COLUMN_DESCRIPTION_TASK = "description";
     public static final String COLUMN_DIFFICULTY_XP = "difficulty_xp";
     public static final String COLUMN_IMPORTANCE_XP = "importance_xp";
+    public static final String COLUMN_DIFFICULTY_TEXT = "difficulty_text";
+    public static final String COLUMN_IMPORTANCE_TEXT = "importance_text";
+
     public static final String COLUMN_TOTAL_XP = "total_xp";
     public static final String COLUMN_STATUS = "status";
     public static final String COLUMN_DUE_DATE = "dueDate";
@@ -131,6 +134,8 @@ public class SQLiteHelper extends SQLiteOpenHelper {
             + COLUMN_TIME + " TEXT, "
             + COLUMN_DIFFICULTY_XP + " INTEGER, "
             + COLUMN_IMPORTANCE_XP + " INTEGER, "
+            + COLUMN_DIFFICULTY_TEXT + " TEXT, "
+            + COLUMN_IMPORTANCE_TEXT + " TEXT, "
             + COLUMN_TOTAL_XP + " INTEGER, "
             + COLUMN_STATUS + " TEXT,"
             + COLUMN_DUE_DATE + " TEXT,"

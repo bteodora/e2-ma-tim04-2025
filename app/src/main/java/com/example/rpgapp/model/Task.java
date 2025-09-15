@@ -57,6 +57,15 @@ public class Task {
     }
 
     // Getter & Setter metode
+    private String difficulty; // "Veoma lak", "Lak", ...
+    private String importance; // "Normalan", "Važan", ...
+
+    public String getDifficultyText() { return difficulty; }
+    public void setDifficultyText(String difficulty) { this.difficulty = difficulty; }
+
+    public String getImportanceText() { return importance; }
+    public void setImportanceText(String importance) { this.importance = importance; }
+
 
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }

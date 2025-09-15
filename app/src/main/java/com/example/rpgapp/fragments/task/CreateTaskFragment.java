@@ -198,6 +198,9 @@ public class CreateTaskFragment extends Fragment {
         task.setRecurring(frequency.equalsIgnoreCase("ponavljajući"));
         task.setRecurringId(task.isRecurring() ? UUID.randomUUID().toString() : null);
         task.setUserId(currentUserId);
+        task.setDifficultyText(difficultySpinner.getSelectedItem().toString());
+        task.setImportanceText(importanceSpinner.getSelectedItem().toString());
+
 
         if(frequency.equalsIgnoreCase("jednokratni")) {
             task.setDueDate(selectedDueDate);
