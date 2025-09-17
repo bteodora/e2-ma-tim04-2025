@@ -163,7 +163,6 @@ public class SQLiteHelper extends SQLiteOpenHelper {
 
     //--------------- BATTLE ---------------------
 
-    //--------------- BATTLE ---------------------
     public static final String TABLE_BOSS_BATTLES = "boss_battles";
     public static final String COLUMN_BATTLE_ID = "battle_id";
     public static final String COLUMN_BOSS_LEVEL = "boss_level";
@@ -175,6 +174,8 @@ public class SQLiteHelper extends SQLiteOpenHelper {
     public static final String COLUMN_ACTIVE_WEAPON = "active_weapon"; // JSON
     public static final String COLUMN_USER_BATTLE_ID = "user_id";
 
+    public static final String COLUMN_BATTLE_CREATED_AT = "created_at";
+
     // SQL CREATE TABLE
     private static final String DB_CREATE_BOSS_BATTLES = "CREATE TABLE " + TABLE_BOSS_BATTLES + " ("
             + COLUMN_BATTLE_ID + " TEXT PRIMARY KEY, "
@@ -185,6 +186,7 @@ public class SQLiteHelper extends SQLiteOpenHelper {
             + COLUMN_COINS_EARNED + " INTEGER, "
             + COLUMN_FINISHED + " INTEGER, "
             + COLUMN_ACTIVE_ITEMS + " TEXT, "
+            + COLUMN_BATTLE_CREATED_AT + " INTEGER, "
             + COLUMN_ACTIVE_WEAPON + " TEXT, "
             + "FOREIGN KEY(" + COLUMN_USER_BATTLE_ID + ") REFERENCES " + TABLE_USERS + "(" + COLUMN_USER_ID + ")"
             + ");";

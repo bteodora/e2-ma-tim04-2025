@@ -13,6 +13,13 @@ public class Boss {
         this.currentHp = maxHp;
     }
 
+    public void levelUp() {
+        this.level++;
+        this.maxHp = this.maxHp * 2 + this.maxHp / 2; // formula ×2.5
+        this.currentHp = this.maxHp; // reset HP na full
+    }
+
+
     private int calculateBossHp(int level) {
         int hp = 200;
         for (int i = 2; i <= level; i++) {

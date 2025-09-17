@@ -1,6 +1,7 @@
 package com.example.rpgapp.model;
 
 import java.math.BigDecimal;
+import java.util.Random;
 
 public class UserItem {
     public String itemId;
@@ -67,13 +68,18 @@ public class UserItem {
     public void setDuplicated(boolean duplicated) {
         isDuplicated = duplicated;
     }
-    
+
     public UserItem(String itemId, BonusType bonusType, double currentBonus) {
         this.itemId = itemId;
         this.bonusType = bonusType;
         this.currentBonus = currentBonus;
         this.lifespan = 1;
         this.quantity = 1;
+    }
+
+    public boolean isBonusTriggered() { // za cizme - da li je dobijen bonus napad
+        double roll = new Random().nextDouble();
+        return roll < this.currentBonus;
     }
 
 }

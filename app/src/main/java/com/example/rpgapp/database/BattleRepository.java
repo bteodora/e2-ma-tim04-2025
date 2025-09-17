@@ -42,16 +42,26 @@ public class BattleRepository {
 //                .set(battle)
 //                .addOnCompleteListener(listener);
 //    }
-    public void addBattle(Battle battle, OnCompleteListener<Void> listener) {
+//    public void addBattle(Battle battle, OnCompleteListener<Void> listener) {
+//        String userId = getCurrentUserId();
+//        if (userId == null) return;
+//
+//        battle.setUserId(userId);
+//        battlesRef.add(battle)
+//                .addOnCompleteListener(task -> {
+//                    if (listener != null) listener.onComplete(task.isSuccessful() ?
+//                            Tasks.forResult(null) : Tasks.forException(task.getException()));
+//                });
+//    }
+    public void addOrUpdateBattle(Battle battle, OnCompleteListener<Void> listener) {
         String userId = getCurrentUserId();
         if (userId == null) return;
 
         battle.setUserId(userId);
-        battlesRef.add(battle)
-                .addOnCompleteListener(task -> {
-                    if (listener != null) listener.onComplete(task.isSuccessful() ?
-                            Tasks.forResult(null) : Tasks.forException(task.getException()));
-                });
+
+        battlesRef.document(battle.getBattleId())
+                .set(battle) // set sa battleId -> update ili create
+                .addOnCompleteListener(listener);
     }
 
 

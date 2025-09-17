@@ -4,6 +4,7 @@ import com.google.firebase.firestore.Exclude;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -35,7 +36,7 @@ public class User {
     private List<String> allianceInvites;
     private String fcmToken;
 
-    private void reduceLifespan() {
+    public void reduceLifespan() {
         userItems.entrySet().removeIf(entry -> {
             UserItem item = entry.getValue();
             if (item.bonusType != BonusType.PERMANENT_PP) {
@@ -46,39 +47,30 @@ public class User {
         });
     }
 
-
-    private void checkIfLevelIncreased() {
-        if (xp>=getRequiredXpForNextLevel()){
-            level++;
-            if(level == 2){
-                title = "Intermediate";
-            } else if (level == 3) {
-                title = "Professional";
-            }
-        }
-    }
-
-    public int getRequiredXpForNextLevel() {
+    public long getRequiredXpForNextLevel() {
         if (level == 1) {
             return 200;
         }
 
-        int xp = 200;
-        for (int i = 2; i <= level; i++) {
-            xp = (int) Math.ceil((xp * 2.5) / 100.0) * 100;
+        double requiredXp = 200;
+
+        for (int i = 3; i <= this.level + 1; i++) {
+            requiredXp = requiredXp * 2.5;
+            requiredXp = Math.ceil(requiredXp / 100.0) * 100;
         }
 
-        return xp;
+        return (long) requiredXp;
     }
 
     public void addXp(int xp){
         this.xp = this.xp + xp;
-        checkIfLevelIncreased();
+        checkLevelUp();
     }
 
     public int calculatePrizeFormula() {
         return (int) (200 * Math.pow(1.2, level - 1));
     }
+
     public int calculatePreviosPrizeFormula() {
         if(level == 1){
             return 200;
@@ -94,7 +86,11 @@ public class User {
         return registrationTimestamp;
     }
 
-    public User() {}
+    public User() {
+        this.equipped = new HashMap<>();
+        this.userItems = new HashMap<>();
+        this.userWeapons = new HashMap<>();
+    }
 
     public User(String username, String avatarId) {
         this.username = username;
@@ -295,15 +291,69 @@ public class User {
             return false; // prekoračeno
         }
 
-        // Dodela XP
-        this.xp += taskXp;
-        checkLevelUp(); // automatski level up ako treba
 
+        int finalTaskXp = getFinalXpForTask(task);
+        addXp(finalTaskXp);
         return true;
     }
-    public void checkLevelUp(){
+    public int checkLevelUp() {
+        int totalPpRewardGained = 0;
 
-        //logika za level up
+        while (this.xp >= getRequiredXpForNextLevel()) {
+            this.level++;
+
+            int ppRewardForThisLevel = calculatePowerPointsRewardForLevel(this.level);
+
+            this.powerPoints += ppRewardForThisLevel;
+
+            totalPpRewardGained += ppRewardForThisLevel;
+
+            if (this.level >= 4) {
+                this.title = "Master";
+            } else if (this.level == 3) {
+                this.title = "Professional";
+            } else if (this.level == 2) {
+                this.title = "Intermediate";
+            }
+        }
+
+        return totalPpRewardGained;
+    }
+
+    private int calculatePowerPointsRewardForLevel(int newLevel) {
+        if (newLevel < 2) {
+            return 0;
+        }
+        if (newLevel == 2) {
+            return 40;
+        }
+
+        double reward = 40.0;
+
+        for (int i = 3; i <= newLevel; i++) {
+            reward *= 1.75;
+        }
+
+        return (int) Math.round(reward);
+    }
+
+    private int calculateScaledXp(int baseValue, int userLevel) {
+        if (userLevel <= 1) {
+            return baseValue;
+        }
+
+        double scaledValue = baseValue;
+        for (int i = 2; i <= userLevel; i++) {
+            scaledValue = scaledValue + (scaledValue / 2.0);
+        }
+
+        return (int) Math.round(scaledValue);
+    }
+
+    public int getFinalXpForTask(Task task) {
+        int scaledDifficultyXp = calculateScaledXp(task.getDifficultyXp(), this.level);
+        int scaledImportanceXp = calculateScaledXp(task.getImportanceXp(), this.level);
+        return scaledDifficultyXp + scaledImportanceXp;
     }
 
 

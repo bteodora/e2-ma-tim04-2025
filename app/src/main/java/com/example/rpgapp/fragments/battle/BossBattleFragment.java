@@ -164,7 +164,7 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
                 }
 
                 user = loadedUser;
-               // int bossLevel = loadBossLevelOrDefault(1);
+                // int bossLevel = loadBossLevelOrDefault(1);
                 int bossLevel;
 
                 SharedPreferences sp = requireContext().getSharedPreferences(SP_NAME, Context.MODE_PRIVATE);
@@ -185,7 +185,7 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
                         restoreBossHpIfExists();
                     } else {
                         battle = new Battle(user, bossLevel, successRate);
-                        battleRepository.addBattle(battle, t -> {});
+                        battleRepository.addOrUpdateBattle(battle, t -> {});
                     }
 
                     // --- POSTAVI UI tek kada su user i battle učitani ---
@@ -230,8 +230,20 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
 
 
     private void setupUi() {
+        if (user == null) {
+        Toast.makeText(requireContext(), "User je NULL", Toast.LENGTH_SHORT).show();
+    } else {
+        Toast.makeText(requireContext(), "User: " + user.getUsername() + " | ID: " + user.getUserId(), Toast.LENGTH_SHORT).show();
+    }
 
-        if (user == null || battle == null) return;
+    if (battle == null) {
+        Toast.makeText(requireContext(), "Battle je NULL", Toast.LENGTH_SHORT).show();
+    } else {
+        Toast.makeText(requireContext(), "Battle loaded: Boss lvl " + battle.getBoss().getLevel(), Toast.LENGTH_SHORT).show();
+    }
+
+    if (user == null || battle == null) return;
+
 
         int totalPP = calculateTotalPP(user);
         userPpBar.setMax(Math.max(totalPP, 1));
@@ -309,6 +321,7 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
 
         if (battle.isFinished()) showResults();
         isAttackInProgress = false;
+
     }
 
     private void showResults() {
@@ -332,7 +345,8 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
         giveReward();
 
         // --- Sačuvaj borbu, ali je ne briši ---
-        // battle.setFinished(true); // opcionalno, možeš ga setovati da znaš da je završena
+         battle.setFinished(false); // opcionalno, možeš ga setovati da znaš da je završena
+         battle.setRemainingAttacks(5);
         battleRepository.updateBattle(battle, t -> {});
 
         // --- Napredovanje bossa ---
@@ -366,6 +380,16 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
         if (defeated) {
             coinsReward = baseCoins;
             equipmentChance = 20;
+
+
+            clearBossState();
+            battle.getBoss().levelUp(); // podigni level i resetuj HP
+            saveBossLevel(battle.getBoss().getLevel());
+            battle.setRemainingAttacks(5);
+            battleRepository.updateBattle(battle, t -> {});
+
+
+
         } else if (didAtLeastHalfDamage) {
             coinsReward = baseCoins / 2;
             equipmentChance = 10;

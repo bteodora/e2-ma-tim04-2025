@@ -149,6 +149,7 @@ public class Battle {
 
         if (remainingAttacks == 0 || boss.isDefeated()) {
             finished = true;
+
             finalizeBattle();
         }
 
@@ -176,6 +177,7 @@ public class Battle {
     }
 
 
+
     // --- NAGRADE ---
     private void finalizeBattle() {
         int baseCoins = 200;
@@ -185,7 +187,12 @@ public class Battle {
         if (boss.isDefeated()) {
             coinsEarned = (int)(baseCoins * Math.pow(1.2, bossLevel - 1));
             droppedItem = dropEquipment();
-        } else if (boss.getMaxHp() <= boss.getCurrentHp() / 2) {
+
+            // level up bossa prema zadatoj formuli
+
+
+            //TODO
+        } else if ((boss.getMaxHp() - boss.getCurrentHp()) >= boss.getMaxHp() / 2) {
             // ako je umanjeno 50% HP-a
             coinsEarned = (int)((baseCoins * Math.pow(1.2, bossLevel - 1)) / 2);
             droppedItem = dropEquipment() && new Random().nextBoolean(); // 50% šansa
@@ -193,6 +200,7 @@ public class Battle {
             coinsEarned = 0;
             droppedItem = false;
         }
+
     }
 
     private boolean dropEquipment() {
