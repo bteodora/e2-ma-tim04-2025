@@ -290,6 +290,19 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
         if (isAttackInProgress || battle == null || battle.isFinished() || user == null) return;
         isAttackInProgress = true;
 
+
+        //--------SMANJENJE PP USERA U PROGRESS BARU
+
+        // --- Koliko PP se troši po udarcu ---
+        int ppCostPerAttack = 2; // primer, možeš promeniti po potrebi
+        int currentPP = calculateTotalPP(user);
+        currentPP = Math.max(0, currentPP - ppCostPerAttack);
+
+        // --- Ažuriraj userPpBar ---
+        userPpBar.setProgress(currentPP);
+
+
+
         boolean hit = battle.attack();
         if (hit) {
             bossImageView.setImageResource(R.drawable.boss_borba);

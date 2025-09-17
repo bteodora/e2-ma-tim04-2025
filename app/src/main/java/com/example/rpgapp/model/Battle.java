@@ -143,6 +143,7 @@ public class Battle {
 
         if (hit) {
             boss.reduceHp(calculateTotalPP());
+
         }
 
         remainingAttacks--;
