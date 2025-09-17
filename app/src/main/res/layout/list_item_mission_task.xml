@@ -1,9 +1,10 @@
-<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    style="@style/PixelPanelBorderStyle"
     android:orientation="vertical"
-    android:padding="12dp">
+    android:padding="12dp"
+    android:layout_marginBottom="8dp">
 
     <!-- Ime zadatka -->
     <TextView
@@ -11,9 +12,10 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Ime zadatka"
-        android:textSize="16sp"
+        android:textAppearance="@style/TextAppearance.MaterialComponents.Subtitle1"
         android:textStyle="bold"
-        android:paddingBottom="4dp" />
+        android:paddingBottom="4dp"
+        android:textColor="@android:color/black" />
 
     <!-- Progres bar -->
     <ProgressBar
@@ -23,8 +25,8 @@
         android:layout_height="20dp"
         android:progress="0"
         android:max="10"
-        android:progressTint="@color/pink_300"
-        android:backgroundTint="@color/blue_300" />
+        android:progressTint="@color/colorPrimary"
+        android:backgroundTint="@color/colorPrimary" />
 
     <!-- Tekstualni prikaz napretka -->
     <TextView
@@ -32,15 +34,16 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="0/10 (danas 0/2)"
-        android:textSize="14sp"
-        android:paddingTop="4dp" />
+        android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
+        android:paddingTop="4dp"
+        android:textColor="@android:color/black" />
 
-    <!-- Dugme za kompletiranje zadatka -->
+    <!-- Dugme za kompletiranje zadatka (sakriveno) -->
     <Button
         android:id="@+id/buttonCompleteTask"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Complete"
-        android:layout_marginTop="6dp" />
+        android:visibility="gone" />
 
 </LinearLayout>

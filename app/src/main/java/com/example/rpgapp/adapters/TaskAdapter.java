@@ -65,9 +65,7 @@ public class TaskAdapter extends ArrayAdapter<Task> {
                         if (mission != null) {
                             specialMissionViewModel.setCurrentMission(mission);
                             ((FragmentActivity) context).runOnUiThread(() -> {
-                                Toast.makeText(context,
-                                        "Specijalna misija učitana! Zadaci iz misije će biti praćeni.",
-                                        Toast.LENGTH_SHORT).show();
+
                             });
                         }
                     }

@@ -1,150 +1,189 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/bossBattleLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fillViewport="true"
     android:padding="16dp"
     tools:context=".fragments.battle.BossBattleFragment">
 
-    <!-- Boss image -->
-    <ImageView
-        android:id="@+id/bossImageView"
-        android:layout_width="200dp"
-        android:layout_height="200dp"
-        android:layout_centerHorizontal="true"
-        android:src="@drawable/boss"
-        android:contentDescription="Boss Image" />
-
-    <!-- Boss level -->
-
-    <!-- Boss HP text -->
-
-
-    <!-- Boss HP bar -->
-
-    <TextView
-        android:id="@+id/bossLevelText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_above="@id/bossHpBar"
-        android:layout_marginBottom="46dp"
-        android:text="Level: 1"
-        android:textColor="@android:color/black"
-        android:textSize="16sp" />
-
-    <TextView
-        android:id="@+id/bossHpText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/bossHpBar"
-        android:layout_marginTop="-66dp"
-        android:text="HP: 100/100"
-        android:textColor="@android:color/black"
-        android:textSize="16sp" />
-
-    <ProgressBar
-        android:id="@+id/bossHpBar"
-        style="@android:style/Widget.ProgressBar.Horizontal"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="24dp"
-        android:layout_below="@id/bossImageView"
-        android:layout_marginTop="16dp"
-        android:max="100"
-        android:progress="100"
-        android:progressDrawable="@drawable/boss_hp_bar" />
-
-    <!-- User PP bar -->
-    <ProgressBar
-        android:id="@+id/userPpBar"
-        style="@android:style/Widget.ProgressBar.Horizontal"
-        android:layout_width="match_parent"
-        android:layout_height="24dp"
-        android:layout_below="@id/bossHpBar"
-        android:layout_marginTop="16dp"
-        android:max="100"
-        android:progress="50"
-        android:progressDrawable="@drawable/user_pp_bar" />
-
-    <!-- Dugme za izbor oružja -->
-    <Button
-        android:id="@+id/selectWeaponButton"
-        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/userPpBar"
-        android:layout_marginTop="12dp"
-        android:text="Select Weapon"
-        android:layout_centerHorizontal="true"/>
+        android:orientation="vertical"
+        android:gravity="center_horizontal">
 
-    <!-- Ikonica aktivnog oružja -->
-    <ImageView
-        android:id="@+id/activeWeaponIcon"
-        android:layout_width="64dp"
-        android:layout_height="64dp"
-        android:layout_toRightOf="@id/selectWeaponButton"
-        android:layout_alignTop="@id/selectWeaponButton"
-        android:layout_marginLeft="12dp"
-        android:src="@drawable/ic_face"
-        android:visibility="gone"
-        android:contentDescription="Active Weapon" />
+        <!-- ===== BOSS IDENTITET ===== -->
+        <ImageView
+            android:id="@+id/bossImageView"
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            android:src="@drawable/boss"
+            android:contentDescription="Boss Image"
+            android:layout_marginBottom="16dp"/>
 
-    <!-- Success rate text -->
-    <TextView
-        android:id="@+id/successRateText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/selectWeaponButton"
-        android:layout_marginTop="8dp"
-        android:layout_centerHorizontal="true"
-        android:text="Chance to hit: 0%"
-        android:textSize="16sp"
-        android:textColor="@android:color/black" />
+        <!-- ===== BOSS LEVEL ===== -->
+        <LinearLayout
+            style="@style/PixelPanelFilledStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="12dp"
+            android:layout_marginBottom="16dp"
+            android:gravity="center_horizontal">
 
-    <!-- Remaining attacks -->
-    <TextView
-        android:id="@+id/remainingAttacksText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/successRateText"
-        android:layout_marginTop="8dp"
-        android:layout_centerHorizontal="true"
-        android:text="Remaining attacks: 5/5"
-        android:textSize="16sp"
-        android:textColor="@android:color/black" />
+            <TextView
+                android:id="@+id/bossLevelText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Level: 1"
+                android:textAppearance="@style/TextAppearance.MaterialComponents.Headline5"
+                android:textColor="@color/colorPrimary"/>
 
-    <!-- Attack button -->
-    <Button
-        android:id="@+id/attackButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/remainingAttacksText"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="16dp"
-        android:text="Attack" />
+        </LinearLayout>
 
-    <!-- Treasure chest for rewards -->
-    <ImageView
-        android:id="@+id/treasureChestImage"
-        android:layout_width="100dp"
-        android:layout_height="100dp"
-        android:layout_below="@id/attackButton"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="24dp"
-        android:src="@drawable/sanduk"
-        android:visibility="gone"
-        android:contentDescription="Treasure Chest" />
 
-    <!-- Coins earned -->
-    <TextView
-        android:id="@+id/coinsEarnedText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/treasureChestImage"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="8dp"
-        android:text="Coins: 0"
-        android:textSize="16sp"
-        android:textColor="@android:color/black"
-        android:visibility="gone" />
+        <!-- ===== BOSS HP ===== -->
+        <LinearLayout
+            style="@style/PixelPanelFilledStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="8dp"
+            android:layout_marginBottom="16dp">
 
-</RelativeLayout>
+            <ProgressBar
+                android:id="@+id/bossHpBar"
+                style="@android:style/Widget.ProgressBar.Horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="24dp"
+                android:max="100"
+                android:progress="100"
+                android:progressDrawable="@drawable/boss_hp_bar"/>
+
+            <TextView
+                android:id="@+id/bossHpText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="HP: 100/100"
+                android:textColor="@android:color/black"
+                android:textSize="16sp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="4dp"/>
+        </LinearLayout>
+
+        <!-- ===== USER PP ===== -->
+        <LinearLayout
+            style="@style/PixelPanelFilledStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="8dp"
+            android:layout_marginBottom="16dp">
+
+            <ProgressBar
+                android:id="@+id/userPpBar"
+                style="@android:style/Widget.ProgressBar.Horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="24dp"
+                android:max="100"
+                android:progress="50"
+                android:progressDrawable="@drawable/user_pp_bar"/>
+
+            <TextView
+                android:id="@+id/userPpText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="PP: 50/100"
+                android:textColor="@android:color/black"
+                android:textSize="16sp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="4dp"/>
+        </LinearLayout>
+
+        <!-- ===== AKCIJE KORISNIKA ===== -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_horizontal"
+            android:layout_marginBottom="16dp">
+
+            <Button
+                android:id="@+id/selectWeaponButton"
+                style="@style/PixelButtonStyle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Select Weapon"/>
+
+            <ImageView
+                android:id="@+id/activeWeaponIcon"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:layout_marginStart="12dp"
+                android:src="@drawable/ic_face"
+                android:visibility="gone"
+                android:contentDescription="Active Weapon"/>
+        </LinearLayout>
+
+        <!-- ===== SUKCES RATE + PREOSTALI NAPADI ===== -->
+        <TextView
+            android:id="@+id/successRateText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Chance to hit: 0%"
+            android:textSize="16sp"
+            android:textColor="@android:color/black"
+            android:layout_marginBottom="4dp"/>
+
+        <TextView
+            android:id="@+id/remainingAttacksText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Remaining attacks: 5/5"
+            android:textSize="16sp"
+            android:textColor="@android:color/black"
+            android:layout_marginBottom="16dp"/>
+
+        <!-- ===== ATTACK BUTTON ===== -->
+        <Button
+            android:id="@+id/attackButton"
+            style="@style/PixelButtonStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Attack"
+            android:layout_marginBottom="24dp"/>
+
+        <!-- ===== TREASURE ===== -->
+        <LinearLayout
+            style="@style/PixelPanelFilledStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:padding="16dp"
+            android:visibility="gone"
+            android:id="@+id/treasureSection">
+
+            <ImageView
+                android:id="@+id/treasureChestImage"
+                android:layout_width="100dp"
+                android:layout_height="100dp"
+                android:src="@drawable/sanduk"
+                android:contentDescription="Treasure Chest"
+                android:layout_marginBottom="8dp"/>
+
+            <TextView
+                android:id="@+id/coinsEarnedText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Coins: 0"
+                android:textSize="16sp"
+                android:textColor="@android:color/black"/>
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>

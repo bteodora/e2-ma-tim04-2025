@@ -1,74 +1,117 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:padding="16dp"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:fillViewport="true">
 
     <LinearLayout
         android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal">
 
-        <EditText
-            android:id="@+id/etTaskTitle"
+        <!-- ===== NASLOV I OPIS ===== -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Task Title"/>
+            android:orientation="vertical"
+            style="@style/PixelPanelFilledStyle"
+            android:padding="12dp"
+            android:layout_marginBottom="12dp">
 
-        <EditText
-            android:id="@+id/etTaskDescription"
+            <EditText
+                android:id="@+id/etTaskTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Task Title"
+                android:background="@android:color/transparent"
+                android:padding="8dp"/>
+
+            <EditText
+                android:id="@+id/etTaskDescription"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Description"
+                android:inputType="textMultiLine"
+                android:minLines="2"
+                android:paddingTop="8dp"
+                android:background="@android:color/transparent"
+                android:padding="8dp"/>
+        </LinearLayout>
+
+        <!-- ===== DATUMI ===== -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Description"
-            android:inputType="textMultiLine"
-            android:minLines="2"
-            android:paddingTop="8dp"/>
+            android:orientation="vertical"
+            style="@style/PixelPanelFilledStyle"
+            android:padding="12dp"
+            android:layout_marginBottom="12dp">
 
-        <EditText
-            android:id="@+id/etTaskStartDate"
+            <EditText
+                android:id="@+id/etTaskStartDate"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Start Date (yyyy-MM-dd)"
+                android:visibility="gone"
+                android:background="@android:color/transparent"
+                android:padding="8dp"/>
+
+            <EditText
+                android:id="@+id/etTaskEndDate"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="End Date (yyyy-MM-dd)"
+                android:visibility="gone"
+                android:background="@android:color/transparent"
+                android:padding="8dp"/>
+
+            <EditText
+                android:id="@+id/etTaskDueDate"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Due Date (yyyy-MM-dd)"
+                android:visibility="gone"
+                android:background="@android:color/transparent"
+                android:padding="8dp"/>
+        </LinearLayout>
+
+        <!-- ===== SPINNERS ===== -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Start Date (yyyy-MM-dd)"
-            android:visibility="gone"/>
+            android:orientation="vertical"
+            style="@style/PixelPanelFilledStyle"
+            android:padding="12dp"
+            android:layout_marginBottom="12dp">
 
-        <EditText
-            android:id="@+id/etTaskEndDate"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="End Date (yyyy-MM-dd)"
-            android:visibility="gone"/>
+            <Spinner
+                android:id="@+id/spinnerDifficulty"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="8dp"/>
 
-        <EditText
-            android:id="@+id/etTaskDueDate"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Due Date (yyyy-MM-dd)"
-            android:visibility="gone"/>
+            <Spinner
+                android:id="@+id/spinnerImportance"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="8dp"/>
 
+            <Spinner
+                android:id="@+id/spinnerCategory"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="8dp"/>
+        </LinearLayout>
 
-        <Spinner
-            android:id="@+id/spinnerDifficulty"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:paddingTop="8dp"/>
-
-        <Spinner
-            android:id="@+id/spinnerImportance"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:paddingTop="8dp"/>
-
-        <Spinner
-            android:id="@+id/spinnerCategory"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:paddingTop="8dp"/>
-
-
+        <!-- ===== DUGME ZA UPDATE ===== -->
         <Button
             android:id="@+id/btnUpdateTask"
             android:text="Update Task"
+            style="@style/PixelButtonStyle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"/>
+
     </LinearLayout>
 </ScrollView>

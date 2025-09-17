@@ -1,37 +1,67 @@
-<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="8dp">
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="@android:color/white">
 
-    <!-- Red sa ikonicom kalendara u desnom uglu -->
+    <!-- ===== HEADER: Tasks + Calendar Button ===== -->
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:paddingBottom="12dp">
+
+        <TextView
+            android:id="@+id/textViewTasksTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Tasks"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_alignParentStart="true"
+            android:textColor="@android:color/black"/>
 
         <ImageButton
             android:id="@+id/btnCalendar"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:layout_alignParentEnd="true"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Kalendar"
-            android:src="@drawable/ic_face" />
+            android:background="@drawable/rounded_button_bg"
+            android:contentDescription="Calendar"
+            android:padding="8dp"
+            android:src="@drawable/ic_calendar" />
     </RelativeLayout>
 
-    <!-- Spinner filter -->
-    <Spinner
-        android:id="@+id/spinnerFilter"
+    <!-- ===== FILTER PANEL ===== -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"/>
+        style="@style/PixelPanelFilledStyle"
+        android:padding="8dp"
+        android:layout_marginBottom="12dp">
 
-    <!-- Lista taskova -->
+        <Spinner
+            android:id="@+id/spinnerFilter"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+    </LinearLayout>
+
+    <!-- ===== TASK LIST ===== -->
+<!--    <ListView-->
+<!--        android:id="@android:id/list"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="0dp"-->
+<!--        android:layout_weight="1"-->
+<!--        android:dividerHeight="2dp"-->
+<!--        android:paddingBottom="8dp"/>-->
     <ListView
         android:id="@android:id/list"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:dividerHeight="2dp"/>
+        android:divider="@android:color/transparent"
+        android:dividerHeight="0dp"
+        android:paddingBottom="8dp"
+        android:background="#E0E0E0"/>
+
 </LinearLayout>

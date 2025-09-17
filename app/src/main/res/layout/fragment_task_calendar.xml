@@ -3,35 +3,54 @@
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp">
+    android:padding="16dp"
+    android:background="@android:color/white">
 
-    <!-- Applandeo CalendarView -->
-    <com.applandeo.materialcalendarview.CalendarView
-        android:id="@+id/calendarView"
+    <!-- ===== CALENDAR PANEL ===== -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:type="classic" />
+        android:orientation="vertical"
+        style="@style/PixelPanelFilledStyle"
+        android:padding="12dp"
+        android:layout_marginBottom="12dp">
 
-    <!-- Legenda kategorija -->
-    <HorizontalScrollView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingTop="8dp"
-        android:paddingBottom="8dp">
-
-        <LinearLayout
-            android:id="@+id/layoutLegend"
-            android:layout_width="wrap_content"
+        <!-- Applandeo CalendarView -->
+        <com.applandeo.materialcalendarview.CalendarView
+            android:id="@+id/calendarView"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"/>
-    </HorizontalScrollView>
+            app:type="classic" />
 
-    <!-- Lista zadataka -->
-    <ListView
-        android:id="@+id/listViewTasks"
+        <!-- Legenda kategorija -->
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
+
+            <LinearLayout
+                android:id="@+id/layoutLegend"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"/>
+        </HorizontalScrollView>
+    </LinearLayout>
+
+    <!-- ===== TASK LIST PANEL ===== -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:dividerHeight="2dp"/>
+        android:orientation="vertical"
+        style="@style/PixelPanelFilledStyle"
+        android:padding="12dp">
+
+        <ListView
+            android:id="@+id/listViewTasks"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:dividerHeight="2dp"/>
+    </LinearLayout>
 </LinearLayout>

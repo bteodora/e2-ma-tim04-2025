@@ -1,19 +1,26 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    style="@style/PixelPanelBorderStyle"
     android:orientation="horizontal"
-    android:padding="8dp">
+    android:padding="12dp"
+    android:layout_marginBottom="8dp"
+    android:gravity="center_vertical">
 
     <TextView
         android:id="@+id/textViewMemberName"
         android:layout_width="0dp"
         android:layout_weight="1"
         android:layout_height="wrap_content"
-        android:text="Member Name"/>
+        android:text="Member Name"
+        android:textAppearance="@style/TextAppearance.MaterialComponents.Subtitle1"
+        android:textColor="@android:color/black"/>
 
     <TextView
         android:id="@+id/textViewMemberProgress"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Progress: 0"/>
+        android:text="Progress: 0"
+        android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
+        android:textColor="@android:color/black"/>
 </LinearLayout>

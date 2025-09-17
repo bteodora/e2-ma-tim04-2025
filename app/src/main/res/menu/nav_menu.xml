@@ -54,7 +54,7 @@
         <item
             android:id="@+id/nav_tasks"
             android:title="Tasks"
-            android:icon="@drawable/ic_face"
+            android:icon="@drawable/ic_task"
             android:orderInCategory="100" />
 
         <item
@@ -65,7 +65,7 @@
         <item
             android:id="@+id/nav_battle"
             android:title="Battle"
-            android:icon="@drawable/ic_new"
+            android:icon="@drawable/ic_battle"
             android:orderInCategory="500" />
 
 

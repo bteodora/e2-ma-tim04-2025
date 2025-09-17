@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:padding="16dp"
     android:layout_width="match_parent"
@@ -7,58 +6,78 @@
     <LinearLayout
         android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        style="@style/PixelPanelFilledStyle"
+        android:padding="16dp"
+        android:gravity="center_horizontal">
 
+        <!-- Naziv zadatka -->
         <TextView
-            android:text="Task Title"
             android:id="@+id/taskTitle"
-            android:textSize="18sp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
-
-        <TextView
-            android:text="Description"
-            android:id="@+id/taskDescription"
-            android:textSize="16sp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingTop="8dp"/>
+            android:text="Task Title"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:paddingBottom="8dp"/>
+
+        <!-- Opis zadatka -->
+        <TextView
+            android:id="@+id/taskDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Description"
+            android:textSize="16sp"
+            android:paddingBottom="8dp"/>
+
+        <!-- Kategorija -->
         <TextView
             android:id="@+id/taskCategory"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Category"/>
+            android:text="Category"
+            android:paddingBottom="4dp"/>
+
+        <!-- Datumi zadatka -->
         <TextView
             android:id="@+id/taskDates"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Dates"/>
+            android:text="Dates"
+            android:paddingBottom="4dp"/>
+
+        <!-- XP -->
         <TextView
             android:id="@+id/taskXp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="XP"/>
+            android:text="XP"
+            android:paddingBottom="8dp"/>
 
-
+        <!-- Status spinner -->
         <Spinner
             android:id="@+id/spinnerStatus"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingTop="8dp"/>
+            android:paddingBottom="12dp"/>
 
+        <!-- Dugme za update -->
         <Button
             android:id="@+id/btnUpdateTask"
-            android:text="Update Task"
+            style="@style/PixelButtonStyle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"/>
+            android:text="Update Task"
+            android:layout_marginBottom="8dp"/>
 
+        <!-- Dugme za delete -->
         <Button
             android:id="@+id/btnDeleteTask"
-            android:text="Delete Task"
+            style="@style/PixelButtonStyle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:text="Delete Task"
             android:backgroundTint="@android:color/holo_red_light"/>
+
     </LinearLayout>
 </ScrollView>

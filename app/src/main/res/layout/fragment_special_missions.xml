@@ -1,91 +1,143 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:fillViewport="true"
+    android:padding="16dp"
+    tools:context=".fragments.alliance.SpecialMissionFragment">
 
-    <Button
-        android:id="@+id/btnStartMission"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Start Mission"
-        android:visibility="gone"
-        android:layout_marginBottom="16dp"/>
-
-    <!-- HP Bosa -->
-    <TextView
-        android:id="@+id/textViewBossHP"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Boss HP: 100"
-        android:textAppearance="?attr/textAppearanceHeadline6" />
-
-    <ProgressBar
-        android:id="@+id/progressBarBossHP"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="24dp"
-        android:layout_marginTop="8dp"
-        android:max="100"
-        style="?android:attr/progressBarStyleHorizontal"/>
-
-    <!-- Napredak korisnika -->
-    <TextView
-        android:id="@+id/textViewUserProgress"
-        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Your Progress: 0"
-        android:layout_marginTop="16dp"
-        android:textAppearance="?attr/textAppearanceSubtitle1" />
+        android:orientation="vertical"
+        android:gravity="center_horizontal">
 
-    <!-- Napredak saveza -->
-    <TextView
-        android:id="@+id/textViewAllianceProgress"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Alliance Progress: 0"
-        android:textAppearance="?attr/textAppearanceSubtitle1"
-        android:layout_marginTop="8dp"/>
+        <ImageView
+            android:id="@+id/bossImageView"
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            android:layout_centerHorizontal="true"
+            android:src="@drawable/boss"
+            android:contentDescription="Boss Image" />
 
-    <TextView
-        android:id="@+id/textViewTimeLeft"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Preostalo dana: 14"
-        android:textSize="16sp"
-        android:layout_marginTop="8dp"
-        android:textColor="@android:color/black"/>
-
-    <!-- Progres po korisnicima -->
-
-    <TextView
-        android:id="@+id/textViewMembersTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Napredak članova:"
-        android:textAppearance="?attr/textAppearanceSubtitle1"
-        android:layout_marginTop="16dp"/>
+        <!-- START MISSION BUTTON (sakriven) -->
+        <Button
+            android:id="@+id/btnStartMission"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Start Mission"
+            android:visibility="gone"
+            style="@style/PixelButtonStyle"
+            android:layout_marginBottom="16dp"/>
 
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerViewMembersProgress"
-        android:layout_width="match_parent"
-        android:layout_height="150dp"
-        android:layout_marginTop="8dp"
-        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-        tools:listitem="@layout/list_item_member_progress" />
+        <!-- ===== BOSS PANEL ===== -->
+        <LinearLayout
+            style="@style/PixelPanelFilledStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:layout_marginBottom="16dp">
 
+            <TextView
+                android:id="@+id/textViewBossHP"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Boss HP: 100"
+                android:textAppearance="@style/TextAppearance.MaterialComponents.Headline6"
+                android:layout_marginBottom="8dp"/>
 
-    <!-- Lista zadataka -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerViewTasks"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:layout_marginTop="16dp"
-        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-        tools:listitem="@layout/list_item_mission_task" />
+            <ProgressBar
+                android:id="@+id/progressBarBossHP"
+                android:layout_width="match_parent"
+                android:layout_height="24dp"
+                android:max="100"
+                android:progress="100"
+                style="?android:attr/progressBarStyleHorizontal"/>
+        </LinearLayout>
 
-</LinearLayout>
+        <!-- ===== USER PANEL ===== -->
+        <LinearLayout
+            style="@style/PixelPanelFilledStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:id="@+id/textViewUserProgress"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Your Progress: 0"
+                android:textAppearance="@style/TextAppearance.MaterialComponents.Subtitle1"
+                android:layout_marginBottom="4dp"/>
+
+        </LinearLayout>
+
+        <!-- ===== ALLIANCE PANEL ===== -->
+        <LinearLayout
+            style="@style/PixelPanelFilledStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:id="@+id/textViewAllianceProgress"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Alliance Progress: 0"
+                android:textAppearance="@style/TextAppearance.MaterialComponents.Subtitle1"/>
+        </LinearLayout>
+
+        <!-- ===== TIME PANEL ===== -->
+        <LinearLayout
+            style="@style/PixelPanelFilledStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:id="@+id/textViewTimeLeft"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Preostalo dana: 14"
+                android:textAppearance="@style/TextAppearance.MaterialComponents.Subtitle1"/>
+        </LinearLayout>
+
+        <!-- ===== MEMBERS PROGRESS RECYCLER ===== -->
+        <TextView
+            android:id="@+id/textViewMembersTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Napredak članova:"
+            android:textAppearance="@style/TextAppearance.MaterialComponents.Subtitle1"
+            android:layout_marginBottom="8dp"/>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerViewMembersProgress"
+            android:layout_width="match_parent"
+            android:layout_height="150dp"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+            tools:listitem="@layout/list_item_member_progress"
+            android:layout_marginBottom="16dp"/>
+
+        <!-- ===== TASKS RECYCLER ===== -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerViewTasks"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+            tools:listitem="@layout/list_item_mission_task"/>
+
+    </LinearLayout>
+</ScrollView>
