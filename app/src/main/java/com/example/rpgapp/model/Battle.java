@@ -263,13 +263,6 @@ public class Battle {
         this.coinsEarned = coinsEarned;
     }
 
-    public void setFinished(boolean finished) {
-        this.finished = finished;
-    }
-
-    public void setRemainingAttacks(int remainingAttacks) {
-        this.remainingAttacks = remainingAttacks;
-    }
 
     public void setBoss(Boss boss) {
         this.boss = boss;
