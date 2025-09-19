@@ -239,6 +239,43 @@ public class Battle {
         return coinsEarned;
     }
 
+    public User getUser() {
+        return user;
+    }
 
+    public void setBossHpBeforeFight(int bossHpBeforeFight) {
+        this.bossHpBeforeFight = bossHpBeforeFight;
+    }
 
+    public void setDroppedWeapon(UserWeapon droppedWeapon) {
+        this.droppedWeapon = droppedWeapon;
+    }
+
+    public void setDroppedItems(Map<String, UserItem> droppedItems) {
+        this.droppedItems = droppedItems;
+    }
+
+    public void setDroppedItem(boolean droppedItem) {
+        this.droppedItem = droppedItem;
+    }
+
+    public void setCoinsEarned(int coinsEarned) {
+        this.coinsEarned = coinsEarned;
+    }
+
+    public void setFinished(boolean finished) {
+        this.finished = finished;
+    }
+
+    public void setRemainingAttacks(int remainingAttacks) {
+        this.remainingAttacks = remainingAttacks;
+    }
+
+    public void setBoss(Boss boss) {
+        this.boss = boss;
+    }
+
+    public void setBattleId(String battleId) {
+        this.battleId = battleId;
+    }
 }

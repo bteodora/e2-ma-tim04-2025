@@ -15,7 +15,7 @@
         android:layout_alignParentEnd="true"
         android:background="@drawable/bg_message_sent"
         android:padding="12dp"
-        android:textColor="@android:color/white"
+        android:textColor="@color/buttonTextColor"
         tools:text="Ovo je moja poruka."/>
     <TextView
         android:id="@+id/textViewMessageTimestamp"

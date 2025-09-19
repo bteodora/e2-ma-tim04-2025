@@ -30,6 +30,8 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class UserRepository {
 
@@ -43,6 +45,7 @@ public class UserRepository {
     private Context context;
     private ListenerRegistration allianceInviteListener;
     private ListenerRegistration allianceListener;
+    private final ExecutorService databaseExecutor = Executors.newSingleThreadExecutor();
 
 
     private UserRepository(Context context) {
@@ -380,37 +383,97 @@ public class UserRepository {
         }
     }
     public void getUserById(String userId, UserCallback callback) {
-        User cachedUser = getUserFromSQLite(userId);
-        if (cachedUser != null) {
-            callback.onUserLoaded(cachedUser);
-            return;
-        }
+        databaseExecutor.execute(() -> {
+            User cachedUser = getUserFromSQLiteInternal(userId);
 
-        db.collection("users").document(userId).get()
-                .addOnSuccessListener(documentSnapshot -> {
-                    if (documentSnapshot.exists()) {
-                        User user = documentSnapshot.toObject(User.class);
-                        if (user != null) {
-                            user.setUserId(userId);
-                            callback.onUserLoaded(user);
-                        } else {
-                            callback.onError(new Exception("Failed to parse user data."));
-                        }
-                    } else {
-                        callback.onUserLoaded(null);
-                    }
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error fetching user from Firestore", e);
-                    callback.onError(e);
-                });
+            if (cachedUser != null) {
+                new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> callback.onUserLoaded(cachedUser));
+            } else {
+                db.collection("users").document(userId).get()
+                        .addOnSuccessListener(documentSnapshot -> {
+                            if (documentSnapshot.exists()) {
+                                User user = documentSnapshot.toObject(User.class);
+                                if (user != null) {
+                                    user.setUserId(userId);
+                                    callback.onUserLoaded(user);
+                                    cacheUserToSQLite(user);
+                                } else {
+                                    callback.onError(new Exception("Failed to parse user data."));
+                                }
+                            } else {
+                                callback.onUserLoaded(null);
+                            }
+                        })
+                        .addOnFailureListener(e -> {
+                            Log.e(TAG, "Error fetching user from Firestore", e);
+                            callback.onError(e);
+                        });
+            }
+        });
+    }
+
+    private User getUserFromSQLiteInternal(String userId) {
+        SQLiteDatabase database = null;
+        User user = null;
+        Cursor cursor = null;
+        try {
+            database = dbHelper.getReadableDatabase();
+            cursor = database.query(SQLiteHelper.TABLE_USERS, null, SQLiteHelper.COLUMN_USER_ID + " = ?", new String[]{userId}, null, null, null);
+            if (cursor != null && cursor.moveToFirst()) {
+                user = new User();
+                Gson gson = new Gson();
+
+                user.setUserId(userId);
+                user.setUsername(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_USERNAME)));
+                user.setAvatarId(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_AVATAR_ID)));
+                user.setLevel(cursor.getInt(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_LEVEL)));
+                user.setTitle(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_TITLE_USER)));
+                user.setXp(cursor.getLong(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_XP)));
+                user.setPowerPoints(cursor.getInt(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_POWER_POINTS)));
+                user.setCoins(cursor.getLong(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_COINS)));
+                user.setRegistrationTimestamp(cursor.getLong(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_REGISTRATION_TIMESTAMP)));
+                user.setAllianceId(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_ALLIANCE_ID)));
+                user.setFcmToken(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_FCM_TOKEN)));
+
+                Type badgeListType = new TypeToken<List<String>>(){}.getType();
+                Type userItemMapType = new TypeToken<Map<String, UserItem>>(){}.getType();
+                Type userWeaponMapType = new TypeToken<Map<String, UserWeapon>>(){}.getType();
+                Type frirendsListType = new TypeToken<List<String>>(){}.getType();
+                Type listStringType = new TypeToken<List<String>>(){}.getType();
+
+                String badgesJson = cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_BADGES_JSON));
+                if (badgesJson != null) user.setBadges(gson.fromJson(badgesJson, badgeListType));
+
+                String equippedJson = cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_EQUIPPED_ITEMS_JSON));
+                if (equippedJson != null) user.setEquipped(gson.fromJson(equippedJson, userItemMapType));
+
+                String userItemsJson = cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_ITEMS_JSON));
+                if (userItemsJson != null) user.setUserItems(gson.fromJson(userItemsJson, userItemMapType));
+
+                String userWeaponsJson = cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_WEAPONS_JSON));
+                if (userWeaponsJson != null) user.setUserWeapons(gson.fromJson(userWeaponsJson, userWeaponMapType));
+
+                String friendsJson = cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_FRIENDS_JSON));
+                if(friendsJson!=null) user.setFriendIds(gson.fromJson(friendsJson, frirendsListType));
+
+                String friendRequestsJson = cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_FRIEND_REQUESTS_JSON));
+                if(friendRequestsJson!=null) user.setFriendRequests(gson.fromJson(friendRequestsJson, frirendsListType));
+
+                String allianceInvitesJson = cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_ALLIANCE_INVITES_JSON));
+                if (allianceInvitesJson != null) user.setAllianceInvites(gson.fromJson(allianceInvitesJson, listStringType));
+            }
+        } finally {
+            if (cursor != null) cursor.close();
+            if (database != null) database.close();
+        }
+        return user;
     }
 
     public void getUserByUsername(String username, UserSearchCallback callback) {
         db.collection("users")
                 .whereGreaterThanOrEqualTo("username", username)
                 .whereLessThanOrEqualTo("username", username + "\uf8ff")
-                .limit(10) // Ograničavamo na 10 rezultata da ne preopteretimo mrežu
+                .limit(10)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     List<User> foundUsers = new ArrayList<>();
@@ -456,6 +519,7 @@ public class UserRepository {
         String userId = userToUpdate.getUserId();
 
         db.collection("users").document(userId).set(userToUpdate);
+
         cacheUserToSQLite(userToUpdate);
 
         if (loggedInUser != null && loggedInUser.getUserId().equals(userId)) {
@@ -465,56 +529,40 @@ public class UserRepository {
     }
 
     private void cacheUserToSQLite(User user) {
-        SQLiteDatabase database = null;
-        try {
-            database = dbHelper.getWritableDatabase();
-            Gson gson = new Gson();
+        databaseExecutor.execute(() -> {
+            SQLiteDatabase database = null;
+            try {
+                database = dbHelper.getWritableDatabase();
+                Gson gson = new Gson();
 
-            database.delete(SQLiteHelper.TABLE_USERS, SQLiteHelper.COLUMN_USER_ID + " = ?", new String[]{user.getUserId()});
+                database.delete(SQLiteHelper.TABLE_USERS, SQLiteHelper.COLUMN_USER_ID + " = ?", new String[]{user.getUserId()});
 
-            ContentValues values = new ContentValues();
-            values.put(SQLiteHelper.COLUMN_USER_ID, user.getUserId());
-            values.put(SQLiteHelper.COLUMN_USERNAME, user.getUsername());
-            values.put(SQLiteHelper.COLUMN_AVATAR_ID, user.getAvatarId());
-            values.put(SQLiteHelper.COLUMN_LEVEL, user.getLevel());
-            values.put(SQLiteHelper.COLUMN_TITLE_USER, user.getTitle());
-            values.put(SQLiteHelper.COLUMN_XP, user.getXp());
-            values.put(SQLiteHelper.COLUMN_POWER_POINTS, user.getPowerPoints());
-            values.put(SQLiteHelper.COLUMN_COINS, user.getCoins());
-            values.put(SQLiteHelper.COLUMN_REGISTRATION_TIMESTAMP, user.getRegistrationTimestamp());
-            values.put(SQLiteHelper.COLUMN_ALLIANCE_ID, user.getAllianceId());
-            values.put(SQLiteHelper.COLUMN_FCM_TOKEN, user.getFcmToken());
+                ContentValues values = new ContentValues();
+                values.put(SQLiteHelper.COLUMN_USER_ID, user.getUserId());
+                values.put(SQLiteHelper.COLUMN_USERNAME, user.getUsername());
+                values.put(SQLiteHelper.COLUMN_AVATAR_ID, user.getAvatarId());
+                values.put(SQLiteHelper.COLUMN_LEVEL, user.getLevel());
+                values.put(SQLiteHelper.COLUMN_TITLE_USER, user.getTitle());
+                values.put(SQLiteHelper.COLUMN_XP, user.getXp());
+                values.put(SQLiteHelper.COLUMN_POWER_POINTS, user.getPowerPoints());
+                values.put(SQLiteHelper.COLUMN_COINS, user.getCoins());
+                values.put(SQLiteHelper.COLUMN_REGISTRATION_TIMESTAMP, user.getRegistrationTimestamp());
+                values.put(SQLiteHelper.COLUMN_ALLIANCE_ID, user.getAllianceId());
+                values.put(SQLiteHelper.COLUMN_FCM_TOKEN, user.getFcmToken());
 
-            if (user.getBadges() != null) {
-                values.put(SQLiteHelper.COLUMN_BADGES_JSON, gson.toJson(user.getBadges()));
+                if (user.getBadges() != null) values.put(SQLiteHelper.COLUMN_BADGES_JSON, gson.toJson(user.getBadges()));
+                if (user.getEquipped() != null) values.put(SQLiteHelper.COLUMN_EQUIPPED_ITEMS_JSON, gson.toJson(user.getEquipped()));
+                if (user.getUserWeapons() != null) values.put(SQLiteHelper.COLUMN_WEAPONS_JSON, gson.toJson(user.getUserWeapons()));
+                if (user.getUserItems() != null) values.put(SQLiteHelper.COLUMN_ITEMS_JSON, gson.toJson(user.getUserItems()));
+                if (user.getFriendIds() != null) values.put(SQLiteHelper.COLUMN_FRIENDS_JSON, gson.toJson(user.getFriendIds()));
+                if (user.getFriendRequests() != null) values.put(SQLiteHelper.COLUMN_FRIEND_REQUESTS_JSON, gson.toJson(user.getFriendRequests()));
+                if (user.getAllianceInvites() != null) values.put(SQLiteHelper.COLUMN_ALLIANCE_INVITES_JSON, gson.toJson(user.getAllianceInvites()));
+
+                database.insert(SQLiteHelper.TABLE_USERS, null, values);
+            } finally {
+                if (database != null) database.close();
             }
-            if (user.getEquipped() != null) {
-                values.put(SQLiteHelper.COLUMN_EQUIPPED_ITEMS_JSON, gson.toJson(user.getEquipped()));
-            }
-            if (user.getUserWeapons() != null) {
-                values.put(SQLiteHelper.COLUMN_WEAPONS_JSON, gson.toJson(user.getUserWeapons()));
-            }
-
-            if (user.getUserItems() != null) {
-                values.put(SQLiteHelper.COLUMN_ITEMS_JSON, gson.toJson(user.getUserItems()));
-            }
-
-            if (user.getFriendIds()!= null){
-                values.put(SQLiteHelper.COLUMN_FRIENDS_JSON, gson.toJson(user.getFriendIds()));
-            }
-
-            if(user.getFriendRequests()!=null){
-                values.put(SQLiteHelper.COLUMN_FRIEND_REQUESTS_JSON, gson.toJson(user.getFriendRequests()));
-            }
-
-            if (user.getAllianceInvites() != null) {
-                values.put(SQLiteHelper.COLUMN_ALLIANCE_INVITES_JSON, gson.toJson(user.getAllianceInvites()));
-            }
-
-            database.insert(SQLiteHelper.TABLE_USERS, null, values);
-        } finally {
-            if (database != null) database.close();
-        }
+        });
     }
 
     private User getUserFromSQLite(String userId) {
@@ -589,21 +637,24 @@ public class UserRepository {
     }
 
     private void deleteUserFromSQLite(String userId) {
-        SQLiteDatabase database = null;
-        try {
-            database = dbHelper.getWritableDatabase();
-            database.delete(SQLiteHelper.TABLE_USERS, SQLiteHelper.COLUMN_USER_ID + " = ?", new String[]{userId});
-        } finally {
-            if (database != null) database.close();
-        }
+        databaseExecutor.execute(() -> {
+            SQLiteDatabase database = null;
+            try {
+                database = dbHelper.getWritableDatabase();
+                database.delete(SQLiteHelper.TABLE_USERS, SQLiteHelper.COLUMN_USER_ID + " = ?", new String[]{userId});
+            } finally {
+                if (database != null) database.close();
+            }
+        });
     }
 
     public void updateUserReward(String userId, Map<String, Object> reward) {
-        new Thread(() -> {
+        databaseExecutor.execute(() -> {
+            SQLiteDatabase db = null;
+            Cursor cursor = null;
             try {
-                SQLiteDatabase db = dbHelper.getWritableDatabase();
-                // Na primer, povuci trenutne vrednosti iz baze
-                Cursor cursor = db.query(SQLiteHelper.TABLE_USERS, null,
+                db = dbHelper.getWritableDatabase();
+                cursor = db.query(SQLiteHelper.TABLE_USERS, null,
                         SQLiteHelper.COLUMN_USER_ID + "=?", new String[]{userId}, null, null, null);
 
                 if (cursor != null && cursor.moveToFirst()) {
@@ -612,7 +663,6 @@ public class UserRepository {
                     int coins = cursor.getInt(cursor.getColumnIndexOrThrow("coins"));
                     int badges = cursor.getInt(cursor.getColumnIndexOrThrow("badges"));
 
-                    // Dodavanje nagrada
                     potions += (int) reward.get("potions");
                     clothes += (int) reward.get("clothes");
                     coins += (int) reward.get("coins");
@@ -626,12 +676,18 @@ public class UserRepository {
 
                     db.update(SQLiteHelper.TABLE_USERS, cv,
                             SQLiteHelper.COLUMN_USER_ID + "=?", new String[]{userId});
-                    cursor.close();
                 }
             } catch (Exception e) {
                 e.printStackTrace();
+            } finally {
+                if (cursor != null) {
+                    cursor.close();
+                }
+                if (db != null) {
+                    db.close();
+                }
             }
-        }).start();
+        });
     }
 
 }

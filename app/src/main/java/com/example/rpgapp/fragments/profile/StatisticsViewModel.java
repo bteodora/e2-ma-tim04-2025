@@ -2,13 +2,18 @@ package com.example.rpgapp.fragments.profile;
 
 import android.app.Application;
 import android.graphics.Color;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
+import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.example.rpgapp.database.AuthRepository;
+import com.example.rpgapp.database.SpecialMissionRepository;
 import com.example.rpgapp.database.TaskRepository;
+import com.example.rpgapp.database.UserRepository;
+import com.example.rpgapp.model.SpecialMission;
 import com.example.rpgapp.model.Task;
 import com.example.rpgapp.model.TaskSummary;
 import com.github.mikephil.charting.data.BarData;
@@ -22,9 +27,11 @@ import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.data.PieEntry;
 import com.github.mikephil.charting.utils.ColorTemplate;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -38,21 +45,58 @@ public class StatisticsViewModel extends AndroidViewModel {
 
     private TaskRepository taskRepository;
     private AuthRepository authRepository;
+    private SpecialMissionRepository specialMissionRepository;
+    private UserRepository userRepository;
 
     public MutableLiveData<String> activeDaysStreak = new MutableLiveData<>("0");
     public MutableLiveData<String> longestSuccessStreak = new MutableLiveData<>("0");
     public MutableLiveData<TaskSummary> taskSummaryData = new MutableLiveData<>();
     public MutableLiveData<BarData> categoryData = new MutableLiveData<>();
     public MutableLiveData<ArrayList<String>> categoryLabels = new MutableLiveData<>();
-    public MutableLiveData<LineData> avgDifficultyData = new MutableLiveData<>();
-    public MutableLiveData<LineData> xpLast7DaysData = new MutableLiveData<>();
+    private MutableLiveData<ChartDataWithLabels> _xpLast7DaysData = new MutableLiveData<>();
+    public LiveData<ChartDataWithLabels> xpLast7DaysData = _xpLast7DaysData;
+    private MutableLiveData<ChartDataWithLabels> _avgDifficultyData = new MutableLiveData<>();
+    public LiveData<ChartDataWithLabels> avgDifficultyData = _avgDifficultyData;
+    private MutableLiveData<String> _missionsStartedCount = new MutableLiveData<>("0");
+    public LiveData<String> missionsStartedCount = _missionsStartedCount;
+    private MutableLiveData<String> _missionsCompletedCount = new MutableLiveData<>("0");
+    public LiveData<String> missionsCompletedCount = _missionsCompletedCount;
+    public MutableLiveData<String> userTitle = new MutableLiveData<>();
+    public MutableLiveData<String> userPowerPoints = new MutableLiveData<>();
+    public MutableLiveData<String> userXpDisplay = new MutableLiveData<>();
+    public MutableLiveData<Integer> userXpProgress = new MutableLiveData<>();
+    public MutableLiveData<Integer> userXpMax = new MutableLiveData<>();
 
     public StatisticsViewModel(@NonNull Application application) {
         super(application);
         taskRepository = TaskRepository.getInstance(application);
         authRepository = new AuthRepository(application);
+        specialMissionRepository = SpecialMissionRepository.getInstance(application);
+        userRepository = UserRepository.getInstance(application);
 
         taskRepository.getAllTasksLiveData().observeForever(this::processAllTasks);
+        userRepository.getLoggedInUserLiveData().observeForever(user -> {
+            if (user != null) {
+                loadMissionStats(user.getUserId());
+
+                userTitle.postValue(user.getTitle());
+                userPowerPoints.postValue(String.valueOf(user.getPowerPoints()));
+
+                long currentXp = user.getXp();
+                long requiredXp = user.getRequiredXpForNextLevel();
+
+                userXpDisplay.postValue(currentXp + " / " + requiredXp + " XP");
+
+                userXpMax.postValue((int) requiredXp);
+                userXpProgress.postValue((int) currentXp);
+
+            } else {
+                userTitle.postValue("");
+                userPowerPoints.postValue("0");
+                userXpDisplay.postValue("0 / 0 XP");
+                userXpProgress.postValue(0);
+            }
+        });
     }
 
     private void processAllTasks(List<Task> tasks) {
@@ -63,9 +107,9 @@ public class StatisticsViewModel extends AndroidViewModel {
         createTaskSummaryChart(tasks);
         createCategoryChart(tasks);
         createXpLast7DaysChart(tasks);
-        createAvgDifficultyChart(tasks);
+        calculateAverageDifficultyForLast7Days(tasks);
+        calculateActiveDaysStreak(tasks);
     }
-
 
     private void createTaskSummaryChart(List<Task> allTasks) {
         int totalCreated = allTasks.size();
@@ -107,28 +151,15 @@ public class StatisticsViewModel extends AndroidViewModel {
         taskSummaryData.postValue(new TaskSummary(pieData, totalCreated));
     }
 
-    // U StatisticsViewModel.java
-
-    // U StatisticsViewModel.java
-
     private void calculateStreaks(List<Task> allTasks) {
-        // =====================================================================
-        // PRAVILO 1: Broj dana aktivnog korišćenja aplikacije
-        // =====================================================================
-        activeDaysStreak.postValue("0"); // Placeholder, zahteva posebno praćenje
+        // activeDaysStreak.postValue("0");
 
-        // =====================================================================
-        // PRAVILO 2: Najduži niz uspešno urađenih zadataka
-        // =====================================================================
-
-        // 1. Kreiramo dva seta: jedan za uspešne, jedan za neuspešne dane
         Set<Long> successfulDays = new HashSet<>();
         Set<Long> failedDays = new HashSet<>();
 
         for (Task task : allTasks) {
             if (task.getCompletionTimestamp() > 0 && task.getStatus() != null) {
-                long dayTimestamp = task.getCompletionTimestamp(); // Već je normalizovan
-
+                long dayTimestamp = task.getCompletionTimestamp();
                 if ("urađen".equalsIgnoreCase(task.getStatus())) {
                     successfulDays.add(dayTimestamp);
                 } else if ("neurađen".equalsIgnoreCase(task.getStatus())) {
@@ -137,8 +168,6 @@ public class StatisticsViewModel extends AndroidViewModel {
             }
         }
 
-        // Uklonimo sve dane koji su bili i uspešni i neuspešni (ako npr. jedan task uradi, a drugi ne)
-        // iz seta uspešnih. Takav dan je neuspešan.
         successfulDays.removeAll(failedDays);
 
         if (successfulDays.isEmpty()) {
@@ -146,39 +175,85 @@ public class StatisticsViewModel extends AndroidViewModel {
             return;
         }
 
-        // 2. Sortiramo samo uspešne dane
         List<Long> sortedSuccessfulDays = new ArrayList<>(successfulDays);
         Collections.sort(sortedSuccessfulDays);
 
-        // 3. Tražimo najduži niz
         int maxStreak = 1;
         int currentStreak = 1;
         for (int i = 1; i < sortedSuccessfulDays.size(); i++) {
             long previousSuccessDay = sortedSuccessfulDays.get(i - 1);
             long currentSuccessDay = sortedSuccessfulDays.get(i);
 
-            // 4. Proveravamo da li postoji dan neuspeha IZMEĐU dva uspešna dana
             boolean streakBroken = false;
             for (Long failedDay : failedDays) {
                 if (failedDay > previousSuccessDay && failedDay < currentSuccessDay) {
                     streakBroken = true;
-                    break; // Našli smo neuspeh, niz je prekinut
+                    break;
                 }
             }
 
             if (streakBroken) {
-                // Ako je niz prekinut, sačuvaj dosadašnji i resetuj
                 maxStreak = Math.max(maxStreak, currentStreak);
                 currentStreak = 1;
             } else {
-                // Ako niz NIJE prekinut, samo ga nastavi
                 currentStreak++;
             }
         }
 
-        // Finalna provera za poslednji niz
         maxStreak = Math.max(maxStreak, currentStreak);
         longestSuccessStreak.postValue(String.valueOf(maxStreak));
+    }
+
+    private void calculateActiveDaysStreak(List<Task> allTasks) {
+        if (allTasks == null || allTasks.isEmpty()) {
+            activeDaysStreak.postValue("0");
+            return;
+        }
+
+        Set<LocalDate> activeDays = new HashSet<>();
+        for (Task task : allTasks) {
+            if (task.getCreationTimestamp() > 0) {
+                LocalDate creationDate = Instant.ofEpochMilli(task.getCreationTimestamp())
+                        .atZone(ZoneId.systemDefault())
+                        .toLocalDate();
+                activeDays.add(creationDate);
+            }
+
+            if (task.getLastActionTimestamp() > 0) {
+                LocalDate actionDate = Instant.ofEpochMilli(task.getLastActionTimestamp())
+                        .atZone(ZoneId.systemDefault())
+                        .toLocalDate();
+                activeDays.add(actionDate);
+            }
+        }
+
+        if (activeDays.isEmpty()) {
+            activeDaysStreak.postValue("0");
+            return;
+        }
+
+        List<LocalDate> sortedActiveDays = new ArrayList<>(activeDays);
+        Collections.sort(sortedActiveDays);
+
+        int currentStreak = 0;
+        LocalDate today = LocalDate.now();
+        LocalDate lastDayInList = sortedActiveDays.get(sortedActiveDays.size() - 1);
+
+        if (lastDayInList.isEqual(today) || lastDayInList.isEqual(today.minusDays(1))) {
+            currentStreak = 1;
+            for (int i = sortedActiveDays.size() - 2; i >= 0; i--) {
+                LocalDate currentDay = sortedActiveDays.get(i + 1);
+                LocalDate previousDay = sortedActiveDays.get(i);
+
+                if (previousDay.isEqual(currentDay.minusDays(1))) {
+                    currentStreak++;
+                } else {
+                    break;
+                }
+            }
+        }
+
+        activeDaysStreak.postValue(String.valueOf(currentStreak));
     }
 
     private void createCategoryChart(List<Task> tasks) {
@@ -198,7 +273,7 @@ public class StatisticsViewModel extends AndroidViewModel {
             entries.add(new BarEntry(i, categoryCount.get(labels.get(i))));
         }
 
-        if(entries.isEmpty()) return;
+        if (entries.isEmpty()) return;
 
         BarDataSet dataSet = new BarDataSet(entries, "Kategorije");
         dataSet.setColors(ColorTemplate.VORDIPLOM_COLORS);
@@ -209,7 +284,9 @@ public class StatisticsViewModel extends AndroidViewModel {
     private void createXpLast7DaysChart(List<Task> tasks) {
         long now = System.currentTimeMillis();
         Map<Integer, Integer> dailyXp = new HashMap<>();
-        for (int i = 0; i < 7; i++) dailyXp.put(i, 0);
+        for (int i = 0; i < 7; i++) {
+            dailyXp.put(i, 0);
+        }
 
         for (Task task : tasks) {
             if ("urađen".equalsIgnoreCase(task.getStatus())) {
@@ -225,41 +302,111 @@ public class StatisticsViewModel extends AndroidViewModel {
         }
 
         ArrayList<Entry> entries = new ArrayList<>();
+        ArrayList<String> labels = new ArrayList<>();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM");
+        LocalDate today = LocalDate.now();
+
         for (int i = 0; i < 7; i++) {
             entries.add(new Entry(i, dailyXp.get(i)));
+            LocalDate day = today.minusDays(6 - i);
+            labels.add(day.format(formatter));
         }
 
         LineDataSet dataSet = new LineDataSet(entries, "XP (poslednjih 7 dana)");
-        xpLast7DaysData.postValue(new LineData(dataSet));
+        LineData lineData = new LineData(dataSet);
+        ChartDataWithLabels finalData = new ChartDataWithLabels(lineData, labels);
+        _xpLast7DaysData.postValue(finalData);
     }
 
-    private void createAvgDifficultyChart(List<Task> tasks) {
-        Map<Long, List<Integer>> xpPerDay = new HashMap<>();
-        for(Task task : tasks){
-            if("urađen".equalsIgnoreCase(task.getStatus())){
-                long dayTimestamp = task.getCompletionTimestamp(); // Već je normalizovan u get-eru
-                if(!xpPerDay.containsKey(dayTimestamp)) {
-                    xpPerDay.put(dayTimestamp, new ArrayList<>());
-                }
-                xpPerDay.get(dayTimestamp).add(task.getTotalXp());
+    private void calculateAverageDifficultyForLast7Days(List<Task> allTasks) {
+        List<Task> completedTasks = new ArrayList<>();
+        for (Task task : allTasks) {
+            if ("urađen".equalsIgnoreCase(task.getStatus())) {
+                completedTasks.add(task);
             }
         }
 
-        List<Long> sortedDays = new ArrayList<>(xpPerDay.keySet());
-        Collections.sort(sortedDays);
-
-        ArrayList<Entry> entries = new ArrayList<>();
-        for (int i = 0; i < sortedDays.size(); i++) {
-            List<Integer> dailyXps = xpPerDay.get(sortedDays.get(i));
-            double sum = 0;
-            for(int xp : dailyXps) sum += xp;
-            float avg = (float) (sum / dailyXps.size());
-            entries.add(new Entry(i, avg));
+        Map<LocalDate, List<Integer>> xpPerDay = new HashMap<>();
+        for (Task task : completedTasks) {
+            LocalDate date = Instant.ofEpochMilli(task.getCompletionTimestamp())
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate();
+            xpPerDay.computeIfAbsent(date, k -> new ArrayList<>()).add(task.getDifficultyXp());
         }
 
-        if(entries.isEmpty()) return;
+        ArrayList<Entry> entries = new ArrayList<>();
+        ArrayList<String> labels = new ArrayList<>();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM");
+        LocalDate today = LocalDate.now();
 
-        LineDataSet dataSet = new LineDataSet(entries, "Prosečna težina zadatka");
-        avgDifficultyData.postValue(new LineData(dataSet));
+        for (int i = 6; i >= 0; i--) {
+            LocalDate day = today.minusDays(i);
+            float avgXp = 0f;
+            if (xpPerDay.containsKey(day)) {
+                List<Integer> dailyXps = xpPerDay.get(day);
+                if (dailyXps != null && !dailyXps.isEmpty()) {
+                    double sum = 0;
+                    for (int xp : dailyXps) sum += xp;
+                    avgXp = (float) (sum / dailyXps.size());
+                }
+            }
+            entries.add(new Entry(6 - i, avgXp));
+            labels.add(day.format(formatter));
+        }
+
+        if (entries.isEmpty()) {
+            _avgDifficultyData.postValue(null);
+            return;
+        }
+
+        LineDataSet dataSet = new LineDataSet(entries, "Average task difficulty");
+        LineData lineData = new LineData(dataSet);
+        ChartDataWithLabels finalData = new ChartDataWithLabels(lineData, labels);
+        _avgDifficultyData.postValue(finalData);
+    }
+
+    public class ChartDataWithLabels {
+        public final LineData lineData;
+        public final List<String> labels;
+
+        public ChartDataWithLabels(LineData lineData, List<String> labels) {
+            this.lineData = lineData;
+            this.labels = labels;
+        }
+    }
+
+    private void loadMissionStats(String currentUserId) {
+        if (currentUserId == null || currentUserId.isEmpty()) {
+            return;
+        }
+
+        specialMissionRepository.getAllMissions().observeForever(allMissions -> {
+            if (allMissions == null) {
+                return;
+            }
+
+
+            int startedCount = 0;
+            int completedCount = 0;
+
+            for (SpecialMission mission : allMissions) {
+                Map<String, Integer> progressMap = mission.getUserTaskProgress();
+
+                if (progressMap.containsKey(currentUserId.trim())) {
+                    startedCount++;
+                    if (!mission.isActive()) {
+                        completedCount++;
+                    }
+                }
+            }
+
+            _missionsStartedCount.postValue(String.valueOf(startedCount));
+            _missionsCompletedCount.postValue(String.valueOf(completedCount));
+        });
+    }
+
+    @Override
+    protected void onCleared() {
+        super.onCleared();
     }
 }
