@@ -1,66 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     android:padding="16dp">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:gravity="center_horizontal"
-        android:layout_marginBottom="16dp">
-
-        <TextView
-            android:id="@+id/textViewLeaderLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Alliance Leader"
-            android:textAppearance="?attr/textAppearanceSubtitle1"
-            android:textColor="@color/textColorSecondary"/>
-
-        <TextView
-            android:id="@+id/textViewLeaderName"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:textAppearance="?attr/textAppearanceHeadline6"
-            tools:text="Ime Vođe" />
-
-    </LinearLayout>
-
-    <View
-        style="@style/PixelDividerFadeStyle"
-        android:layout_width="match_parent"
-        android:layout_height="16dp"
-        android:layout_marginBottom="16dp"/>
-
-    <TextView
-        android:id="@+id/textViewMembersLabel"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Members"
-        android:textAppearance="?attr/textAppearanceHeadline6" />
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerViewMembers"
-        style="@style/PixelPanelBorderStyle"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:layout_marginTop="8dp"
-        android:padding="4dp"
-        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-        tools:listitem="@layout/list_item_user"/>
-
+    <!-- STEP 1: Pin the buttons to the bottom of the screen -->
     <FrameLayout
+        android:id="@+id/buttonsLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp">
+        android:layout_marginTop="16dp"
+        android:layout_alignParentBottom="true">
 
         <Button
             android:id="@+id/buttonLeaveAlliance"
@@ -69,6 +22,7 @@
             android:layout_height="wrap_content"
             android:text="Leave Alliance"
             android:visibility="gone"
+            android:minHeight="56dp"
             tools:visibility="visible"/>
 
         <Button
@@ -80,8 +34,48 @@
             app:backgroundTint="#B71C1C"
             android:textColor="@color/white"
             android:visibility="gone"
+            android:minHeight="56dp"
             tools:visibility="gone"/>
-
     </FrameLayout>
 
-</LinearLayout>
+    <!-- STEP 2: Pin the header views to the top of the screen -->
+    <TextView
+        android:id="@+id/textViewLeaderName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:textAppearance="?attr/textAppearanceHeadline6"
+        android:layout_alignParentTop="true"
+        tools:text="Leader: Ime Vođe" />
+
+    <View
+        android:id="@+id/divider"
+        style="@style/PixelDividerFadeStyle"
+        android:layout_width="match_parent"
+        android:layout_height="16dp"
+        android:layout_marginTop="8dp"
+        android:layout_below="@id/textViewLeaderName"/>
+
+    <TextView
+        android:id="@+id/textViewMembersLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Members"
+        android:textAppearance="?attr/textAppearanceHeadline6"
+        android:layout_below="@id/divider"/>
+
+    <!-- STEP 3: Tell the RecyclerView to fill the space between the header and the buttons -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerViewMembers"
+        style="@style/PixelPanelBorderStyle"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="8dp"
+        android:padding="4dp"
+        android:layout_below="@id/textViewMembersLabel"
+        android:layout_above="@id/buttonsLayout"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+        tools:listitem="@layout/list_item_user"/>
+
+</RelativeLayout>

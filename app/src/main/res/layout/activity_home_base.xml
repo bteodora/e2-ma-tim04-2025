@@ -34,5 +34,5 @@
     </com.google.android.material.appbar.AppBarLayout>
 
     <include layout="@layout/activity_home_content" />
-    
+
 </androidx.constraintlayout.widget.ConstraintLayout>
