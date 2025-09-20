@@ -4,7 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tooles"
     android:id="@+id/base_navigation"
-    app:startDestination="@+id/nav_products">
+    app:startDestination="@+id/nav_tasks">
 
     <!-- Products -->
     <fragment
@@ -27,8 +27,6 @@
         tools:layout="@layout/fragment_new_product"
         app:popUpTo="@+id/nav_products"
         app:popUpToInclusive="false" />
-
-    <!-- Alliance -->
 
     <!-- Alliance -->
     <fragment

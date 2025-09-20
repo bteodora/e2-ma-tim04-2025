@@ -77,15 +77,17 @@ public class ShopFragment extends Fragment {
                 .getActiveMissionForUser(currentUserId, new SpecialMissionRepository.MissionCallback() {
                     @Override
                     public void onMissionLoaded(SpecialMission mission) {
-                        specialMissionViewModel.setCurrentMission(mission);
-                        activeMission = mission;
-                        requireActivity().runOnUiThread(() -> {
-                            if (mission != null) {
-                                Toast.makeText(requireContext(),
-                                        "Kupovinom u shopu rešavate zadatak iz specijalne misije!",
-                                        Toast.LENGTH_SHORT).show();
-                            }
-                        });
+                        if (isAdded()) {
+                            specialMissionViewModel.setCurrentMission(mission);
+                            activeMission = mission;
+                            requireActivity().runOnUiThread(() -> {
+                                if (mission != null) {
+                                    Toast.makeText(requireContext(),
+                                            "Kupovinom u shopu rešavate zadatak iz specijalne misije!",
+                                            Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                        }
                     }
 
                     @Override

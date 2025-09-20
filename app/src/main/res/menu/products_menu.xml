@@ -7,9 +7,4 @@
         android:orderInCategory="300"
         app:showAsAction="ifRoom"/>
 
-    <item android:id="@+id/nav_settings"
-        android:title="@string/settings"
-        android:icon="@drawable/ic_settings"
-        android:orderInCategory="100"
-        app:showAsAction="never" />
 </menu>

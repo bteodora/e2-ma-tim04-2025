@@ -28,6 +28,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Join an Alliance"
+            android:fontFamily="@font/logo_font"
             android:textAppearance="?attr/textAppearanceHeadline5"
             android:layout_marginBottom="8dp"/>
 
@@ -61,6 +62,7 @@
 
             <TextView
                 android:id="@+id/textViewAllianceName"
+                android:fontFamily="@font/logo_font"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textAppearance="?attr/textAppearanceHeadline5"

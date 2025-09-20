@@ -1,9 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp"
-    android:background="@android:color/white">
+    android:padding="16dp">
 
     <!-- ===== HEADER: Tasks + Calendar Button ===== -->
     <RelativeLayout
@@ -19,7 +19,7 @@
             android:textSize="18sp"
             android:textStyle="bold"
             android:layout_alignParentStart="true"
-            android:textColor="@android:color/black"/>
+            android:textColor="?android:attr/textColorPrimary"/>
 
         <ImageButton
             android:id="@+id/btnCalendar"
@@ -47,13 +47,6 @@
     </LinearLayout>
 
     <!-- ===== TASK LIST ===== -->
-<!--    <ListView-->
-<!--        android:id="@android:id/list"-->
-<!--        android:layout_width="match_parent"-->
-<!--        android:layout_height="0dp"-->
-<!--        android:layout_weight="1"-->
-<!--        android:dividerHeight="2dp"-->
-<!--        android:paddingBottom="8dp"/>-->
     <ListView
         android:id="@android:id/list"
         android:layout_width="match_parent"
@@ -61,7 +54,6 @@
         android:layout_weight="1"
         android:divider="@android:color/transparent"
         android:dividerHeight="0dp"
-        android:paddingBottom="8dp"
-        android:background="#E0E0E0"/>
+        android:paddingBottom="8dp"/>
 
 </LinearLayout>

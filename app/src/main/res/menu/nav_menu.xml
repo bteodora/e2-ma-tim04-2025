@@ -15,33 +15,24 @@
             android:orderInCategory="200"/>
 
         <item android:id="@+id/myProfileFragment"
-            android:title="Profile - Teodora"
+            android:title="Profile"
             android:icon="@drawable/ic_face"
-            android:orderInCategory="300" />
-
-        <item android:id="@+id/nav_logout"
-            android:title="Log out - Teodora"
-            android:icon="@drawable/ic_logout"
             android:orderInCategory="300" />
 
         <item
             android:id="@+id/allianceFragment"
-            android:icon="@drawable/ic_settings"
+            android:icon="@drawable/ic_alliance"
             android:title="My Alliance" />
 
         <item
             android:id="@+id/nav_shop"
-            android:icon="@drawable/ic_face"
-            android:title="Shop  - Teodora" />
+            android:icon="@drawable/ic_shop_cart"
+            android:title="Shop" />
         <item
             android:id="@+id/nav_friends"
-            android:icon="@drawable/ic_face"
-            android:title="Friends - Teodora" />
+            android:icon="@drawable/ic_action_group"
+            android:title="Friends" />
 
-        <item
-            android:id="@+id/requestsFragment"
-            android:icon="@drawable/ic_face"
-            android:title="Friend requests - Teodora" />
         <item
             android:id="@+id/nav_tasks"
             android:title="Tasks"
@@ -58,6 +49,11 @@
             android:title="Battle"
             android:icon="@drawable/ic_battle"
             android:orderInCategory="500" />
+
+        <item android:id="@+id/nav_logout"
+            android:title="Log out"
+            android:icon="@drawable/ic_logout"
+            android:orderInCategory="600" />
 
 
     </group>
