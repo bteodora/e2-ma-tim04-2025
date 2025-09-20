@@ -31,7 +31,6 @@ import com.journeyapps.barcodescanner.ScanOptions;
 import android.content.pm.ActivityInfo;
 
 public class FriendsFragment extends Fragment {
-    // Promenjen TAG da bi se lakše filtriralo
     private static final String TAG = "RPGApp_Debug";
     private FriendsViewModel viewModel;
     private SearchView searchViewUsers;
@@ -41,8 +40,6 @@ public class FriendsFragment extends Fragment {
     public FriendsFragment() {
         Log.d(TAG, "FriendsFragment: Constructor called");
     }
-
-    // U FriendsFragment.java
 
     private final ActivityResultLauncher<ScanOptions> barcodeLauncher = registerForActivityResult(new ScanContract(),
             result -> {
@@ -88,6 +85,11 @@ public class FriendsFragment extends Fragment {
             startScanner();
         });
 
+        Button buttonViewRequests = view.findViewById(R.id.buttonViewRequests);
+        buttonViewRequests.setOnClickListener(v -> {
+            NavHostFragment.findNavController(this).navigate(R.id.action_view_requests);
+        });
+
         Button createAllianceButton = view.findViewById(R.id.buttonCreateAlliance);
         createAllianceButton.setOnClickListener(v -> {
             CreateAllianceDialogFragment dialog = new CreateAllianceDialogFragment();
@@ -106,7 +108,6 @@ public class FriendsFragment extends Fragment {
         options.setCameraId(0);
         options.setBeepEnabled(true);
         options.setBarcodeImageEnabled(true);
-        // options.setOrientationLocked(true);
         barcodeLauncher.launch(options);
     }
 
@@ -131,7 +132,7 @@ public class FriendsFragment extends Fragment {
         searchViewUsers.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
-                viewModel.searchUsers(query); // Ovu logiku ćemo doraditi
+                viewModel.searchUsers(query);
                 return true;
             }
 

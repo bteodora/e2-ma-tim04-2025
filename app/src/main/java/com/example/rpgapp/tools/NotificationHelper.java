@@ -87,7 +87,7 @@ public class NotificationHelper {
         );
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, ALLIANCE_CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_action_person)
+                .setSmallIcon(R.drawable.ic_alliance)
                 .setContentTitle("Alliance Invitation")
                 .setContentText(inviterUsername + " invited you to join " + allianceName)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
@@ -110,7 +110,7 @@ public class NotificationHelper {
         }
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, GENERAL_CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_action_group)
+                .setSmallIcon(R.drawable.ic_alliance)
                 .setContentTitle(title)
                 .setContentText(message)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)

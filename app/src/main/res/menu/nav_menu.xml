@@ -23,20 +23,11 @@
             android:title="Log out - Teodora"
             android:icon="@drawable/ic_logout"
             android:orderInCategory="300" />
-        <item
-            android:id="@+id/nav_register"
-            android:icon="@drawable/ic_face"
-            android:title="Register - Teodora" />
 
         <item
             android:id="@+id/allianceFragment"
             android:icon="@drawable/ic_settings"
             android:title="My Alliance" />
-
-        <item
-            android:id="@+id/nav_login"
-            android:icon="@drawable/ic_face"
-            android:title="Log in - Teodora" />
 
         <item
             android:id="@+id/nav_shop"

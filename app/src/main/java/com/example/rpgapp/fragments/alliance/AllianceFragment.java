@@ -52,10 +52,9 @@ public class AllianceFragment extends Fragment {
     }
 
     private void bindViews(View view) {
-        // Povezivanje elemenata za oba stanja
         noAllianceLayout = view.findViewById(R.id.layout_no_alliance);
         buttonCreateAlliance = view.findViewById(R.id.buttonCreateAlliance);
-        buttonViewInvites = view.findViewById(R.id.buttonViewInvites);
+        buttonViewInvites = view.findViewById(R.id.buttonViewRequests);
 
         allianceContentLayout = view.findViewById(R.id.layout_alliance_content);
         viewPager = view.findViewById(R.id.viewPager);

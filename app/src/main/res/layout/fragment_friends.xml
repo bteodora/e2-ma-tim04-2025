@@ -16,7 +16,6 @@
         android:orientation="horizontal"
         android:layout_marginBottom="8dp">
 
-        <!-- Korišćenje naših stilizovanih dugmadi, bez ikonica -->
         <Button
             android:id="@+id/buttonViewRequests"
             style="@style/PixelButtonStyle"
