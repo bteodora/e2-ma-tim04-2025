@@ -219,27 +219,6 @@ public class UserRepository {
         return loggedInUser;
     }
 
-    public void startListeningForAllianceUpdates(String allianceId, AllianceUpdatesListener listener) {
-        if (allianceListener != null) {
-            allianceListener.remove();
-        }
-        this.updatesListener = listener;
-
-        db.collection("alliances").document(allianceId)
-                .addSnapshotListener((snapshot, e) -> {
-                    if (e != null || snapshot == null || !snapshot.exists()) {
-                        return; // Ignoriši greške
-                    }
-
-                    Alliance newAllianceState = snapshot.toObject(Alliance.class);
-
-                    // TODO: Implementiraj logiku za poređenje stare i nove liste članova
-                    // da bismo pronašli ko se tačno pridružio.
-
-                    Log.d(TAG, "Detektovana promena na savezu!");
-                });
-    }
-
 
     public void sendFriendRequest(String targetUserId, SendRequestCallback callback) {
         if (loggedInUser == null) {

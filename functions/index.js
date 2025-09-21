@@ -225,10 +225,6 @@ exports.sendSingleAllianceInvite = onDocumentUpdated("alliances/{allianceId}", a
 
   const message = {
     token: token,
-    notification: {
-      title: "Alliance Invitation!",
-      body: `${leaderUsername} has invited you to join '${allianceName}'!`,
-    },
     data: {
       type: "ALLIANCE_INVITE",
       allianceId: allianceId,
@@ -242,7 +238,7 @@ exports.sendSingleAllianceInvite = onDocumentUpdated("alliances/{allianceId}", a
     },
   };
 
-  logger.log(`sendSingleAllianceInvite: Šaljem invite notifikaciju korisniku ${newInviteId}.`);
+  logger.log(`sendSingleAllianceInvite: Šaljem invite notifikaciju (samo data) korisniku ${newInviteId}.`);
   const messaging = getMessaging();
   return messaging.send(message);
 });

@@ -153,14 +153,11 @@ public class AllianceRepository {
                 });
     }
 
-    public void acceptAllianceInvite(String newAllianceId, UserRepository.RequestCallback callback) {
-        User currentUser = userRepository.getLoggedInUser();
+    public void acceptAllianceInvite(String newAllianceId, User currentUser, UserRepository.RequestCallback callback) {
         if (currentUser == null) {
-            callback.onFailure(new Exception("User not logged in."));
+            callback.onFailure(new Exception("User object cannot be null."));
             return;
         }
-
-        // TODO: Provera da li je misija u starom savezu aktivna pre nego što se ovo pozove!
 
         WriteBatch batch = db.batch();
         String currentUserId = currentUser.getUserId();
@@ -189,7 +186,7 @@ public class AllianceRepository {
                         String message = currentUser.getUsername() + " has joined your alliance '" + allianceName + "'.";
                         Notification notification = new Notification(leaderId, title, message);
 
-                        DocumentReference notificationRef = db.collection("notifications").document(); // Novi ID
+                        DocumentReference notificationRef = db.collection("notifications").document();
                         batch.set(notificationRef, notification);
 
                         batch.commit().addOnSuccessListener(aVoid -> {
@@ -203,22 +200,22 @@ public class AllianceRepository {
                 .addOnFailureListener(e -> callback.onFailure(e));
     }
 
-    public void declineAllianceInvite(String allianceId, UserRepository.RequestCallback callback) {
-        User currentUser = userRepository.getLoggedInUser();
-        if (currentUser == null) {
-            callback.onFailure(new Exception("User not logged in."));
+
+    public void declineAllianceInvite(String allianceId, String currentUserId, UserRepository.RequestCallback callback) {
+        if (currentUserId == null || currentUserId.isEmpty()) {
+            callback.onFailure(new Exception("Current User ID cannot be null or empty."));
             return;
         }
 
-        DocumentReference userDoc = db.collection("users").document(currentUser.getUserId());
+        DocumentReference userDoc = db.collection("users").document(currentUserId);
 
         userDoc.update("allianceInvites", FieldValue.arrayRemove(allianceId))
                 .addOnSuccessListener(aVoid -> {
-                    userRepository.refreshLoggedInUser();
                     callback.onSuccess();
                 })
                 .addOnFailureListener(e -> callback.onFailure(e));
     }
+
 
     public void disbandAlliance(String allianceId, List<String> memberIds, UserRepository.RequestCallback callback) {
         WriteBatch batch = db.batch();
