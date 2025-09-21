@@ -175,6 +175,10 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
                 // int bossLevel = loadBossLevelOrDefault(1);
                 int bossLevel;
 
+                if (user.getBasePowerPoints() <= 0) {
+                    user.setBasePowerPoints(user.getPowerPoints());
+                }
+
                 SharedPreferences sp = requireContext().getSharedPreferences(SP_NAME, Context.MODE_PRIVATE);
 
                 if (sp.contains(SP_BOSS_LEVEL)) {
