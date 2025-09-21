@@ -160,22 +160,77 @@ public class Battle {
     private int calculateTotalPP() {
         if (user == null) return 0; // zaštita
 
-        int totalPP = user.getPowerPoints();
+        double basePP = user.getPowerPoints();
+        double finalPP = basePP;
 
-        if(activeItems != null) {
-            for(UserItem item : activeItems.values()){
-                if(item.getBonusType() == BonusType.PERMANENT_PP || item.getBonusType() == BonusType.TEMPORARY_PP){
-                    totalPP += (int)item.getCurrentBonus();
+        double permanentMultiplier = 1.0;
+
+        // Odeća/oprema
+        if (user.getEquipped() != null) {
+            for (UserItem item : user.getEquipped().values()) {
+                if (item.getBonusType() == BonusType.PERMANENT_PP) {
+                    permanentMultiplier *= (1.0 + item.getCurrentBonus());
                 }
             }
         }
 
-        if(activeWeapon != null) {
-            totalPP += activeWeapon.getBonusPP();
+        // Svi korisnikovi oružja
+        if (user.getUserWeapons() != null) {
+            for (UserWeapon weapon : user.getUserWeapons().values()) {
+                if (weapon.getBoostType() == BonusType.PERMANENT_PP) {
+                    permanentMultiplier *= (1.0 + weapon.getCurrentBoost());
+                }
+            }
         }
 
-        return totalPP;
+        // Aktivno oružje
+        if (activeWeapon != null && activeWeapon.getBoostType() == BonusType.PERMANENT_PP) {
+            permanentMultiplier *= (1.0 + activeWeapon.getCurrentBoost());
+        }
+
+        finalPP = basePP * permanentMultiplier;
+
+        double temporaryBonusValue = 0.0;
+
+        // TEMP bonusi iz odeće
+        if (user.getEquipped() != null) {
+            for (UserItem item : user.getEquipped().values()) {
+                if (item.getBonusType() == BonusType.TEMPORARY_PP) {
+                    temporaryBonusValue += (basePP * item.getCurrentBonus());
+                }
+            }
+        }
+
+        // TEMP bonusi iz oružja
+        if (activeWeapon != null && activeWeapon.getBoostType() == BonusType.TEMPORARY_PP) {
+            temporaryBonusValue += (basePP * activeWeapon.getCurrentBoost());
+        }
+
+        finalPP += temporaryBonusValue;
+
+        return (int) Math.round(finalPP);
     }
+
+
+//    private int calculateTotalPP() {
+//        if (user == null) return 0; // zaštita
+//
+//        int totalPP = user.getPowerPoints();
+//
+//        if(activeItems != null) {
+//            for(UserItem item : activeItems.values()){
+//                if(item.getBonusType() == BonusType.PERMANENT_PP || item.getBonusType() == BonusType.TEMPORARY_PP){
+//                    totalPP += (int)item.getCurrentBonus();
+//                }
+//            }
+//        }
+//
+//        if(activeWeapon != null) {
+//            totalPP += activeWeapon.getBonusPP();
+//        }
+//
+//        return totalPP;
+//    }
 
 
 
