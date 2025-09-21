@@ -11,15 +11,15 @@
         android:layout_height="wrap_content"
         android:paddingBottom="12dp">
 
-        <TextView
-            android:id="@+id/textViewTasksTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Tasks"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:layout_alignParentStart="true"
-            android:textColor="?android:attr/textColorPrimary"/>
+<!--        <TextView-->
+<!--            android:id="@+id/textViewTasksTitle"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:text="Tasks"-->
+<!--            android:textSize="18sp"-->
+<!--            android:textStyle="bold"-->
+<!--            android:layout_alignParentStart="true"-->
+<!--            android:textColor="?android:attr/textColorPrimary"/>-->
 
         <ImageButton
             android:id="@+id/btnCalendar"
