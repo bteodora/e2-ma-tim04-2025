@@ -248,6 +248,11 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
 
 
         int totalPP = calculateTotalPP(user);
+        user.setPowerPoints(totalPP);
+
+        UserRepository.getInstance(requireContext()).updateUser(user);
+        battleRepository.updateBattle(battle, t -> {});
+
         userPpBar.setMax(Math.max(totalPP, 1));
         userPpBar.setProgress(totalPP);
 
@@ -395,7 +400,6 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
         resetPPToBase(user);
 
 
-       // battleRepository.updateBattle(battle, t -> {});
 
 
         if (userWon) {
@@ -534,7 +538,8 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
         }
 
         finalPP += temporaryBonusValue;
-//        u.setPowerPoints((int)Math.round(finalPP));
+
+        u.setPowerPoints((int)Math.round(finalPP));
 //        u.setBasePowerPoints((int)Math.round(finalPP));
 
         return (int) Math.round(finalPP);
@@ -552,24 +557,6 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
         return clamp((int) Math.round(finalRate), 1, 100);
     }
 
-
-    private void consumeTemporaryEquipment(User u) {
-        if (u == null || u.getEquipped() == null) return;
-        Map<String, UserItem> eq = u.getEquipped();
-        Map<String, String> toRemove = new HashMap<>();
-        for (Map.Entry<String, UserItem> e : eq.entrySet()) {
-            UserItem it = e.getValue();
-            if (it.getBonusType() == BonusType.TEMPORARY_PP) {
-                int ls = Math.max(0, it.getLifespan() - 1);
-                it.setLifespan(ls);
-                if (ls == 0) toRemove.put(e.getKey(), e.getKey());
-            }
-        }
-        for (String key : toRemove.keySet()) eq.remove(key);
-        int totalPP = calculateTotalPP(u);
-        userPpBar.setMax(Math.max(totalPP, 1));
-        userPpBar.setProgress(totalPP);
-    }
 
     private double getMoneyBoostPercent(User u) {
         double sum = 0.0;
@@ -656,8 +643,18 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
         WeaponListAdapter adapter = new WeaponListAdapter(weaponsList, weapon -> {
             if (battle != null) {
                 battle.setActiveWeapon(weapon);
-                updateUserPP();
+               // Toast.makeText(requireContext(), "Aktivirano na klik: " + weapon.getName(), Toast.LENGTH_SHORT).show();
 
+                //updateUserPP();
+                int totalPP=calculateTotalPP(user);
+                user.setPowerPoints(totalPP);
+
+                UserRepository.getInstance(requireContext()).updateUser(user);
+                battleRepository.updateBattle(battle, t -> {});
+
+                userPpBar.setMax(Math.max(totalPP, 1));
+                userPpBar.setProgress(totalPP);
+                userPpText.setText("PP: " + totalPP);
             }
 
             activeWeaponIcon.setVisibility(View.VISIBLE);
@@ -688,21 +685,6 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
         if (resourceName == null) return R.drawable.ic_face; // default
         int resId = requireContext().getResources().getIdentifier(resourceName, "drawable", requireContext().getPackageName());
         return resId != 0 ? resId : R.drawable.ic_face; // fallback
-    }
-
-    private void updateUserPP() {
-        if (user == null) return;
-
-        // Izračunaj ukupne PP sa svim bonusima
-        int totalPP = calculateTotalPP(user);
-
-        // Ažuriraj UI
-        userPpBar.setMax(Math.max(totalPP, 1));
-        userPpBar.setProgress(totalPP);
-        userPpText.setText("PP: " + totalPP);
-
-        // Sačuvaj trenutni PP u user objekt (opciono, za kasniju upotrebu)
-        user.setPowerPoints(totalPP);
     }
 
     private void resetPPToBase(User u) {
