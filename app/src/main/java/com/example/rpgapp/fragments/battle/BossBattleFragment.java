@@ -21,9 +21,12 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.rpgapp.R;
 //import com.example.rpgapp.adapters.WeaponListAdapter;
+import com.example.rpgapp.adapters.WeaponListAdapter;
 import com.example.rpgapp.database.BattleRepository;
 import com.example.rpgapp.database.SpecialMissionRepository;
 import com.example.rpgapp.database.UserRepository;
@@ -36,7 +39,9 @@ import com.example.rpgapp.model.SpecialMission;
 import com.example.rpgapp.model.User;
 import com.example.rpgapp.model.UserItem;
 import com.example.rpgapp.model.UserWeapon;
+import com.example.rpgapp.model.Weapon;
 import com.example.rpgapp.services.TaskService;
+import com.example.rpgapp.tools.GameData;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -594,47 +599,116 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
             return;
         }
 
-        // 1. Pretvori mapu u listu
-        List<UserWeapon> weaponsList = new ArrayList<>(user.getUserWeapons().values());
+        // 1. Učitaj sva oružja iz GameData
+        Map<String, Weapon> allWeapons = GameData.getAllWeapons();
 
-        // 2. Napravi niz imena oružja za prikaz u AlertDialog-u
-        String[] weaponNames = new String[weaponsList.size()];
-        for (int i = 0; i < weaponsList.size(); i++) {
-            weaponNames[i] = weaponsList.get(i).getName();
+        // 2. Napravi listu UserWeapon sa mapiranim Weapon podacima
+        List<UserWeapon> weaponsList = new ArrayList<>();
+        for (UserWeapon uw : user.getUserWeapons().values()) {
+            Weapon weaponData = allWeapons.get(uw.getWeaponId());
+            if (weaponData != null) {
+                uw.setName(weaponData.getName());
+                uw.setCurrentBoost(weaponData.getBoost());
+                uw.setImageResourceId(getResourceIdByName(weaponData.getImage())); // vidi helper ispod
+                weaponsList.add(uw);
+            }
         }
 
-        // 3. Kreiraj AlertDialog
-        androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(requireContext());
-        builder.setTitle("Izaberite oružje");
+        if (weaponsList.isEmpty()) {
+            Toast.makeText(requireContext(), "Nemate dostupna oružja.", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-        builder.setItems(weaponNames, (dialog, which) -> {
-            UserWeapon selectedWeapon = weaponsList.get(which);
+        // 3. Napravi custom view sa RecyclerView
+        View dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_weapon_list, null);
+        RecyclerView recyclerView = dialogView.findViewById(R.id.recyclerWeapons);
+        recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
 
-            // --- Postavi aktivno oružje ---
+        // 4. Adapter
+        WeaponListAdapter adapter = new WeaponListAdapter(weaponsList, weapon -> {
+            // Klik na oružje
             if (battle != null) {
-                battle.setActiveWeapon(selectedWeapon);
+                battle.setActiveWeapon(weapon);
 
-                // --- Update user PP bar sa bonusom od oružja ---
                 int totalPP = calculateTotalPP(user);
                 userPpBar.setMax(Math.max(totalPP, 1));
                 userPpBar.setProgress(totalPP);
-
                 userPpText.setText("PP: " + totalPP);
             }
 
-            // --- Prikazi ikonu izabranog oružja ---
             activeWeaponIcon.setVisibility(View.VISIBLE);
-            activeWeaponIcon.setImageResource(selectedWeapon.getImageResourceId());
+            activeWeaponIcon.setImageResource(weapon.getImageResourceId());
 
-            Toast.makeText(requireContext(), "Aktivirano: " + selectedWeapon.getName(), Toast.LENGTH_SHORT).show();
+            Toast.makeText(requireContext(), "Aktivirano: " + weapon.getName(), Toast.LENGTH_SHORT).show();
         });
+        recyclerView.setAdapter(adapter);
 
-        // 4. Dodaj Cancel dugme
-        builder.setNegativeButton("Cancel", null);
-
-        // 5. Prikazi dialog
-        builder.show();
+        // 5. Prikaži u AlertDialog-u
+        new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                .setTitle("Izaberite oružje")
+                .setView(dialogView)
+                .setNegativeButton("Otkaži", null)
+                .show();
     }
+
+    /**
+     * Helper metoda koja pronalazi drawable resource ID po imenu
+     */
+    private int getResourceIdByName(String resourceName) {
+        if (resourceName == null) return R.drawable.ic_face; // default
+        int resId = requireContext().getResources().getIdentifier(resourceName, "drawable", requireContext().getPackageName());
+        return resId != 0 ? resId : R.drawable.ic_face; // fallback
+    }
+
+
+
+//    private void showWeaponSelectionDialog() {
+//        if (user == null || user.getUserWeapons() == null || user.getUserWeapons().isEmpty()) {
+//            Toast.makeText(requireContext(), "Nemate oružje.", Toast.LENGTH_SHORT).show();
+//            return;
+//        }
+//
+//        // 1. Pretvori mapu u listu
+//        List<UserWeapon> weaponsList = new ArrayList<>(user.getUserWeapons().values());
+//
+//        // 2. Napravi niz imena oružja za prikaz u AlertDialog-u
+//        String[] weaponNames = new String[weaponsList.size()];
+//        for (int i = 0; i < weaponsList.size(); i++) {
+//            weaponNames[i] = weaponsList.get(i).getName();
+//        }
+//
+//        // 3. Kreiraj AlertDialog
+//        androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(requireContext());
+//        builder.setTitle("Izaberite oružje");
+//
+//        builder.setItems(weaponNames, (dialog, which) -> {
+//            UserWeapon selectedWeapon = weaponsList.get(which);
+//
+//            // --- Postavi aktivno oružje ---
+//            if (battle != null) {
+//                battle.setActiveWeapon(selectedWeapon);
+//
+//                // --- Update user PP bar sa bonusom od oružja ---
+//                int totalPP = calculateTotalPP(user);
+//                userPpBar.setMax(Math.max(totalPP, 1));
+//                userPpBar.setProgress(totalPP);
+//
+//                userPpText.setText("PP: " + totalPP);
+//            }
+//
+//            // --- Prikazi ikonu izabranog oružja ---
+//            activeWeaponIcon.setVisibility(View.VISIBLE);
+//            activeWeaponIcon.setImageResource(selectedWeapon.getImageResourceId());
+//
+//            Toast.makeText(requireContext(), "Aktivirano: " + selectedWeapon.getName(), Toast.LENGTH_SHORT).show();
+//        });
+//
+//        // 4. Dodaj Cancel dugme
+//        builder.setNegativeButton("Cancel", null);
+//
+//        // 5. Prikazi dialog
+//        builder.show();
+//    }
 
 
 

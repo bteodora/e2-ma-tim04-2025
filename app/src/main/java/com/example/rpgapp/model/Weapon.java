@@ -1,7 +1,5 @@
 package com.example.rpgapp.model;
 
-enum WeaponType{Sword, Bow}
-
 public class Weapon {
     private String id;
     private String name;
