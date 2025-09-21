@@ -7,20 +7,41 @@
     android:gravity="center_vertical"
     android:layout_marginBottom="8dp">
 
+    <!-- Ikonica oružja -->
     <ImageView
-        android:id="@+id/weaponIcon"
+        android:id="@+id/imageViewWeaponIcon"
         android:layout_width="48dp"
         android:layout_height="48dp"
         android:layout_marginEnd="12dp"
-        android:padding="4dp"
         android:contentDescription="Weapon Icon" />
 
-    <TextView
-        android:id="@+id/weaponName"
-        android:layout_width="wrap_content"
+    <!-- LinearLayout za ime i bonus -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_weight="1"
         android:layout_height="wrap_content"
-        android:text="Weapon Name"
-        android:textSize="16sp"
-        android:textColor="@android:color/black"
-        android:textStyle="bold" />
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/textViewWeaponName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Weapon Name"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/black"
+            android:maxLines="1"
+            android:ellipsize="end"/>
+
+        <TextView
+            android:id="@+id/textViewWeaponBonus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="+5.02% Power Points"
+            android:textSize="14sp"
+            android:textColor="@android:color/darker_gray"
+            android:maxLines="2"
+            android:ellipsize="end"/>
+    </LinearLayout>
+
 </LinearLayout>

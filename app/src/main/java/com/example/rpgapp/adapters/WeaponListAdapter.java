@@ -34,11 +34,11 @@ public class WeaponListAdapter extends ArrayAdapter<UserWeapon> {
         }
 
         UserWeapon weapon = weapons.get(position);
-        ImageView icon = convertView.findViewById(R.id.weaponIcon);
-        TextView name = convertView.findViewById(R.id.weaponName);
+//        ImageView icon = convertView.findViewById(R.id.weaponIcon);
+//        TextView name = convertView.findViewById(R.id.weaponName);
 
-        icon.setImageResource(weapon.getImageResourceId());
-        name.setText(weapon.getName());
+//        icon.setImageResource(weapon.getImageResourceId());
+//        name.setText(weapon.getName());
 
         return convertView;
     }

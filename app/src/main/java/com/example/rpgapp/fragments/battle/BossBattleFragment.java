@@ -23,7 +23,7 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.rpgapp.R;
-import com.example.rpgapp.adapters.WeaponListAdapter;
+//import com.example.rpgapp.adapters.WeaponListAdapter;
 import com.example.rpgapp.database.BattleRepository;
 import com.example.rpgapp.database.SpecialMissionRepository;
 import com.example.rpgapp.database.UserRepository;
@@ -62,7 +62,7 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
 
     private ImageView bossImageView, treasureChestImage, activeWeaponIcon;
     private ProgressBar bossHpBar, userPpBar;
-    private TextView successRateText, remainingAttacksText, coinsEarnedText, bossLevelText, bossHpText;
+    private TextView successRateText, remainingAttacksText, coinsEarnedText, bossLevelText, bossHpText, userPpText;
     private Button attackButton, selectWeaponButton;
 
     private SensorManager sensorManager;
@@ -127,6 +127,7 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
         activeWeaponIcon = view.findViewById(R.id.activeWeaponIcon);
         bossLevelText = view.findViewById(R.id.bossLevelText);
         bossHpText = view.findViewById(R.id.bossHpText);
+        userPpText = view.findViewById(R.id.userPpText);
 
         // --- Hide neki elementi na startu ---
         coinsEarnedText.setVisibility(View.GONE);
@@ -230,17 +231,7 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
 
 
     private void setupUi() {
-        if (user == null) {
-        Toast.makeText(requireContext(), "User je NULL", Toast.LENGTH_SHORT).show();
-    } else {
-        Toast.makeText(requireContext(), "User: " + user.getUsername() + " | ID: " + user.getUserId(), Toast.LENGTH_SHORT).show();
-    }
 
-    if (battle == null) {
-        Toast.makeText(requireContext(), "Battle je NULL", Toast.LENGTH_SHORT).show();
-    } else {
-        Toast.makeText(requireContext(), "Battle loaded: Boss lvl " + battle.getBoss().getLevel(), Toast.LENGTH_SHORT).show();
-    }
 
     if (user == null || battle == null) return;
 
@@ -248,6 +239,10 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
         int totalPP = calculateTotalPP(user);
         userPpBar.setMax(Math.max(totalPP, 1));
         userPpBar.setProgress(totalPP);
+
+        // Ovde samo prikazuješ PP
+        userPpText.setText("PP: " + totalPP);
+
 
         bossHpBar.setMax(battle.getBoss().getMaxHp());
         bossHpBar.setProgress(battle.getBoss().getCurrentHp());
@@ -290,16 +285,6 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
         if (isAttackInProgress || battle == null || battle.isFinished() || user == null) return;
         isAttackInProgress = true;
 
-
-        //--------SMANJENJE PP USERA U PROGRESS BARU
-
-        // --- Koliko PP se troši po udarcu ---
-        int ppCostPerAttack = 2; // primer, možeš promeniti po potrebi
-        int currentPP = calculateTotalPP(user);
-        currentPP = Math.max(0, currentPP - ppCostPerAttack);
-
-        // --- Ažuriraj userPpBar ---
-        userPpBar.setProgress(currentPP);
 
 
 
@@ -567,6 +552,8 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
                 int totalPP = calculateTotalPP(user);
                 userPpBar.setMax(Math.max(totalPP, 1));
                 userPpBar.setProgress(totalPP);
+
+                userPpText.setText("PP: " + totalPP);
             }
 
             // --- Prikazi ikonu izabranog oružja ---

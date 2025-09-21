@@ -96,7 +96,7 @@
                 android:id="@+id/userPpText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="PP: 50/100"
+                android:text="PP: 50"
                 android:textColor="@android:color/black"
                 android:textSize="16sp"
                 android:layout_gravity="center_horizontal"

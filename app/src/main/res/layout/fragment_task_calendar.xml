@@ -27,7 +27,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingTop="8dp"
-            android:paddingBottom="8dp">
+            android:paddingBottom="4dp">
 
             <LinearLayout
                 android:id="@+id/layoutLegend"
@@ -45,12 +45,13 @@
         android:layout_weight="1"
         android:orientation="vertical"
         style="@style/PixelPanelFilledStyle"
-        android:padding="12dp">
+        android:padding="0dp">
 
         <ListView
             android:id="@+id/listViewTasks"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:dividerHeight="2dp"/>
+            android:dividerHeight="2dp"
+            android:background="#E0E0E0"/>
     </LinearLayout>
 </LinearLayout>
