@@ -12,6 +12,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.rpgapp.R;
 import com.example.rpgapp.model.UserWeapon;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
+
 import java.util.List;
 
 public class WeaponListAdapter extends RecyclerView.Adapter<WeaponListAdapter.WeaponViewHolder> {
@@ -58,15 +61,28 @@ public class WeaponListAdapter extends RecyclerView.Adapter<WeaponListAdapter.We
             boost = itemView.findViewById(R.id.weaponBoost);
         }
 
-        public void bind(UserWeapon weapon, OnWeaponClickListener listener) {
-            name.setText(weapon.getName());
-            boost.setText("Boost: " + weapon.getCurrentBoost());
+//        public void bind(UserWeapon weapon, OnWeaponClickListener listener) {
+//            name.setText(weapon.getName());
+//            boost.setText("Boost: " + weapon.getCurrentBoost());
+//
+//            // Umesto if-else po tipu
+//            image.setImageResource(weapon.getImageResourceId());
+//
+//            itemView.setOnClickListener(v -> listener.onWeaponClick(weapon));
+//        }
+    public void bind(UserWeapon weapon, OnWeaponClickListener listener) {
+        name.setText(weapon.getName());
+        boost.setText("Boost: " + weapon.getCurrentBoost());
 
-            // Umesto if-else po tipu
-            image.setImageResource(weapon.getImageResourceId());
+        // Prikaži animirani GIF umesto statične slike
+        Glide.with(image.getContext())
+                .asGif()
+                .load(weapon.getImageResourceId())
+                .placeholder(R.drawable.ic_face)
+                .into(image);
 
-            itemView.setOnClickListener(v -> listener.onWeaponClick(weapon));
-        }
+        itemView.setOnClickListener(v -> listener.onWeaponClick(weapon));
+    }
 
     }
 }
