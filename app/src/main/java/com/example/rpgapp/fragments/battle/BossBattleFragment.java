@@ -22,6 +22,8 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.NavController;
+import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -32,6 +34,7 @@ import com.example.rpgapp.database.BattleRepository;
 import com.example.rpgapp.database.SpecialMissionRepository;
 import com.example.rpgapp.database.UserRepository;
 import com.example.rpgapp.fragments.alliance.SpecialMissionViewModel;
+import com.example.rpgapp.fragments.profile.ProfileFragment;
 import com.example.rpgapp.model.Battle;
 import com.example.rpgapp.model.BonusType;
 import com.example.rpgapp.model.Boss;
@@ -70,7 +73,7 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
     private ImageView bossImageView, treasureChestImage, activeWeaponIcon;
     private ProgressBar bossHpBar, userPpBar;
     private TextView successRateText, remainingAttacksText, coinsEarnedText, bossLevelText, bossHpText, userPpText;
-    private Button attackButton, selectWeaponButton;
+    private Button attackButton, selectWeaponButton, changeEquipmentButton;
 
     private SensorManager sensorManager;
     private Sensor accelerometer;
@@ -135,6 +138,7 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
         bossLevelText = view.findViewById(R.id.bossLevelText);
         bossHpText = view.findViewById(R.id.bossHpText);
         userPpText = view.findViewById(R.id.userPpText);
+        changeEquipmentButton = view.findViewById(R.id.changeEquipmentButton);
 
         // --- Hide neki elementi na startu ---
         coinsEarnedText.setVisibility(View.GONE);
@@ -287,6 +291,14 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
             activeMission = mission;
             attackButton.setEnabled(activeMission != null);
         });
+
+        changeEquipmentButton.setOnClickListener(v -> {
+            Bundle bundle = new Bundle();
+            bundle.putString("userId", currentUserId); // ovde stavi ID korisnika koji treba
+            NavController navController = NavHostFragment.findNavController(BossBattleFragment.this);
+            navController.navigate(R.id.action_battleFragment_to_myProfileFragment, bundle);
+        });
+
 
 
     }
@@ -628,54 +640,25 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
             return;
         }
 
-        View dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_weapon_list, null);
+        View dialogView = LayoutInflater.from(requireContext())
+                .inflate(R.layout.dialog_weapon_list, null);
         RecyclerView recyclerView = dialogView.findViewById(R.id.recyclerWeapons);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
 
-        // Napravi AlertDialog i sačuvaj u promenljivu
-        AlertDialog dialog = new androidx.appcompat.app.AlertDialog.Builder(requireContext())
-                .setTitle("Izaberite oružje")
-                .setView(dialogView)
-                .setNegativeButton("Otkaži", null)
-                .create();
-
-        // Adapter sa klik listener-om
-        WeaponListAdapter adapter = new WeaponListAdapter(weaponsList, weapon -> {
-            if (battle != null) {
-                battle.setActiveWeapon(weapon);
-               // Toast.makeText(requireContext(), "Aktivirano na klik: " + weapon.getName(), Toast.LENGTH_SHORT).show();
-
-                //updateUserPP();
-                int totalPP=calculateTotalPP(user);
-                user.setPowerPoints(totalPP);
-
-                UserRepository.getInstance(requireContext()).updateUser(user);
-                battleRepository.updateBattle(battle, t -> {});
-
-                userPpBar.setMax(Math.max(totalPP, 1));
-                userPpBar.setProgress(totalPP);
-                userPpText.setText("PP: " + totalPP);
-            }
-
-            activeWeaponIcon.setVisibility(View.VISIBLE);
-            Glide.with(activeWeaponIcon.getContext())
-                    .asGif()
-                    .load(weapon.getImageResourceId())
-                    .placeholder(R.drawable.ic_face)
-                    .into(activeWeaponIcon);
-
-
-
-            Toast.makeText(requireContext(), "Aktivirano: " + weapon.getName(), Toast.LENGTH_SHORT).show();
-
-            // Zatvori dijalog
-            dialog.dismiss();
-        });
+        // Adapter BEZ klik listenera
+        WeaponListAdapter adapter = new WeaponListAdapter(weaponsList, null);
         recyclerView.setAdapter(adapter);
 
-        // Prikaži dialog
+        // Napravi i prikaži dijalog
+        AlertDialog dialog = new AlertDialog.Builder(requireContext())
+                .setTitle("Vaša oprema")
+                .setView(dialogView)
+                .setNegativeButton("Zatvori", null)
+                .create();
+
         dialog.show();
     }
+
 
 
     /**

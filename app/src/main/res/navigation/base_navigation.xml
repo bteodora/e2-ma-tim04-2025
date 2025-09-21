@@ -224,7 +224,19 @@
         android:id="@+id/nav_battle"
         android:name="com.example.rpgapp.fragments.battle.BossBattleFragment"
         android:label="Battle"
-        tools:layout="@layout/fragment_boss_battle" />
+        tools:layout="@layout/fragment_boss_battle">
+
+        <!-- Akcija ka profilu -->
+        <action
+            android:id="@+id/action_battleFragment_to_myProfileFragment"
+            app:destination="@id/myProfileFragment" />
+    </fragment>
+
+    <!--    <fragment-->
+<!--        android:id="@+id/nav_battle"-->
+<!--        android:name="com.example.rpgapp.fragments.battle.BossBattleFragment"-->
+<!--        android:label="Battle"-->
+<!--        tools:layout="@layout/fragment_boss_battle" />-->
 
 <!--    &lt;!&ndash; Specijalna misija &ndash;&gt;-->
 <!--    <fragment-->

@@ -117,7 +117,16 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Select Weapon"/>
+                android:text="Vaša oprema"/>
+
+            <Button
+                android:id="@+id/changeEquipmentButton"
+                style="@style/PixelButtonStyle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="Promeni opremu"/>
 
             <ImageView
                 android:id="@+id/activeWeaponIcon"
