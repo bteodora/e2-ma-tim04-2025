@@ -43,6 +43,13 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".activities.ProcessInviteActivity"
+            android:theme="@style/Theme.App.Transparent"
+            android:exported="false"
+            android:taskAffinity=""
+            android:excludeFromRecents="true" />
+
         <receiver android:name=".recievers.SyncReceiver" />
 
         <service android:name=".services.SyncService" />
