@@ -19,6 +19,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -52,6 +53,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
+import com.bumptech.glide.Glide;
 
 public class BossBattleFragment extends Fragment implements SensorEventListener {
 
@@ -292,13 +294,14 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
         if (isAttackInProgress || battle == null || user == null || battle.getRemainingAttacks() <= 0) {
             if (battle != null && battle.isFinished()) {
                 showResults();
+                battle.setActiveWeapon(null);
+                activeWeaponIcon.setVisibility(View.GONE);
             }
             return;
         }
         isAttackInProgress = true;
 
-
-
+//        updateUserPP();
 
         boolean hit = battle.attack();
         if (hit) {
@@ -346,12 +349,13 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
 
         // Proveri da li je borba SADA završena (tek nakon provere za bonus)
         if (battle.isFinished()) {
-            // Koristimo malu pauzu kako bi korisnik stigao da pročita Toast poruku
-            // pre nego što se prikažu rezultati borbe.
+
             if (getView() != null) {
                 getView().postDelayed(this::showResults, 1200);
             } else {
                 showResults(); // U slučaju da je view uništen
+                battle.setActiveWeapon(null);
+                activeWeaponIcon.setVisibility(View.GONE);
             }
         }
 
@@ -379,6 +383,16 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
          battle.setFinished(false); // opcionalno, možeš ga setovati da znaš da je završena
          battle.setRemainingAttacks(5);
         battleRepository.updateBattle(battle, t -> {});
+
+        battle.setActiveWeapon(null);
+        activeWeaponIcon.setVisibility(View.GONE);
+//        user.setPowerPoints(user.getBasePowerPoints());
+//        updateUserPP();
+        resetPPToBase(user);
+
+
+       // battleRepository.updateBattle(battle, t -> {});
+
 
         if (userWon) {
             int nextLevel = battle.getBoss().getLevel() + 1;
@@ -469,8 +483,11 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
     }
 
     private int calculateTotalPP(User u) {
-        double basePP = u.getPowerPoints();
-        double finalPP = basePP;
+        //double basePP = u.getBasePowerPoints();   // originalna vrednost pre borbe
+        double currentPP = u.getPowerPoints();    // vrednost koja može da se menja u toku igre
+
+        double finalPP = currentPP;
+
 
         double permanentMultiplier = 1.0;
 
@@ -496,23 +513,25 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
         }
 
 
-        finalPP = basePP * permanentMultiplier;
+        finalPP = currentPP * permanentMultiplier;
 
         double temporaryBonusValue = 0.0;
 
         if (u.getEquipped() != null) {
             for (UserItem item : u.getEquipped().values()) {
                 if (item.getBonusType() == BonusType.TEMPORARY_PP) {
-                    temporaryBonusValue += (basePP * item.getCurrentBonus());
+                    temporaryBonusValue += (currentPP * item.getCurrentBonus());
                 }
             }
         }
 
         if (battle != null && battle.getActiveWeapon() != null && battle.getActiveWeapon().getBoostType() == BonusType.TEMPORARY_PP) {
-            temporaryBonusValue += (basePP * battle.getActiveWeapon().getCurrentBoost());
+            temporaryBonusValue += (currentPP * battle.getActiveWeapon().getCurrentBoost());
         }
 
         finalPP += temporaryBonusValue;
+//        u.setPowerPoints((int)Math.round(finalPP));
+//        u.setBasePowerPoints((int)Math.round(finalPP));
 
         return (int) Math.round(finalPP);
     }
@@ -599,17 +618,16 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
             return;
         }
 
-        // 1. Učitaj sva oružja iz GameData
         Map<String, Weapon> allWeapons = GameData.getAllWeapons();
 
-        // 2. Napravi listu UserWeapon sa mapiranim Weapon podacima
         List<UserWeapon> weaponsList = new ArrayList<>();
         for (UserWeapon uw : user.getUserWeapons().values()) {
             Weapon weaponData = allWeapons.get(uw.getWeaponId());
             if (weaponData != null) {
                 uw.setName(weaponData.getName());
                 uw.setCurrentBoost(weaponData.getBoost());
-                uw.setImageResourceId(getResourceIdByName(weaponData.getImage())); // vidi helper ispod
+                uw.setImageResourceId(getResourceIdByName(weaponData.getImage()));
+                uw.setBoostType(weaponData.getBoost_type());
                 weaponsList.add(uw);
             }
         }
@@ -619,37 +637,45 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
             return;
         }
 
-        // 3. Napravi custom view sa RecyclerView
         View dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_weapon_list, null);
         RecyclerView recyclerView = dialogView.findViewById(R.id.recyclerWeapons);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
 
-        // 4. Adapter
-        WeaponListAdapter adapter = new WeaponListAdapter(weaponsList, weapon -> {
-            // Klik na oružje
-            if (battle != null) {
-                battle.setActiveWeapon(weapon);
-
-                int totalPP = calculateTotalPP(user);
-                userPpBar.setMax(Math.max(totalPP, 1));
-                userPpBar.setProgress(totalPP);
-                userPpText.setText("PP: " + totalPP);
-            }
-
-            activeWeaponIcon.setVisibility(View.VISIBLE);
-            activeWeaponIcon.setImageResource(weapon.getImageResourceId());
-
-            Toast.makeText(requireContext(), "Aktivirano: " + weapon.getName(), Toast.LENGTH_SHORT).show();
-        });
-        recyclerView.setAdapter(adapter);
-
-        // 5. Prikaži u AlertDialog-u
-        new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+        // Napravi AlertDialog i sačuvaj u promenljivu
+        AlertDialog dialog = new androidx.appcompat.app.AlertDialog.Builder(requireContext())
                 .setTitle("Izaberite oružje")
                 .setView(dialogView)
                 .setNegativeButton("Otkaži", null)
-                .show();
+                .create();
+
+        // Adapter sa klik listener-om
+        WeaponListAdapter adapter = new WeaponListAdapter(weaponsList, weapon -> {
+            if (battle != null) {
+                battle.setActiveWeapon(weapon);
+                updateUserPP();
+
+            }
+
+            activeWeaponIcon.setVisibility(View.VISIBLE);
+            Glide.with(activeWeaponIcon.getContext())
+                    .asGif()
+                    .load(weapon.getImageResourceId())
+                    .placeholder(R.drawable.ic_face)
+                    .into(activeWeaponIcon);
+
+
+
+            Toast.makeText(requireContext(), "Aktivirano: " + weapon.getName(), Toast.LENGTH_SHORT).show();
+
+            // Zatvori dijalog
+            dialog.dismiss();
+        });
+        recyclerView.setAdapter(adapter);
+
+        // Prikaži dialog
+        dialog.show();
     }
+
 
     /**
      * Helper metoda koja pronalazi drawable resource ID po imenu
@@ -660,57 +686,54 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
         return resId != 0 ? resId : R.drawable.ic_face; // fallback
     }
 
+    private void updateUserPP() {
+        if (user == null) return;
 
+        // Izračunaj ukupne PP sa svim bonusima
+        int totalPP = calculateTotalPP(user);
 
-//    private void showWeaponSelectionDialog() {
-//        if (user == null || user.getUserWeapons() == null || user.getUserWeapons().isEmpty()) {
-//            Toast.makeText(requireContext(), "Nemate oružje.", Toast.LENGTH_SHORT).show();
-//            return;
-//        }
-//
-//        // 1. Pretvori mapu u listu
-//        List<UserWeapon> weaponsList = new ArrayList<>(user.getUserWeapons().values());
-//
-//        // 2. Napravi niz imena oružja za prikaz u AlertDialog-u
-//        String[] weaponNames = new String[weaponsList.size()];
-//        for (int i = 0; i < weaponsList.size(); i++) {
-//            weaponNames[i] = weaponsList.get(i).getName();
-//        }
-//
-//        // 3. Kreiraj AlertDialog
-//        androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(requireContext());
-//        builder.setTitle("Izaberite oružje");
-//
-//        builder.setItems(weaponNames, (dialog, which) -> {
-//            UserWeapon selectedWeapon = weaponsList.get(which);
-//
-//            // --- Postavi aktivno oružje ---
-//            if (battle != null) {
-//                battle.setActiveWeapon(selectedWeapon);
-//
-//                // --- Update user PP bar sa bonusom od oružja ---
-//                int totalPP = calculateTotalPP(user);
-//                userPpBar.setMax(Math.max(totalPP, 1));
-//                userPpBar.setProgress(totalPP);
-//
-//                userPpText.setText("PP: " + totalPP);
-//            }
-//
-//            // --- Prikazi ikonu izabranog oružja ---
-//            activeWeaponIcon.setVisibility(View.VISIBLE);
-//            activeWeaponIcon.setImageResource(selectedWeapon.getImageResourceId());
-//
-//            Toast.makeText(requireContext(), "Aktivirano: " + selectedWeapon.getName(), Toast.LENGTH_SHORT).show();
-//        });
-//
-//        // 4. Dodaj Cancel dugme
-//        builder.setNegativeButton("Cancel", null);
-//
-//        // 5. Prikazi dialog
-//        builder.show();
-//    }
+        // Ažuriraj UI
+        userPpBar.setMax(Math.max(totalPP, 1));
+        userPpBar.setProgress(totalPP);
+        userPpText.setText("PP: " + totalPP);
 
+        // Sačuvaj trenutni PP u user objekt (opciono, za kasniju upotrebu)
+        user.setPowerPoints(totalPP);
+    }
 
+    private void resetPPToBase(User u) {
+        if (u == null) return;
+
+        double basePP = u.getBasePowerPoints();
+        if (basePP <= 0) basePP = 10; // default vrednost ako base nije inicijalizovan
+
+        double permanentMultiplier = 1.0;
+        if (u.getEquipped() != null) {
+            for (UserItem item : u.getEquipped().values()) {
+                if (item.getBonusType() == BonusType.PERMANENT_PP) {
+                    permanentMultiplier *= (1.0 + item.getCurrentBonus());
+                }
+            }
+        }
+
+        if (u.getUserWeapons() != null) {
+            for (UserWeapon weapon : u.getUserWeapons().values()) {
+                if (weapon.getBoostType() == BonusType.PERMANENT_PP) {
+                    permanentMultiplier *= (1.0 + weapon.getCurrentBoost());
+                }
+            }
+        }
+
+        int totalPP = (int) Math.round(basePP * permanentMultiplier);
+
+        // Update UI bez prebrisavanja u calculateTotalPP()
+        userPpBar.setMax(totalPP);
+        userPpBar.setProgress(totalPP);
+        userPpText.setText("PP: " + totalPP);
+
+        // Sačuvaj samo ako želiš trajnu vrednost
+        u.setPowerPoints(totalPP);
+    }
 
 
 

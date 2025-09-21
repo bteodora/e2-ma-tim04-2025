@@ -161,6 +161,7 @@ public class Battle {
         if (user == null) return 0; // zaštita
 
         double basePP = user.getPowerPoints();
+
         double finalPP = basePP;
 
         double permanentMultiplier = 1.0;
@@ -210,27 +211,6 @@ public class Battle {
 
         return (int) Math.round(finalPP);
     }
-
-
-//    private int calculateTotalPP() {
-//        if (user == null) return 0; // zaštita
-//
-//        int totalPP = user.getPowerPoints();
-//
-//        if(activeItems != null) {
-//            for(UserItem item : activeItems.values()){
-//                if(item.getBonusType() == BonusType.PERMANENT_PP || item.getBonusType() == BonusType.TEMPORARY_PP){
-//                    totalPP += (int)item.getCurrentBonus();
-//                }
-//            }
-//        }
-//
-//        if(activeWeapon != null) {
-//            totalPP += activeWeapon.getBonusPP();
-//        }
-//
-//        return totalPP;
-//    }
 
 
 

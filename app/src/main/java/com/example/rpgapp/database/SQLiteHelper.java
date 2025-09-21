@@ -33,6 +33,8 @@ public class SQLiteHelper extends SQLiteOpenHelper {
     public static final String COLUMN_TITLE_USER = "title";
     public static final String COLUMN_XP = "xp";
     public static final String COLUMN_POWER_POINTS = "power_points";
+    public static final String COLUMN_BASE_POWER_POINTS = "base_power_points";
+
     public static final String COLUMN_COINS = "coins";
     public static final String COLUMN_REGISTRATION_TIMESTAMP = "registration_timestamp";
     public static final String COLUMN_BADGES_JSON = "badges_json";
@@ -79,6 +81,8 @@ public class SQLiteHelper extends SQLiteOpenHelper {
             + COLUMN_TITLE_USER + " text, "
             + COLUMN_XP + " integer, "
             + COLUMN_POWER_POINTS + " integer, "
+            + COLUMN_BASE_POWER_POINTS + " INTEGER, "
+
             + COLUMN_COINS + " integer, "
             + COLUMN_REGISTRATION_TIMESTAMP + " integer, "
             + COLUMN_BADGES_JSON + " text, "
