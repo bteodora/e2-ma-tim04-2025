@@ -529,7 +529,7 @@ public class UserRepository {
                 values.put(SQLiteHelper.COLUMN_REGISTRATION_TIMESTAMP, user.getRegistrationTimestamp());
                 values.put(SQLiteHelper.COLUMN_ALLIANCE_ID, user.getAllianceId());
                 values.put(SQLiteHelper.COLUMN_FCM_TOKEN, user.getFcmToken());
-                values.put(SQLiteHelper.COLUMN_BASE_POWER_POINTS, user.getBasePowerPoints());
+
 
                 if (user.getBadges() != null) values.put(SQLiteHelper.COLUMN_BADGES_JSON, gson.toJson(user.getBadges()));
                 if (user.getEquipped() != null) values.put(SQLiteHelper.COLUMN_EQUIPPED_ITEMS_JSON, gson.toJson(user.getEquipped()));
@@ -567,7 +567,6 @@ public class UserRepository {
                 user.setRegistrationTimestamp(cursor.getLong(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_REGISTRATION_TIMESTAMP)));
                 user.setAllianceId(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_ALLIANCE_ID)));
                 user.setFcmToken(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_FCM_TOKEN)));
-                user.setBasePowerPoints(cursor.getInt(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_BASE_POWER_POINTS)));
 
                 Type badgeListType = new TypeToken<List<String>>(){}.getType();
                 Type userItemMapType = new TypeToken<Map<String, UserItem>>(){}.getType();

@@ -23,7 +23,6 @@ public class User {
     private Map<String, UserItem> equipped;
 
     private int powerPoints;
-    private int basePowerPoints; //pre dodatnog pp-a
     private long coins;
     @Exclude
     private String userId;
@@ -88,15 +87,6 @@ public class User {
         return registrationTimestamp;
     }
 
-    public int getBasePowerPoints()
-    { return basePowerPoints;
-    }
-
-    public void setBasePowerPoints(int basePP)
-    {
-        this.basePowerPoints = basePP;
-    }
-
     public User() {
         this.equipped = new HashMap<>();
         this.userItems = new HashMap<>();
@@ -111,7 +101,6 @@ public class User {
         this.title = "Begginer";
         this.xp = 0;
         this.powerPoints = 10;
-        this.basePowerPoints = 10;
         this.coins = 0;
 
         this.badges = null;
@@ -317,7 +306,6 @@ public class User {
             int ppRewardForThisLevel = calculatePowerPointsRewardForLevel(this.level);
 
             this.powerPoints += ppRewardForThisLevel;
-            this.basePowerPoints +=ppRewardForThisLevel;
 
             totalPpRewardGained += ppRewardForThisLevel;
 
