@@ -37,6 +37,7 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="48dp"
             android:text="QuestLog"
+            android:fontFamily="@font/logo_font"
             android:textAppearance="@style/TextAppearance.MaterialComponents.Headline4"
             app:layout_constraintBottom_toTopOf="@id/editTextLoginEmail"
             app:layout_constraintStart_toStartOf="parent"

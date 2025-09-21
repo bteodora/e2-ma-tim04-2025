@@ -64,6 +64,10 @@ public class Alliance {
         return memberIds;
     }
 
+    public int getMemberCount(){
+        return memberIds.size();
+    }
+
     public void setMemberIds(List<String> memberIds) {
         this.memberIds = memberIds;
     }

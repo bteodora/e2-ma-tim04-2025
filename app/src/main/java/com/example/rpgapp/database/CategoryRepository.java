@@ -13,14 +13,20 @@ import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.ArrayList;
 import java.util.List;
+// <<< IZMENA: Importovani Executor-i
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class CategoryRepository {
 
     private static volatile CategoryRepository INSTANCE;
-    private SQLiteHelper dbHelper;
-    private Context context;
+    private final SQLiteHelper dbHelper;
+    private final Context context;
 
-    private MutableLiveData<List<Category>> allCategoriesLiveData = new MutableLiveData<>();
+    private final MutableLiveData<List<Category>> allCategoriesLiveData = new MutableLiveData<>();
+
+    // <<< IZMENA: Dodat je ExecutorService za pozadinske operacije sa bazom
+    private final ExecutorService databaseExecutor = Executors.newSingleThreadExecutor();
 
     private CategoryRepository(Context context) {
         this.context = context.getApplicationContext();
@@ -38,7 +44,6 @@ public class CategoryRepository {
         return INSTANCE;
     }
 
-    // --- Dohvati UID trenutno ulogovanog korisnika ---
     private String getCurrentUserId() {
         if (FirebaseAuth.getInstance().getCurrentUser() != null) {
             return FirebaseAuth.getInstance().getCurrentUser().getUid();
@@ -46,72 +51,68 @@ public class CategoryRepository {
         return null;
     }
 
-    // --- Dodaj ili ažuriraj kategoriju ---
     public void insertCategory(Category category) {
         if (category == null) return;
-
-        SQLiteDatabase db = null;
-        try {
-            db = dbHelper.getWritableDatabase();
-            ContentValues values = new ContentValues();
-            values.put(SQLiteHelper.COLUMN_CATEGORY_NAME, category.getName());
-            values.put(SQLiteHelper.COLUMN_CATEGORY_COLOR, category.getColor());
-            values.put(SQLiteHelper.COLUMN_CATEGORY_USER_ID, getCurrentUserId());
-
-            db.insertWithOnConflict(SQLiteHelper.TABLE_CATEGORIES, null, values, SQLiteDatabase.CONFLICT_REPLACE);
-
-        } finally {
-            if (db != null) db.close();
-        }
-
-        loadCategoriesFromSQLite();
+        // <<< IZMENA: Operacija se izvršava na pozadinskom thread-u
+        databaseExecutor.execute(() -> {
+            SQLiteDatabase db = null;
+            try {
+                db = dbHelper.getWritableDatabase();
+                ContentValues values = new ContentValues();
+                values.put(SQLiteHelper.COLUMN_CATEGORY_NAME, category.getName());
+                values.put(SQLiteHelper.COLUMN_CATEGORY_COLOR, category.getColor());
+                values.put(SQLiteHelper.COLUMN_CATEGORY_USER_ID, getCurrentUserId());
+                db.insertWithOnConflict(SQLiteHelper.TABLE_CATEGORIES, null, values, SQLiteDatabase.CONFLICT_REPLACE);
+            } finally {
+                if (db != null) db.close();
+            }
+            // Odmah nakon upisa, pokreni ponovno učitavanje (koje će takođe biti u pozadini)
+            loadCategoriesFromSQLite();
+        });
     }
 
     public void updateCategory(Category category) {
         if (category == null) return;
-
-        SQLiteDatabase db = null;
-        try {
-            db = dbHelper.getWritableDatabase();
-            ContentValues values = new ContentValues();
-            values.put(SQLiteHelper.COLUMN_CATEGORY_NAME, category.getName());
-            values.put(SQLiteHelper.COLUMN_CATEGORY_COLOR, category.getColor());
-            values.put(SQLiteHelper.COLUMN_CATEGORY_USER_ID, getCurrentUserId());
-
-            db.update(SQLiteHelper.TABLE_CATEGORIES, values,
-                    SQLiteHelper.COLUMN_CATEGORY_ID + "=?",
-                    new String[]{String.valueOf(category.getId())});
-
-        } finally {
-            if (db != null) db.close();
-        }
-
-        loadCategoriesFromSQLite();
+        databaseExecutor.execute(() -> {
+            SQLiteDatabase db = null;
+            try {
+                db = dbHelper.getWritableDatabase();
+                ContentValues values = new ContentValues();
+                values.put(SQLiteHelper.COLUMN_CATEGORY_NAME, category.getName());
+                values.put(SQLiteHelper.COLUMN_CATEGORY_COLOR, category.getColor());
+                values.put(SQLiteHelper.COLUMN_CATEGORY_USER_ID, getCurrentUserId());
+                db.update(SQLiteHelper.TABLE_CATEGORIES, values,
+                        SQLiteHelper.COLUMN_CATEGORY_ID + "=?",
+                        new String[]{String.valueOf(category.getId())});
+            } finally {
+                if (db != null) db.close();
+            }
+            loadCategoriesFromSQLite();
+        });
     }
 
-    // --- Obriši kategoriju ---
     public void deleteCategory(int id) {
-        SQLiteDatabase db = null;
-        try {
-            db = dbHelper.getWritableDatabase();
-            db.delete(SQLiteHelper.TABLE_CATEGORIES,
-                    SQLiteHelper.COLUMN_CATEGORY_ID + "=? AND " + SQLiteHelper.COLUMN_CATEGORY_USER_ID + "=?",
-                    new String[]{String.valueOf(id), getCurrentUserId()});
-        } finally {
-            if (db != null) db.close();
-        }
-
-        loadCategoriesFromSQLite();
+        databaseExecutor.execute(() -> {
+            SQLiteDatabase db = null;
+            try {
+                db = dbHelper.getWritableDatabase();
+                db.delete(SQLiteHelper.TABLE_CATEGORIES,
+                        SQLiteHelper.COLUMN_CATEGORY_ID + "=? AND " + SQLiteHelper.COLUMN_CATEGORY_USER_ID + "=?",
+                        new String[]{String.valueOf(id), getCurrentUserId()});
+            } finally {
+                if (db != null) db.close();
+            }
+            loadCategoriesFromSQLite();
+        });
     }
 
-    // --- LiveData za sve kategorije trenutno ulogovanog korisnika ---
     public LiveData<List<Category>> getAllCategories() {
         loadCategoriesFromSQLite();
         return allCategoriesLiveData;
     }
 
-    // --- Jedna kategorija po ID, samo ako pripada ulogovanom korisniku ---
     public LiveData<Category> getCategoryById(int id) {
+        // Ova metoda ne pristupa bazi, može ostati ovakva
         MutableLiveData<Category> categoryLiveData = new MutableLiveData<>();
         List<Category> currentCategories = allCategoriesLiveData.getValue();
         if (currentCategories != null) {
@@ -125,61 +126,66 @@ public class CategoryRepository {
         return categoryLiveData;
     }
 
-    // --- Dodaj novu kategoriju (isti kao insert, ali bez replace) ---
     public void addCategory(Category category) {
         if (category == null) return;
-
-        SQLiteDatabase db = null;
-        try {
-            db = dbHelper.getWritableDatabase();
-            ContentValues values = new ContentValues();
-            values.put(SQLiteHelper.COLUMN_CATEGORY_NAME, category.getName());
-            values.put(SQLiteHelper.COLUMN_CATEGORY_COLOR, category.getColor());
-            values.put(SQLiteHelper.COLUMN_CATEGORY_USER_ID, getCurrentUserId());
-            db.insert(SQLiteHelper.TABLE_CATEGORIES, null, values);
-        } finally {
-            if (db != null) db.close();
-        }
-
-        loadCategoriesFromSQLite();
+        databaseExecutor.execute(() -> {
+            SQLiteDatabase db = null;
+            try {
+                db = dbHelper.getWritableDatabase();
+                ContentValues values = new ContentValues();
+                values.put(SQLiteHelper.COLUMN_CATEGORY_NAME, category.getName());
+                values.put(SQLiteHelper.COLUMN_CATEGORY_COLOR, category.getColor());
+                values.put(SQLiteHelper.COLUMN_CATEGORY_USER_ID, getCurrentUserId());
+                db.insert(SQLiteHelper.TABLE_CATEGORIES, null, values);
+            } finally {
+                if (db != null) db.close();
+            }
+            loadCategoriesFromSQLite();
+        });
     }
 
-    // --- Pomoćna metoda za učitavanje kategorija iz SQLite ---
     private void loadCategoriesFromSQLite() {
         loadCategoriesFromSQLite(getCurrentUserId());
     }
 
     private void loadCategoriesFromSQLite(String userId) {
-        SQLiteDatabase db = null;
-        List<Category> categories = new ArrayList<>();
-        try {
-            db = dbHelper.getReadableDatabase();
-            String selection = null;
-            String[] selectionArgs = null;
+        // <<< IZMENA: Ceo rad sa bazom se prebacuje na pozadinski thread
+        databaseExecutor.execute(() -> {
+            SQLiteDatabase db = null;
+            Cursor cursor = null;
+            List<Category> categories = new ArrayList<>();
+            try {
+                db = dbHelper.getReadableDatabase();
+                String selection = null;
+                String[] selectionArgs = null;
 
-            if (userId != null) {
-                selection = SQLiteHelper.COLUMN_CATEGORY_USER_ID + "=?";
-                selectionArgs = new String[]{userId};
+                if (userId != null) {
+                    selection = SQLiteHelper.COLUMN_CATEGORY_USER_ID + "=?";
+                    selectionArgs = new String[]{userId};
+                }
+
+                cursor = db.query(SQLiteHelper.TABLE_CATEGORIES, null, selection, selectionArgs, null, null, null);
+
+                if (cursor != null && cursor.moveToFirst()) {
+                    do {
+                        Category c = new Category();
+                        c.setId(cursor.getInt(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_CATEGORY_ID)));
+                        c.setName(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_CATEGORY_NAME)));
+                        c.setColor(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_CATEGORY_COLOR)));
+                        c.setUserId(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_CATEGORY_USER_ID)));
+                        categories.add(c);
+                    } while (cursor.moveToNext());
+                }
+            } finally {
+                if (cursor != null) {
+                    cursor.close();
+                }
+                if (db != null) {
+                    db.close();
+                }
             }
-
-            Cursor cursor = db.query(SQLiteHelper.TABLE_CATEGORIES, null, selection, selectionArgs, null, null, null);
-
-            if (cursor != null && cursor.moveToFirst()) {
-                do {
-                    Category c = new Category();
-                    c.setId(cursor.getInt(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_CATEGORY_ID)));
-                    c.setName(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_CATEGORY_NAME)));
-                    c.setColor(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_CATEGORY_COLOR)));
-                    c.setUserId(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_CATEGORY_USER_ID)));
-                    categories.add(c);
-                } while (cursor.moveToNext());
-                cursor.close();
-            }
-        } finally {
-            if (db != null) db.close();
-        }
-
-        allCategoriesLiveData.postValue(categories);
+            // <<< IZMENA: postValue() se koristi za slanje rezultata nazad na glavni thread
+            allCategoriesLiveData.postValue(categories);
+        });
     }
-
 }

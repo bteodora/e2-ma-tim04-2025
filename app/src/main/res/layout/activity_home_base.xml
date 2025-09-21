@@ -35,19 +35,4 @@
 
     <include layout="@layout/activity_home_content" />
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/floating_action_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginEnd="15dp"
-        android:layout_marginBottom="15dp"
-        android:backgroundTint="@color/pink_300"
-        app:srcCompat="@drawable/ic_shop_cart"
-        android:clickable="true"
-        android:contentDescription="@string/cart"
-        android:tooltipText="@string/cart"
-        android:theme="@style/Theme.ShopApp"
-        tools:ignore="ImageContrastCheck" />
 </androidx.constraintlayout.widget.ConstraintLayout>

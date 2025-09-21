@@ -28,14 +28,15 @@ public class Task {
     private String recurringId;      // grupa ponavljanja (isti ID za sve ponavljajuće instance)
 
     private String userId;
+
+    private long creationTimestamp;
+    private long lastActionTimestamp;
     @Exclude
     private String taskId;
 
     public Task() {}
 
-    public Task(String title, String description, String category, String color, String frequency,
-                int interval, String intervalUnit, String startDate, String endDate, String time,
-                int difficultyXp, int importanceXp, String status, String dueDate, boolean recurring, String recurringId, String userId) {
+    public Task(String title, String description, String category, String color, String frequency, int interval, String intervalUnit, String startDate, String endDate, String time, int difficultyXp, int importanceXp, int totalXp, String status, String dueDate, boolean recurring, String recurringId, String userId, long creationTimestamp, long lastActionTimestamp, String taskId) {
         this.title = title;
         this.description = description;
         this.category = category;
@@ -48,12 +49,15 @@ public class Task {
         this.time = time;
         this.difficultyXp = difficultyXp;
         this.importanceXp = importanceXp;
-        this.totalXp = difficultyXp + importanceXp;
+        this.totalXp = totalXp;
         this.status = status;
         this.dueDate = dueDate;
         this.recurring = recurring;
         this.recurringId = recurringId;
         this.userId = userId;
+        this.creationTimestamp = creationTimestamp;
+        this.lastActionTimestamp = lastActionTimestamp;
+        this.taskId = taskId;
     }
 
     // Getter & Setter metode
@@ -143,26 +147,41 @@ public class Task {
     public void setUserId(String userId) {
         this.userId = userId;
     }
-
+    @Exclude
     public boolean isOneTime() {
         return "jednokratni".equalsIgnoreCase(frequency);
     }
 
+    @Exclude
     public boolean isRepeating() {
         return "ponavljajući".equalsIgnoreCase(frequency);
     }
 
+    public long getLastActionTimestamp() {
+        return lastActionTimestamp;
+    }
+
+    public void setLastActionTimestamp(long lastActionTimestamp) {
+        this.lastActionTimestamp = lastActionTimestamp;
+    }
+
+    public long getCreationTimestamp() {
+        return creationTimestamp;
+    }
+
+    public void setCreationTimestamp(long creationTimestamp) {
+        this.creationTimestamp = creationTimestamp;
+    }
+
+
+
     @Exclude
     public long getCompletionTimestamp() {
-        if (dueDate == null || dueDate.isEmpty()) {
-            return 0;
+        if ("urađen".equalsIgnoreCase(status) && lastActionTimestamp > 0) {
+            return lastActionTimestamp;
         }
-        try {
-            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-            return dateFormat.parse(dueDate).getTime();
-        } catch (Exception e) {
-            return 0;
-        }
+
+        return 0;
     }
 
 }

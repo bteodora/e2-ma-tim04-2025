@@ -4,6 +4,8 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -16,31 +18,40 @@ import com.example.rpgapp.fragments.alliance.SpecialMissionViewModel;
 import com.example.rpgapp.model.Task;
 import com.example.rpgapp.model.User;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class TaskRepository {
 
     private static final String TAG = "TaskRepository";
     private static volatile TaskRepository INSTANCE;
-    private FirebaseFirestore db = FirebaseFirestore.getInstance();
-    private SQLiteHelper dbHelper;
+    private final FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private final SQLiteHelper dbHelper;
+    private final Context context;
 
-    private MutableLiveData<List<Task>> allTasksLiveData = new MutableLiveData<>();
-    private Context context;
+    // LiveData that holds the PROCESSED list for UI display
+    private final MutableLiveData<List<Task>> processedTasksLiveData = new MutableLiveData<>();
+    // LiveData that holds the RAW, unprocessed list for internal use
+    private final MutableLiveData<List<Task>> allTasksLiveData = new MutableLiveData<>();
+
+    private final ExecutorService databaseExecutor = Executors.newSingleThreadExecutor();
+    public static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
 
     private TaskRepository(Context context) {
         this.context = context.getApplicationContext();
         dbHelper = new SQLiteHelper(this.context);
     }
-    public static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
 
     public static TaskRepository getInstance(Context context) {
         if (INSTANCE == null) {
@@ -52,6 +63,7 @@ public class TaskRepository {
         }
         return INSTANCE;
     }
+
     private String getCurrentUserId() {
         if (FirebaseAuth.getInstance().getCurrentUser() != null) {
             return FirebaseAuth.getInstance().getCurrentUser().getUid();
@@ -59,16 +71,23 @@ public class TaskRepository {
         return null;
     }
 
+    // --- NEW MAIN METHODS ---
+    // This method is called by TaskListFragment to display the OPTIMIZED list
+    public LiveData<List<Task>> getProcessedTasksLiveData() {
+        loadAndProcessTasks();
+        return processedTasksLiveData;
+    }
 
-    // --- LISTA SVIH TASKOVA ---
+    // --- OLD METHODS (now using background thread) ---
+    // This can still be used by other parts of the app that need the raw list
     public LiveData<List<Task>> getAllTasksLiveData() {
-        loadTasksFromSQLite();
-        loadTasksFromFirestore(); //filter po useru
+        loadTasksFromSQLite(); // Loads raw list into allTasksLiveData
+        loadTasksFromFirestore(); // Syncs with Firestore
         return allTasksLiveData;
     }
 
     public boolean areAllTasksCompletedDuringMission() {
-        List<Task> tasks = getAllTasksLiveData().getValue();
+        List<Task> tasks = allTasksLiveData.getValue();
         if (tasks == null || tasks.isEmpty()) return false;
 
         for (Task task : tasks) {
@@ -79,44 +98,71 @@ public class TaskRepository {
         return true;
     }
 
+    // --- MAIN PROCESSING LOGIC (EXECUTED IN BACKGROUND) ---
+    private void loadAndProcessTasks() {
+        databaseExecutor.execute(() -> {
+            List<Task> allTasks = loadTasksFromSQLiteInternal();
+            Map<String, String> categoryColorMap = loadCategoryColorsInternal();
+
+            List<Task> finalTaskList = new ArrayList<>();
+            long threeDaysMillis = 3L * 24 * 60 * 60 * 1000;
+
+            for (Task task : allTasks) {
+                try {
+                    boolean isPast = false;
+                    if (task.getDueDate() != null && !task.getDueDate().isEmpty()) {
+                        long dueMillis = dateFormat.parse(task.getDueDate()).getTime();
+                        if (System.currentTimeMillis() > dueMillis + threeDaysMillis) isPast = true;
+                    }
+                    if (!isPast && task.getEndDate() != null && !task.getEndDate().isEmpty()) {
+                        long endMillis = dateFormat.parse(task.getEndDate()).getTime();
+                        if (System.currentTimeMillis() > endMillis + threeDaysMillis) isPast = true;
+                    }
+                    if (isPast) continue;
+
+                    if (task.getCategory() != null) {
+                        String color = categoryColorMap.get(task.getCategory().toLowerCase());
+                        task.setColor(color != null ? color : "#9E9E9E");
+                    }
+                    finalTaskList.add(task);
+                } catch (ParseException e) {
+                    Log.e(TAG, "Error parsing date for task: " + task.getTitle(), e);
+                }
+            }
+            processedTasksLiveData.postValue(finalTaskList);
+        });
+    }
+
+    // --- ORIGINAL METHODS, NOW ADAPTED ---
+
     public void loadTasksFromFirestore() {
         String currentUserId = getCurrentUserId();
         if (currentUserId == null) return;
 
-        db.collection("tasks")
-                .whereEqualTo("userId", currentUserId)
-                .get()
-                .addOnSuccessListener(querySnapshot -> {
-                    List<Task> tasks = new ArrayList<>();
+        db.collection("tasks").whereEqualTo("userId", currentUserId).get()
+                .addOnSuccessListener(querySnapshot -> databaseExecutor.execute(() -> {
                     for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
                         Task task = doc.toObject(Task.class);
                         if (task != null) {
-                            task.setTaskId(doc.getId()); // osigurava da svaki task ima taskId
-                            tasks.add(task);
+                            task.setTaskId(doc.getId());
+                            // Immediately write to SQLite
+                            cacheSingleTaskToSQLite(task);
                         }
                     }
-
-                    allTasksLiveData.postValue(tasks);
-
-                    // Opcionalno: sinhronizuj sa SQLite
-                    for (Task t : tasks) {
-                        cacheTaskToSQLite(t);
-                    }
-                })
+                    // After sync, refresh both lists from the local database
+                    loadAndProcessTasks(); // Refreshes the processed list for UI
+                    allTasksLiveData.postValue(loadTasksFromSQLiteInternal()); // Refreshes the raw list
+                }))
                 .addOnFailureListener(e -> Log.e(TAG, "Error loading tasks from Firestore", e));
     }
 
     public LiveData<List<Task>> getAllTasksForUser(String userId) {
         MutableLiveData<List<Task>> tasksLiveData = new MutableLiveData<>();
-
         if (userId == null) {
             tasksLiveData.setValue(new ArrayList<>());
             return tasksLiveData;
         }
-
-        db.collection("tasks")
-                .whereEqualTo("userId", userId)
-                .get()
+        db.collection("tasks").whereEqualTo("userId", userId).get()
                 .addOnSuccessListener(querySnapshot -> {
                     List<Task> tasks = new ArrayList<>();
                     for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
@@ -128,55 +174,247 @@ public class TaskRepository {
                     }
                     tasksLiveData.postValue(tasks);
                 })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error loading tasks from Firestore for statistics", e);
-                    tasksLiveData.postValue(null); // Signaliziraj grešku
-                });
-
+                .addOnFailureListener(e -> Log.e(TAG, "Error loading tasks from Firestore for statistics", e));
         return tasksLiveData;
     }
 
-    // --- JEDAN TASK PO ID ---
     public LiveData<Task> getTaskById(String taskId) {
         MutableLiveData<Task> taskLiveData = new MutableLiveData<>();
-        if (allTasksLiveData.getValue() != null) {
-            for (Task task : allTasksLiveData.getValue()) {
+        databaseExecutor.execute(() -> {
+            // Search local database for the most recent data
+            List<Task> tasks = loadTasksFromSQLiteInternal();
+            for (Task task : tasks) {
                 if (taskId.equals(task.getTaskId())) {
                     taskLiveData.postValue(task);
-                    break;
+                    return;
                 }
             }
-        }
+        });
         return taskLiveData;
     }
 
-    // --- UPDATE TASKA ---
+    public void addTask(Task task) {
+        if (task.getTaskId() == null) task.setTaskId(UUID.randomUUID().toString());
+        long currentTime = System.currentTimeMillis();
+        task.setCreationTimestamp(currentTime);
+        task.setLastActionTimestamp(currentTime);
+
+        db.collection("tasks").document(task.getTaskId()).set(task);
+
+        databaseExecutor.execute(() -> {
+            cacheSingleTaskToSQLite(task);
+            loadAndProcessTasks();
+            allTasksLiveData.postValue(loadTasksFromSQLiteInternal());
+        });
+    }
+
     public void updateTask(Task task) {
         if (task.getTaskId() == null) return;
+        db.collection("tasks").document(task.getTaskId()).set(task);
 
-        // Firestore
-        DocumentReference docRef = db.collection("tasks").document(task.getTaskId());
-        docRef.set(task);
-
-        // SQLite
-        cacheTaskToSQLite(task);
-        loadTasksFromSQLite();
+        databaseExecutor.execute(() -> {
+            cacheSingleTaskToSQLite(task);
+            loadAndProcessTasks();
+            allTasksLiveData.postValue(loadTasksFromSQLiteInternal());
+        });
     }
 
-    // --- DELETE TASKA ---
     public void deleteTask(Task task) {
         if (task.getTaskId() == null) return;
-
-        // Firestore
         db.collection("tasks").document(task.getTaskId()).delete();
 
-        // SQLite
-        deleteTaskFromSQLite(task.getTaskId());
-        loadTasksFromSQLite();
+        databaseExecutor.execute(() -> {
+            SQLiteDatabase db = null;
+            try {
+                db = dbHelper.getWritableDatabase();
+                db.delete(SQLiteHelper.TABLE_TASKS, SQLiteHelper.COLUMN_TASK_ID + " = ?", new String[]{task.getTaskId()});
+            } finally {
+                if (db != null) db.close();
+            }
+            loadAndProcessTasks();
+            allTasksLiveData.postValue(loadTasksFromSQLiteInternal());
+        });
     }
 
-    // --- POMOĆNE METODE ---
-    private void cacheTaskToSQLite(Task task) {
+    public void deleteFutureRecurringTasks(Task task) {
+        if (!task.isRecurring()) return;
+        databaseExecutor.execute(() -> {
+            List<Task> currentTasks = loadTasksFromSQLiteInternal();
+            long now = System.currentTimeMillis();
+
+            for (Task t : currentTasks) {
+                if (t.getRecurringId() != null && t.getRecurringId().equals(task.getRecurringId())) {
+                    try {
+                        long taskTime = t.getDueDate() != null ? dateFormat.parse(t.getDueDate()).getTime() : dateFormat.parse(t.getStartDate()).getTime();
+                        if (taskTime >= now) {
+                            db.collection("tasks").document(t.getTaskId()).delete();
+                            SQLiteDatabase sqlDb = null;
+                            try {
+                                sqlDb = dbHelper.getWritableDatabase();
+                                sqlDb.delete(SQLiteHelper.TABLE_TASKS, SQLiteHelper.COLUMN_TASK_ID + " = ?", new String[]{t.getTaskId()});
+                            } finally {
+                                if (sqlDb != null) sqlDb.close();
+                            }
+                        }
+                    } catch (Exception e) { e.printStackTrace(); }
+                }
+            }
+            loadAndProcessTasks();
+            allTasksLiveData.postValue(loadTasksFromSQLiteInternal());
+        });
+    }
+
+    public void updateFutureRecurringTasks(Task task) {
+        if (!task.isRecurring()) return;
+        databaseExecutor.execute(() -> {
+            List<Task> currentTasks = loadTasksFromSQLiteInternal();
+            long now = System.currentTimeMillis();
+
+            for (Task t : currentTasks) {
+                if (t.getRecurringId() != null && t.getRecurringId().equals(task.getRecurringId())) {
+                    try {
+                        long taskTime = t.getDueDate() != null ? dateFormat.parse(t.getDueDate()).getTime() : dateFormat.parse(t.getStartDate()).getTime();
+                        if (taskTime >= now) {
+                            t.setTitle(task.getTitle());
+                            t.setDescription(task.getDescription());
+                            t.setStatus(task.getStatus());
+                            t.setCategory(task.getCategory());
+                            t.setLastActionTimestamp(System.currentTimeMillis());
+                            cacheSingleTaskToSQLite(t);
+                            db.collection("tasks").document(t.getTaskId()).set(t);
+                        }
+                    } catch (Exception e) { e.printStackTrace(); }
+                }
+            }
+            loadAndProcessTasks();
+            allTasksLiveData.postValue(loadTasksFromSQLiteInternal());
+        });
+    }
+
+    public void updateTaskStatus(Task task, String selectedStatus, Context context) {
+        if (task == null) return;
+        databaseExecutor.execute(() -> {
+            String currentStatus = task.getStatus().toLowerCase();
+            String selectedStatusLower = selectedStatus.toLowerCase();
+
+            if ("urađen".equals(currentStatus) || "neurađen".equals(currentStatus) || "otkazan".equals(currentStatus) || isTaskPast(task)) {
+                new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(context, "This task cannot be changed", Toast.LENGTH_SHORT).show());
+                return;
+            }
+
+            switch (currentStatus) {
+                case "aktivan":
+                    if (!("urađen".equals(selectedStatusLower) || "otkazan".equals(selectedStatusLower) || ("pauziran".equals(selectedStatusLower) && task.isRecurring()) || "aktivan".equals(selectedStatusLower))) {
+                        new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(context, "Invalid status change", Toast.LENGTH_SHORT).show());
+                        return;
+                    }
+                    break;
+                case "pauziran":
+                    if (!("aktivan".equals(selectedStatusLower) || "pauziran".equals(selectedStatusLower))) {
+                        new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(context, "Invalid status change", Toast.LENGTH_SHORT).show());
+                        return;
+                    }
+                    break;
+            }
+            task.setStatus(selectedStatusLower);
+            task.setLastActionTimestamp(System.currentTimeMillis());
+
+            if ("urađen".equals(selectedStatusLower)) {
+                UserRepository userRepo = UserRepository.getInstance(context);
+                if (userRepo != null) {
+                    User currentUser = userRepo.getLoggedInUser();
+                    if (currentUser != null) {
+                        List<Task> allUserTasks = loadTasksFromSQLiteInternal();
+                        int finalXpGained = currentUser.getFinalXpForTask(task);
+                        task.setTotalXp(finalXpGained);
+                        boolean xpWasAdded = currentUser.increaseXp(task, allUserTasks);
+                        userRepo.updateUser(currentUser);
+                        new Handler(Looper.getMainLooper()).post(() -> {
+                            if (xpWasAdded) {
+                                Toast.makeText(context, "You earned " + finalXpGained + " XP!", Toast.LENGTH_SHORT).show();
+                            } else {
+                                Toast.makeText(context, "XP quota exceeded", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    }
+                }
+                // Special mission – automatically reduce boss HP
+                String userId = getCurrentUserId();
+                if (userId != null && context instanceof ViewModelStoreOwner) {
+                     new Handler(Looper.getMainLooper()).post(() -> {
+                        SpecialMissionViewModel vm = new ViewModelProvider((ViewModelStoreOwner) context).get(SpecialMissionViewModel.class);
+                        vm.handleNormalTaskCompletion(task, userId);
+                    });
+                }
+            }
+
+            updateTask(task); // Calls the method that already works asynchronously and refreshes lists
+            new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(context, "Task status updated", Toast.LENGTH_SHORT).show());
+        });
+    }
+
+    public List<String> getAllCategories() {
+        Log.w(TAG, "Inefficient method getAllCategories() was called. Should be avoided.");
+        // This method would require synchronous database access, blocking the UI.
+        // The logic has been moved to loadAndProcessTasks instead.
+        return new ArrayList<>();
+    }
+
+    private void loadTasksFromSQLite() {
+        databaseExecutor.execute(() -> {
+            allTasksLiveData.postValue(loadTasksFromSQLiteInternal());
+        });
+    }
+
+    // --- INTERNAL (HELPER) METHODS ---
+
+    private List<Task> loadTasksFromSQLiteInternal() {
+        List<Task> tasks = new ArrayList<>();
+        String currentUserId = getCurrentUserId();
+        if (currentUserId == null) return tasks;
+        SQLiteDatabase database = null;
+        Cursor cursor = null;
+        try {
+            database = dbHelper.getReadableDatabase();
+            String selection = SQLiteHelper.COLUMN_TASK_USER_ID + "=?";
+            String[] selectionArgs = new String[]{currentUserId};
+            cursor = database.query(SQLiteHelper.TABLE_TASKS, null, selection, selectionArgs, null, null, null);
+            if (cursor != null && cursor.moveToFirst()) {
+                do { tasks.add(mapCursorToTask(cursor)); } while (cursor.moveToNext());
+            }
+        } finally {
+            if (cursor != null) cursor.close();
+            if (database != null) database.close();
+        }
+        return tasks;
+    }
+
+    private Map<String, String> loadCategoryColorsInternal() {
+        Map<String, String> categoryMap = new HashMap<>();
+        String currentUserId = getCurrentUserId();
+        if (currentUserId == null) return categoryMap;
+        SQLiteDatabase database = null;
+        Cursor cursor = null;
+        try {
+            database = dbHelper.getReadableDatabase();
+            String selection = SQLiteHelper.COLUMN_CATEGORY_USER_ID + "=?";
+            String[] selectionArgs = new String[]{currentUserId};
+            cursor = database.query(SQLiteHelper.TABLE_CATEGORIES, new String[]{SQLiteHelper.COLUMN_CATEGORY_NAME, SQLiteHelper.COLUMN_CATEGORY_COLOR}, selection, selectionArgs, null, null, null);
+            if (cursor != null && cursor.moveToFirst()) {
+                do {
+                    String name = cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_CATEGORY_NAME));
+                    String color = cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_CATEGORY_COLOR));
+                    if (name != null) categoryMap.put(name.toLowerCase(), color);
+                } while (cursor.moveToNext());
+            }
+        } finally {
+            if (cursor != null) cursor.close();
+            if (database != null) database.close();
+        }
+        return categoryMap;
+    }
+
+    private void cacheSingleTaskToSQLite(Task task) {
         SQLiteDatabase database = null;
         try {
             database = dbHelper.getWritableDatabase();
@@ -185,8 +423,6 @@ public class TaskRepository {
             values.put(SQLiteHelper.COLUMN_TITLE_TASK, task.getTitle());
             values.put(SQLiteHelper.COLUMN_DESCRIPTION_TASK, task.getDescription());
             values.put(SQLiteHelper.COLUMN_STATUS, task.getStatus());
-
-            // Dodatna polja
             values.put(SQLiteHelper.COLUMN_CATEGORY, task.getCategory());
             values.put(SQLiteHelper.COLUMN_COLOR, task.getColor());
             values.put(SQLiteHelper.COLUMN_FREQUENCY, task.getFrequency());
@@ -198,59 +434,17 @@ public class TaskRepository {
             values.put(SQLiteHelper.COLUMN_DUE_DATE, task.getDueDate());
             values.put(SQLiteHelper.COLUMN_START_DATE, task.getStartDate());
             values.put(SQLiteHelper.COLUMN_END_DATE, task.getEndDate());
-
             values.put(SQLiteHelper.COLUMN_DIFFICULTY_TEXT, task.getDifficultyText());
             values.put(SQLiteHelper.COLUMN_IMPORTANCE_TEXT, task.getImportanceText());
-
             values.put(SQLiteHelper.COLUMN_RECURRING, task.isRecurring() ? 1 : 0);
             values.put(SQLiteHelper.COLUMN_RECURRING_ID, task.getRecurringId());
-            // user_id
             values.put(SQLiteHelper.COLUMN_TASK_USER_ID, getCurrentUserId());
-
-
+            values.put(SQLiteHelper.COLUMN_CREATION_TIMESTAMP, task.getCreationTimestamp());
+            values.put(SQLiteHelper.COLUMN_LAST_ACTION_TIMESTAMP, task.getLastActionTimestamp());
             database.insertWithOnConflict(SQLiteHelper.TABLE_TASKS, null, values, SQLiteDatabase.CONFLICT_REPLACE);
         } finally {
             if (database != null) database.close();
         }
-    }
-
-    private void deleteTaskFromSQLite(String taskId) {
-        SQLiteDatabase database = null;
-        try {
-            database = dbHelper.getWritableDatabase();
-            database.delete(SQLiteHelper.TABLE_TASKS, SQLiteHelper.COLUMN_TASK_ID + " = ?", new String[]{taskId});
-
-        } finally {
-            if (database != null) database.close();
-        }
-    }
-
-    private void loadTasksFromSQLite() {
-        SQLiteDatabase database = null;
-        List<Task> tasks = new ArrayList<>();
-        try {
-            database = dbHelper.getReadableDatabase();
-            String selection = null;
-            String[] selectionArgs = null;
-
-            String currentUserId = getCurrentUserId();
-            if (currentUserId != null) {
-                selection = SQLiteHelper.COLUMN_TASK_USER_ID + "=?";
-                selectionArgs = new String[]{currentUserId};
-            }
-
-            Cursor cursor = database.query(SQLiteHelper.TABLE_TASKS, null, selection, selectionArgs, null, null, null);
-            if (cursor != null && cursor.moveToFirst()) {
-                do {
-                    Task task = mapCursorToTask(cursor);
-                    tasks.add(task);
-                } while (cursor.moveToNext());
-                cursor.close();
-            }
-        } finally {
-            if (database != null) database.close();
-        }
-        allTasksLiveData.postValue(tasks);
     }
 
     private Task mapCursorToTask(Cursor cursor) {
@@ -261,8 +455,6 @@ public class TaskRepository {
         task.setStatus(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_STATUS)));
         task.setDifficultyText(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_DIFFICULTY_TEXT)));
         task.setImportanceText(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_IMPORTANCE_TEXT)));
-
-        // Dodatna polja
         task.setCategory(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_CATEGORY)));
         task.setColor(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_COLOR)));
         task.setFrequency(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_FREQUENCY)));
@@ -277,200 +469,21 @@ public class TaskRepository {
         task.setRecurring(cursor.getInt(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_RECURRING)) == 1);
         task.setRecurringId(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_RECURRING_ID)));
         task.setUserId(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_TASK_USER_ID)));
-
-
+        task.setCreationTimestamp(cursor.getLong(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_CREATION_TIMESTAMP)));
+        task.setLastActionTimestamp(cursor.getLong(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_LAST_ACTION_TIMESTAMP)));
         return task;
     }
-    public void addTask(Task task) {
-        if (task.getTaskId() == null) task.setTaskId(UUID.randomUUID().toString());
 
-        // Firestore
-        db.collection("tasks").document(task.getTaskId()).set(task);
-
-        // SQLite
-        cacheTaskToSQLite(task);
-
-        // Osveži LiveData
-        loadTasksFromSQLite();
-    }
-
-    public void deleteFutureRecurringTasks(Task task) {
-        if (!task.isRecurring()) return;
-
-        long now = System.currentTimeMillis();
-        List<Task> currentTasks = allTasksLiveData.getValue();
-        if (currentTasks == null) return;
-
-        List<Task> updatedTasks = new ArrayList<>(currentTasks);
-        List<Task> tasksToDelete = new ArrayList<>();
-
-        for (Task t : updatedTasks) {
-            if (t.getRecurringId() != null && t.getRecurringId().equals(task.getRecurringId())) {
-                try {
-                    long taskTime = t.getDueDate() != null
-                            ? dateFormat.parse(t.getDueDate()).getTime()
-                            : dateFormat.parse(t.getStartDate()).getTime();
-
-                    if (taskTime >= now) {
-                        tasksToDelete.add(t);
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-
-        for (Task t : tasksToDelete) {
-            deleteTaskFromSQLite(t.getTaskId());
-            db.collection("tasks").document(t.getTaskId()).delete();
-            updatedTasks.remove(t);
-        }
-
-        allTasksLiveData.setValue(updatedTasks);
-    }
-
-
-    public void updateFutureRecurringTasks(Task task) {
-        if (!task.isRecurring()) return;
-
-        long now = System.currentTimeMillis();
-        List<Task> currentTasks = allTasksLiveData.getValue();
-        if (currentTasks == null) return;
-
-        List<Task> updatedTasks = new ArrayList<>(currentTasks);
-
-        for (Task t : updatedTasks) {
-            if (t.getRecurringId() != null && t.getRecurringId().equals(task.getRecurringId())) {
-                try {
-                    long taskTime = t.getDueDate() != null
-                            ? dateFormat.parse(t.getDueDate()).getTime()
-                            : dateFormat.parse(t.getStartDate()).getTime();
-
-                    if (taskTime >= now) {
-                        t.setTitle(task.getTitle());
-                        t.setDescription(task.getDescription());
-                        t.setStatus(task.getStatus());
-                        t.setCategory(task.getCategory());
-                        cacheTaskToSQLite(t); // sačuvaj izmene u SQLite
-                        db.collection("tasks").document(t.getTaskId()).set(t); // Firestore update
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-
-        allTasksLiveData.setValue(updatedTasks);
-    }
-
-    public List<String> getAllCategories() {
-        List<String> categories = new ArrayList<>();
-        List<Task> tasks = allTasksLiveData.getValue();
-        if (tasks != null) {
-            for (Task task : tasks) {
-                String cat = task.getCategory();
-                if (cat != null && !cat.isEmpty() && !categories.contains(cat)) {
-                    categories.add(cat);
-                }
-            }
-        }
-        return categories;
-    }
-
-    // --- UPDATE STATUSA TASKA ---
-    public void updateTaskStatus(Task task, String selectedStatus, Context context) {
-        if (task == null) return;
-
-        String currentStatus = task.getStatus().toLowerCase();
-        String selectedStatusLower = selectedStatus.toLowerCase();
-
-        if ("urađen".equals(currentStatus) || "neurađen".equals(currentStatus) ||
-                "otkazan".equals(currentStatus) || isTaskPast(task)) {
-            if (context != null) {
-                Toast.makeText(context, "Ovaj zadatak se ne može menjati", Toast.LENGTH_SHORT).show();
-            }
-            return;
-        }
-
-        // Pravila promene statusa
-        switch (currentStatus) {
-            case "aktivan":
-                if ("urađen".equals(selectedStatusLower) || "otkazan".equals(selectedStatusLower) ||
-                        ("pauziran".equals(selectedStatusLower) && task.isRecurring()) ||
-                        "aktivan".equals(selectedStatusLower)) {
-                    task.setStatus(selectedStatusLower);
-                } else {
-                    if (context != null) {
-                        Toast.makeText(context, "Nevažeća promena statusa", Toast.LENGTH_SHORT).show();
-                    }
-                    return;
-                }
-                break;
-            case "pauziran":
-                if ("aktivan".equals(selectedStatusLower) || "pauziran".equals(selectedStatusLower)) {
-                    task.setStatus(selectedStatusLower);
-                } else {
-                    if (context != null) {
-                        Toast.makeText(context, "Nevažeća promena statusa", Toast.LENGTH_SHORT).show();
-                    }
-                    return;
-                }
-                break;
-        }
-
-        // Ako je urađen, dodeli XP i smanji HP bossa
-        if ("urađen".equals(selectedStatusLower)) {
-            // XP
-            UserRepository userRepo = UserRepository.getInstance(context);
-            if (userRepo != null) {
-                User currentUser = userRepo.getLoggedInUser();
-                if (currentUser != null) {
-                    List<Task> todaysTasks = getAllTasksLiveData().getValue();
-                    boolean xpAdded = currentUser.increaseXp(task, todaysTasks);
-                    userRepo.updateUser(currentUser);
-
-                    if (xpAdded) {
-                        Toast.makeText(context, "Osvojili ste " + task.getTotalXp() + " XP!", Toast.LENGTH_SHORT).show();
-                    } else {
-                        Toast.makeText(context, "Kvota za XP je prekoračena", Toast.LENGTH_SHORT).show();
-                    }
-                }
-            }
-
-            // Specijalna misija – automatski smanji HP bossa
-            String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-            if (userId != null && context != null) {
-                SpecialMissionViewModel vm = new ViewModelProvider(
-                        (ViewModelStoreOwner) context // context mora biti FragmentActivity
-                ).get(SpecialMissionViewModel.class);
-
-                vm.handleNormalTaskCompletion(task, userId);
-            }
-        }
-
-        // Update u Firestore i SQLite
-        updateTask(task);
-
-        if (context != null) {
-            Toast.makeText(context, "Status zadatka ažuriran", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-
-    // --- PRIVATNA POMOĆNA METODA ---
     private boolean isTaskPast(Task task) {
         try {
             if (task.getDueDate() != null && !task.getDueDate().isEmpty()) {
-                return dateFormat.parse(task.getDueDate()).getTime() < System.currentTimeMillis();
+                // Consider the task "past" only after the end of its due day
+                return dateFormat.parse(task.getDueDate()).getTime() < (System.currentTimeMillis() - 24*60*60*1000);
             }
             if (task.getEndDate() != null && !task.getEndDate().isEmpty()) {
-                return dateFormat.parse(task.getEndDate()).getTime() < System.currentTimeMillis();
+                return dateFormat.parse(task.getEndDate()).getTime() < (System.currentTimeMillis() - 24*60*60*1000);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        } catch (Exception e) { e.printStackTrace(); }
         return false;
     }
-
-
 }

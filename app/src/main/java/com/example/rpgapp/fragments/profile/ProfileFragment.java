@@ -283,6 +283,8 @@ public class ProfileFragment extends Fragment {
             TextView weaponBonus = weaponView.findViewById(R.id.textViewWeaponBonus);
             Button upgradeButton = weaponView.findViewById(R.id.buttonUpgradeWeapon);
 
+            TextView weaponLevel = weaponView.findViewById(R.id.textViewWeaponLevel);
+
             Weapon baseWeapon = GameData.getAllWeapons().get(userWeapon.getWeaponId());
             if (baseWeapon == null) continue;
 
@@ -292,8 +294,11 @@ public class ProfileFragment extends Fragment {
             if (resourceId == 0) resourceId = R.drawable.default_avatar;
             Glide.with(requireContext()).asGif().load(resourceId).into(weaponIcon);
 
-            weaponName.setText(baseWeapon.getName() + " (Lvl " + userWeapon.getLevel() + ")");
+            weaponName.setText(baseWeapon.getName());
             weaponBonus.setText(userWeapon.getBoostAsString());
+
+            weaponLevel.setText(String.valueOf(userWeapon.getLevel()));
+
 
             if (isMyProfile) {
                 upgradeButton.setVisibility(View.VISIBLE);

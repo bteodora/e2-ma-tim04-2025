@@ -7,14 +7,34 @@
     android:layout_height="wrap_content"
     android:layout_marginBottom="8dp">
 
-    <ImageView
-        android:id="@+id/imageViewWeaponIcon"
+    <FrameLayout
+        android:id="@+id/frameLayoutWeaponIconContainer"
         android:layout_width="72dp"
         android:layout_height="72dp"
         android:layout_alignParentStart="true"
-        android:layout_centerVertical="true"
-        android:contentDescription="Weapon Icon"
-        tools:src="@mipmap/ic_launcher"/>
+        android:layout_centerVertical="true">
+
+        <ImageView
+            android:id="@+id/imageViewWeaponIcon"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:contentDescription="Weapon Icon"
+            tools:src="@mipmap/ic_launcher"/>
+
+        <TextView
+            android:id="@+id/textViewWeaponLevel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|center_horizontal"
+            android:layout_marginBottom="4dp"
+            android:paddingStart="6dp"
+            android:paddingEnd="6dp"
+            android:textColor="@android:color/white"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            tools:text="5" />
+
+    </FrameLayout>
 
     <Button
         android:id="@+id/buttonUpgradeWeapon"
@@ -32,13 +52,11 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:layout_centerVertical="true"
-        android:layout_toEndOf="@id/imageViewWeaponIcon"
+        android:layout_toEndOf="@id/frameLayoutWeaponIconContainer"
         android:layout_toStartOf="@id/buttonUpgradeWeapon"
         android:layout_marginStart="16dp"
         android:layout_marginEnd="8dp">
 
-        <!-- KLJUČNA PROMENA: Smanjena veličina teksta da bi stalo više,
-             i dalje je bold da se istakne. -->
         <TextView
             android:id="@+id/textViewWeaponName"
             android:layout_width="wrap_content"

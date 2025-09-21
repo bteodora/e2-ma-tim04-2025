@@ -261,7 +261,9 @@ public class AllianceRepository {
                 .addOnFailureListener(e -> callback.onFailure(e));
     }
 
-    public void listenForMessages(String allianceId, MessagesCallback callback) {
+    public LiveData<List<Message>> listenForMessagesLiveData(String allianceId) {
+        MutableLiveData<List<Message>> messagesLiveData = new MutableLiveData<>();
+
         if (messagesListener != null) {
             messagesListener.remove();
         }
@@ -270,11 +272,16 @@ public class AllianceRepository {
                 .orderBy("timestamp", Query.Direction.ASCENDING)
                 .limitToLast(50)
                 .addSnapshotListener((snapshots, e) -> {
-                    if (e != null || snapshots == null) { return; }
+                    if (e != null || snapshots == null) {
+                        messagesLiveData.postValue(new ArrayList<>());
+                        return;
+                    }
 
                     List<Message> messages = snapshots.toObjects(Message.class);
-                    callback.onMessagesReceived(messages);
+                    messagesLiveData.postValue(messages);
                 });
+
+        return messagesLiveData;
     }
 
     public void stopListeningForMessages() {

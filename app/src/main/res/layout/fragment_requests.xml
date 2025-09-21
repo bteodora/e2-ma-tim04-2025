@@ -1,14 +1,62 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".fragments.requests.RequestsFragment">
 
+    <!-- This is your existing list. It will be shown when there are requests. -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerViewRequests"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:padding="8dp" />
+        android:padding="8dp"
+        android:visibility="gone" /> <!-- Start with it gone -->
+
+    <!-- This is the new "empty state" layout, inspired by your example. -->
+    <!-- It will be shown when the list of requests is empty. -->
+    <LinearLayout
+        android:id="@+id/layout_no_requests"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="32dp"
+        android:visibility="visible"
+        tools:visibility="visible">
+
+        <!-- Note: You will need to add an appropriate icon to your drawable folder -->
+        <ImageView
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:src="@drawable/ic_action_group"
+            app:tint="@color/textColorSecondary"
+            android:layout_marginBottom="16dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="No Pending"
+            android:fontFamily="@font/logo_font"
+            android:textAppearance="?attr/textAppearanceHeadline5"
+            android:layout_marginBottom="8dp"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Requests"
+            android:fontFamily="@font/logo_font"
+            android:textAppearance="?attr/textAppearanceHeadline5"
+            android:layout_marginBottom="8dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="You don't have any pending requests right now."
+            android:textAppearance="?attr/textAppearanceBody1"
+            android:gravity="center"
+            android:textColor="@color/textColorSecondary"/>
+
+    </LinearLayout>
 
 </FrameLayout>

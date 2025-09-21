@@ -23,7 +23,7 @@ import com.example.rpgapp.model.User;
 public class AllianceInfoFragment extends Fragment {
 
     private AllianceViewModel viewModel;
-    private TextView allianceName, leaderName;
+    private TextView leaderName;
     private RecyclerView recyclerViewMembers;
     private UserAdapter membersAdapter;
     private Button buttonDisband, buttonLeave;
@@ -39,13 +39,11 @@ public class AllianceInfoFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        allianceName = view.findViewById(R.id.textViewAllianceName);
         leaderName = view.findViewById(R.id.textViewLeaderName);
         recyclerViewMembers = view.findViewById(R.id.recyclerViewMembers);
         buttonDisband = view.findViewById(R.id.buttonDisbandAlliance);
         buttonLeave = view.findViewById(R.id.buttonLeaveAlliance);
 
-        // ✅ Deljeni ViewModel sa parent fragmentom ili Activity
         viewModel = new ViewModelProvider(requireActivity()).get(AllianceViewModel.class);
 
         setupRecyclerView();
@@ -84,8 +82,8 @@ public class AllianceInfoFragment extends Fragment {
 
         viewModel.getCurrentAlliance().observe(getViewLifecycleOwner(), alliance -> {
             if (alliance != null) {
-                allianceName.setText(alliance.getName());
-                leaderName.setText("Leader: " + alliance.getLeaderUsername());
+                String leaderText = "Leader: " + alliance.getLeaderUsername();
+                leaderName.setText(leaderText);
                 updateButtonVisibility();
             }
         });

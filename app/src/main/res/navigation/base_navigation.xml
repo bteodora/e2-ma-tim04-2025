@@ -2,9 +2,9 @@
 <navigation
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:tools="http://schemas.android.com/tooles"
     android:id="@+id/base_navigation"
-    app:startDestination="@+id/nav_products">
+    app:startDestination="@+id/nav_tasks">
 
     <!-- Products -->
     <fragment
@@ -29,15 +29,12 @@
         app:popUpToInclusive="false" />
 
     <!-- Alliance -->
-
-    <!-- Alliance -->
     <fragment
         android:id="@+id/allianceFragment"
         android:name="com.example.rpgapp.fragments.alliance.AllianceFragment"
         android:label="My Alliance"
         tools:layout="@layout/fragment_alliance" />
 
-    <!-- Requests -->
     <fragment
         android:id="@+id/requestsFragment"
         android:name="com.example.rpgapp.fragments.requests.RequestsFragment"
@@ -126,6 +123,9 @@
         <action
             android:id="@+id/action_friendsFragment_to_friendProfileFragment"
             app:destination="@id/friendProfileFragment" />
+        <action
+            android:id="@+id/action_view_requests"
+            app:destination="@id/requestsFragment" />
     </fragment>
 
     <!-- Language -->
@@ -232,7 +232,5 @@
 <!--        android:name="com.example.rpgapp.fragments.alliance.SpecialMissionFragment"-->
 <!--        android:label="Special Mission"-->
 <!--        tools:layout="@layout/fragment_special_mission" />-->
-
-
 
 </navigation>

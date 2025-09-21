@@ -121,21 +121,6 @@ public class HomeActivity extends AppCompatActivity implements SharedPreferences
             userRepository.setLoggedInUser(currentUser.getUid());
         }
 
-        binding.activityHomeBase.floatingActionButton.setOnClickListener(v -> {
-            Log.i("ShopApp", "Floating Action Button");
-            /*
-             * Ako nasoj aktivnosti zelimo da posaljemo nekakve podatke
-             * za to ne treba da koristimo konstruktor. Treba da iskoristimo
-             * identicnu strategiju koju smo koristili kda smo radili sa
-             * fragmentima! Koristicemo Bundle za slanje podataka. Tacnije
-             * intent ce formirati Bundle za nas, ali mi treba da pozovemo
-             * odgovarajucu putExtra metodu.
-             * */
-            Intent intent = new Intent(HomeActivity.this, CartActivity.class);
-            intent.putExtra("title", "Cart");
-            startActivity(intent);
-        });
-
         drawer = binding.drawerLayout;
         navigationView = binding.navView;
         toolbar = binding.activityHomeBase.toolbar;
@@ -227,7 +212,7 @@ public class HomeActivity extends AppCompatActivity implements SharedPreferences
         // konfiguracijom akcione trake i navigacije.
         // Svaki ID menija prosleđuje se kao skup ID-ova jer svaki meni treba smatrati odredištima najvišeg nivoa.
         mAppBarConfiguration = new AppBarConfiguration
-                .Builder(R.id.nav_products, R.id.nav_new, R.id.nav_logout, R.id.nav_settings, R.id.nav_language, R.id.nav_register)
+                .Builder(R.id.nav_tasks, R.id.myProfileFragment, R.id.nav_shop, R.id.nav_friends, R.id.allianceFragment, R.id.nav_battle, R.id.nav_products, R.id.nav_new, R.id.nav_logout, R.id.nav_settings, R.id.nav_language, R.id.nav_register)
                 .setOpenableLayout(drawer)
                 .build();
         // Ova linija koda postavlja navigationView da radi zajedno sa NavController-om.
@@ -298,7 +283,6 @@ public class HomeActivity extends AppCompatActivity implements SharedPreferences
     @Override
     protected void onResume() {
         super.onResume();
-        //Za slucaj da referenca nije postavljena da se izbegne problem sa androidom!
         if (manager == null) {
             setUpReceiver();
         }
@@ -318,12 +302,11 @@ public class HomeActivity extends AppCompatActivity implements SharedPreferences
             {
                 NavController navController = Navigation.findNavController(HomeActivity.this, R.id.fragment_nav_content_main);
 
-                // Nakon toga, koristi se NavigationUI.onNavDestinationSelected(item, navController)
-                // kako bi se omogućila integracija između MenuItem-a i odredišta unutar aplikacije
-                // definisanih unutar navigacionog grafa (NavGraph).
-                // Ova funkcija proverava da li je odabrana stavka izbornika povezana s nekim
-                // odredištem unutar navigacionog grafa i pokreće tu navigaciju ako postoji
-                // odgovarajuće podudaranje.
+                if (menuItem.getItemId() == R.id.nav_new) {
+                    navController.navigate(R.id.nav_create_task);
+                    return true;
+                }
+
                 return NavigationUI.onNavDestinationSelected(menuItem, navController);
             }
         };

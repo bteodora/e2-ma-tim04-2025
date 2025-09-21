@@ -12,6 +12,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Shop"
+        android:fontFamily="@font/logo_font"
         android:textAppearance="?attr/textAppearanceHeadline5"
         android:layout_gravity="center_horizontal"
         android:padding="16dp"/>
@@ -33,7 +34,7 @@
             <ImageView
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@drawable/ic_action_person"/>
+                android:src="@drawable/ic_coin"/>
             <TextView
                 android:id="@+id/textViewUserCoins"
                 android:layout_width="wrap_content"

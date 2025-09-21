@@ -14,7 +14,7 @@ public class SQLiteHelper extends SQLiteOpenHelper {
     public static final String COLUMN_IMAGE = "image";
 
     private static final String DATABASE_NAME = "rpgapp_final.db";
-    private static final int DATABASE_VERSION = 13;
+    private static final int DATABASE_VERSION = 14;
 
     private static final String DB_CREATE = "create table "
             + TABLE_PRODUCTS + "("
@@ -25,7 +25,6 @@ public class SQLiteHelper extends SQLiteOpenHelper {
             + ")";
 
     //--------------- USER ---------------------
-    //TODO dodati za ostale klase isto ovako:
     public static final String TABLE_USERS = "USERS";
     public static final String COLUMN_USER_ID = "_id";
     public static final String COLUMN_USERNAME = "username";
@@ -118,6 +117,8 @@ public class SQLiteHelper extends SQLiteOpenHelper {
     public static final String COLUMN_RECURRING_ID = "recurring_id";
     public static final String COLUMN_TASK_USER_ID = "user_id";
     public static final String COLUMN_CATEGORY_USER_ID = "user_id";
+    public static final String COLUMN_CREATION_TIMESTAMP = "creationTimestamp";
+    public static final String COLUMN_LAST_ACTION_TIMESTAMP = "lastActionTimestamp";
 
 
     private static final String DB_CREATE_TASKS = "CREATE TABLE " + TABLE_TASKS + "("
@@ -142,6 +143,8 @@ public class SQLiteHelper extends SQLiteOpenHelper {
             + COLUMN_RECURRING + " INTEGER, "
             + COLUMN_RECURRING_ID + " TEXT, "
             + COLUMN_TASK_USER_ID + " TEXT, "
+            + COLUMN_CREATION_TIMESTAMP + " INTEGER,"
+            + COLUMN_LAST_ACTION_TIMESTAMP + " INTEGER,"
             + "FOREIGN KEY(" + COLUMN_TASK_USER_ID + ") REFERENCES " + TABLE_USERS + "(" + COLUMN_USER_ID + ")"
             + ")";
     //--------------- CATEGORY ---------------------
