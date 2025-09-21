@@ -9,7 +9,7 @@ import android.os.Build;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import com.example.rpgapp.R;
-import com.example.rpgapp.recievers.AllianceInviteActionReceiver;
+import com.example.rpgapp.activities.ProcessInviteActivity;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
@@ -57,7 +57,6 @@ public class NotificationHelper {
         }
     }
 
-
     public void showAllianceInviteNotification(String allianceId, String inviterUsername, String allianceName) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
@@ -66,20 +65,21 @@ public class NotificationHelper {
             }
         }
 
-        Intent acceptIntent = new Intent(context, AllianceInviteActionReceiver.class);
-        acceptIntent.setAction(AllianceInviteActionReceiver.ACTION_ACCEPT);
-        acceptIntent.putExtra(AllianceInviteActionReceiver.EXTRA_ALLIANCE_ID, allianceId);
-        PendingIntent acceptPendingIntent = PendingIntent.getBroadcast(
+        Intent acceptIntent = new Intent(context, ProcessInviteActivity.class);
+        acceptIntent.setAction(ProcessInviteActivity.ACTION_ACCEPT);
+        acceptIntent.putExtra(ProcessInviteActivity.EXTRA_ALLIANCE_ID, allianceId);
+        PendingIntent acceptPendingIntent = PendingIntent.getActivity(
                 context,
                 1,
                 acceptIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
 
-        Intent declineIntent = new Intent(context, AllianceInviteActionReceiver.class);
-        declineIntent.setAction(AllianceInviteActionReceiver.ACTION_DECLINE);
-        declineIntent.putExtra(AllianceInviteActionReceiver.EXTRA_ALLIANCE_ID, allianceId);
-        PendingIntent declinePendingIntent = PendingIntent.getBroadcast(
+        // --- DECLINE INTENT ---
+        Intent declineIntent = new Intent(context, ProcessInviteActivity.class);
+        declineIntent.setAction(ProcessInviteActivity.ACTION_DECLINE);
+        declineIntent.putExtra(ProcessInviteActivity.EXTRA_ALLIANCE_ID, allianceId);
+        PendingIntent declinePendingIntent = PendingIntent.getActivity(
                 context,
                 2,
                 declineIntent,
@@ -94,7 +94,6 @@ public class NotificationHelper {
                 .setOngoing(true)
                 .addAction(R.drawable.ic_action_new, "Accept", acceptPendingIntent)
                 .addAction(R.drawable.ic_action_warning, "Decline", declinePendingIntent)
-
                 .setAutoCancel(false);
 
         NotificationManagerCompat notificationManager = NotificationManagerCompat.from(context);
