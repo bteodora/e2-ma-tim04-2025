@@ -53,14 +53,27 @@ public class EquipmentListAdapter extends RecyclerView.Adapter<EquipmentListAdap
             boost = itemView.findViewById(R.id.weaponBoost);
         }
 
+//        public void bind(EquipmentDisplay eq) {
+//            name.setText(eq.getName());
+//            boost.setText("Boost: " + eq.getBoost());
+//            Glide.with(image.getContext())
+//                    .asGif()
+//                    .load(eq.getImageResId())
+//                    .placeholder(R.drawable.ic_face)
+//                    .into(image);
+//        }
+
         public void bind(EquipmentDisplay eq) {
             name.setText(eq.getName());
             boost.setText("Boost: " + eq.getBoost());
+
             Glide.with(image.getContext())
-                    .asGif()
+                    .asBitmap() // učitava sve kao statičnu sliku, GIF-ovi neće animirati
                     .load(eq.getImageResId())
                     .placeholder(R.drawable.ic_face)
                     .into(image);
         }
+
+
     }
 }

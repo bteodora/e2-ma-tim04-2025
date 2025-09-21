@@ -252,9 +252,9 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
 
 
         int totalPP = calculateTotalPP(user);
-        user.setPowerPoints(totalPP);
+        //user.setPowerPoints(totalPP);
 
-        UserRepository.getInstance(requireContext()).updateUser(user);
+        //UserRepository.getInstance(requireContext()).updateUser(user);
         battleRepository.updateBattle(battle, t -> {});
 
         userPpBar.setMax(Math.max(totalPP, 1));
@@ -322,7 +322,6 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
         }
         isAttackInProgress = true;
 
-//        updateUserPP();
 
         boolean hit = battle.attack();
         if (hit) {
@@ -459,26 +458,51 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
 
         if (equipmentChance > 0 && random.nextInt(100) < equipmentChance) {
             if (random.nextInt(100) < 95) {
+                // Dodaj ITEM (odeća / napitak)
+                Map<String, Item> allItems = GameData.getAllItems();
+                List<String> ids = new ArrayList<>(allItems.keySet());
+
+                // Izaberi nasumičan Item ID
+                String randomItemId = ids.get(random.nextInt(ids.size()));
+                Item baseItem = allItems.get(randomItemId);
+
                 UserItem clothing = new UserItem();
-                clothing.setItemId("clothing_" + System.currentTimeMillis());
+                clothing.setItemId(baseItem.getId());                // <-- koristi pravi ID iz GameData
                 clothing.setQuantity(1);
-                clothing.setBonusType(BonusType.TEMPORARY_PP);
-                clothing.setCurrentBonus(5.0);
-                clothing.setLifespan(5);
-                if (user.getUserItems() == null) user.setUserItems(new HashMap<>());
+                clothing.setBonusType(baseItem.getBonusType());      // koristi bonus iz GameData
+                clothing.setCurrentBonus(baseItem.getBonusValue());
+                clothing.setLifespan(baseItem.getLifespan());
+
+                if (user.getUserItems() == null) {
+                    user.setUserItems(new HashMap<>());
+                }
                 user.getUserItems().put(clothing.getItemId(), clothing);
-                equipmentMsg = " +1 Clothing";
+
+                equipmentMsg = " +1 Item (" + baseItem.getName() + ")";
             } else {
+                // Dodaj WEAPON
+                Map<String, Weapon> allWeapons = GameData.getAllWeapons();
+                List<String> weaponIds = new ArrayList<>(allWeapons.keySet());
+
+                // Izaberi nasumično oružje
+                String randomWeaponId = weaponIds.get(random.nextInt(weaponIds.size()));
+                Weapon baseWeapon = allWeapons.get(randomWeaponId);
+
                 UserWeapon weapon = new UserWeapon();
-                weapon.setWeaponId("weapon_" + System.currentTimeMillis());
-                weapon.setLevel(1);
-                weapon.setCurrentBoost(0.05);
-                weapon.setBoostType(BonusType.PERMANENT_PP);
-                if (user.getUserWeapons() == null) user.setUserWeapons(new HashMap<>());
+                weapon.setWeaponId(baseWeapon.getId());              // <-- koristi pravi ID iz GameData
+                weapon.setLevel(baseWeapon.getLevel());
+                weapon.setCurrentBoost(baseWeapon.getBoost());
+                weapon.setBoostType(baseWeapon.getBoost_type());
+
+                if (user.getUserWeapons() == null) {
+                    user.setUserWeapons(new HashMap<>());
+                }
                 user.getUserWeapons().put(weapon.getWeaponId(), weapon);
-                equipmentMsg = " +1 Weapon";
+
+                equipmentMsg = " +1 Weapon (" + baseWeapon.getName() + ")";
             }
         }
+
 
         user.setCoins(user.getCoins() + coinsReward);
         String text = "Coins earned: " + coinsReward + " (Total: " + user.getCoins() + ")";
@@ -499,6 +523,7 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
 
     private int calculateTotalPP(User u) {
         double currentPP = u.getPowerPoints();    // vrednost koja može da se menja u toku igre
+        Toast.makeText(requireContext(), "User PP iz baze: " + currentPP, Toast.LENGTH_SHORT).show();
 
         double finalPP = currentPP;
 
@@ -607,50 +632,6 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
         }
     }
 
-//    private void showWeaponSelectionDialog() {
-//        if (user == null || user.getUserWeapons() == null || user.getUserWeapons().isEmpty()) {
-//            Toast.makeText(requireContext(), "Nemate oružje.", Toast.LENGTH_SHORT).show();
-//            return;
-//        }
-//
-//        Map<String, Weapon> allWeapons = GameData.getAllWeapons();
-//
-//        List<UserWeapon> weaponsList = new ArrayList<>();
-//        for (UserWeapon uw : user.getUserWeapons().values()) {
-//            Weapon weaponData = allWeapons.get(uw.getWeaponId());
-//            if (weaponData != null) {
-//                uw.setName(weaponData.getName());
-//                uw.setCurrentBoost(weaponData.getBoost());
-//                uw.setImageResourceId(getResourceIdByName(weaponData.getImage()));
-//                uw.setBoostType(weaponData.getBoost_type());
-//                weaponsList.add(uw);
-//            }
-//        }
-//
-//        if (weaponsList.isEmpty()) {
-//            Toast.makeText(requireContext(), "Nemate dostupna oružja.", Toast.LENGTH_SHORT).show();
-//            return;
-//        }
-//
-//        View dialogView = LayoutInflater.from(requireContext())
-//                .inflate(R.layout.dialog_weapon_list, null);
-//        RecyclerView recyclerView = dialogView.findViewById(R.id.recyclerWeapons);
-//        recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
-//
-//        // Adapter BEZ klik listenera
-//        WeaponListAdapter adapter = new WeaponListAdapter(weaponsList, null);
-//        recyclerView.setAdapter(adapter);
-//
-//        // Napravi i prikaži dijalog
-//        AlertDialog dialog = new AlertDialog.Builder(requireContext())
-//                .setTitle("Vaša oprema")
-//                .setView(dialogView)
-//                .setNegativeButton("Zatvori", null)
-//                .create();
-//
-//        dialog.show();
-//    }
-//
 
     private void showEquipmentSelectionDialog() {
         List<EquipmentDisplay> equipmentList = new ArrayList<>();
@@ -675,9 +656,21 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
 
         Map<String, Item> allItems = GameData.getAllItems();
         if (user != null && user.getUserItems() != null) {
+//            Toast.makeText(requireContext(),
+//                    "User ima " + user.getUserItems().size() + " item(a)",
+//                    Toast.LENGTH_SHORT).show();
+
             for (UserItem ui : user.getUserItems().values()) {
+//                Toast.makeText(requireContext(),
+//                        "Obrađujem itemId: " + ui.getItemId(),
+//                        Toast.LENGTH_SHORT).show();
+
                 Item itemData = allItems.get(ui.getItemId());
                 if (itemData != null) {
+//                    Toast.makeText(requireContext(),
+//                            "Nađen item: " + itemData.getName(),
+//                            Toast.LENGTH_SHORT).show();
+
                     int resId = getResourceIdByName(itemData.getImage());
                     equipmentList.add(new EquipmentDisplay(
                             itemData.getId(),
@@ -686,9 +679,16 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
                             itemData.getBonusValue(),
                             resId
                     ));
+                } else {
+                    Toast.makeText(requireContext(),
+                            "Nema podataka u GameData za id: " + ui.getItemId(),
+                            Toast.LENGTH_SHORT).show();
                 }
             }
+        } else {
+            Toast.makeText(requireContext(), "User nema iteme.", Toast.LENGTH_SHORT).show();
         }
+
 
         if (equipmentList.isEmpty()) {
             Toast.makeText(requireContext(), "Nemate dostupnu opremu.", Toast.LENGTH_SHORT).show();
