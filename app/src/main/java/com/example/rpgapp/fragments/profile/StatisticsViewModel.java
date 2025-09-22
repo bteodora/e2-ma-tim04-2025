@@ -32,6 +32,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -151,15 +152,29 @@ public class StatisticsViewModel extends AndroidViewModel {
         taskSummaryData.postValue(new TaskSummary(pieData, totalCreated));
     }
 
+    private long normalizeToStartOfDay(long timestamp) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(timestamp);
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+        return calendar.getTimeInMillis();
+    }
+
     private void calculateStreaks(List<Task> allTasks) {
-        // activeDaysStreak.postValue("0");
+        if (allTasks == null || allTasks.isEmpty()) {
+            longestSuccessStreak.postValue("0");
+            return;
+        }
 
         Set<Long> successfulDays = new HashSet<>();
         Set<Long> failedDays = new HashSet<>();
 
         for (Task task : allTasks) {
-            if (task.getCompletionTimestamp() > 0 && task.getStatus() != null) {
-                long dayTimestamp = task.getCompletionTimestamp();
+            if (task.getLastActionTimestamp() > 0 && task.getStatus() != null) {
+                long dayTimestamp = normalizeToStartOfDay(task.getLastActionTimestamp());
+
                 if ("urađen".equalsIgnoreCase(task.getStatus())) {
                     successfulDays.add(dayTimestamp);
                 } else if ("neurađen".equalsIgnoreCase(task.getStatus())) {
@@ -178,29 +193,43 @@ public class StatisticsViewModel extends AndroidViewModel {
         List<Long> sortedSuccessfulDays = new ArrayList<>(successfulDays);
         Collections.sort(sortedSuccessfulDays);
 
-        int maxStreak = 1;
-        int currentStreak = 1;
-        for (int i = 1; i < sortedSuccessfulDays.size(); i++) {
-            long previousSuccessDay = sortedSuccessfulDays.get(i - 1);
-            long currentSuccessDay = sortedSuccessfulDays.get(i);
+        List<Long> sortedFailedDays = new ArrayList<>(failedDays);
+        Collections.sort(sortedFailedDays);
 
-            boolean streakBroken = false;
-            for (Long failedDay : failedDays) {
-                if (failedDay > previousSuccessDay && failedDay < currentSuccessDay) {
-                    streakBroken = true;
-                    break;
-                }
-            }
-
-            if (streakBroken) {
-                maxStreak = Math.max(maxStreak, currentStreak);
-                currentStreak = 1;
-            } else {
-                currentStreak++;
-            }
+        if (sortedSuccessfulDays.size() == 1) {
+            longestSuccessStreak.postValue("1");
+            return;
         }
 
-        maxStreak = Math.max(maxStreak, currentStreak);
+        int maxStreak = 0;
+        int currentStreak = 0;
+
+        if (sortedFailedDays.isEmpty()) {
+            maxStreak = sortedSuccessfulDays.size();
+        } else {
+            int lastCheckedSuccessDayIndex = -1;
+
+            for (long failedDay : sortedFailedDays) {
+                int successfulDaysInSegment = 0;
+                for (int i = lastCheckedSuccessDayIndex + 1; i < sortedSuccessfulDays.size(); i++) {
+                    if (sortedSuccessfulDays.get(i) < failedDay) {
+                        successfulDaysInSegment++;
+                        lastCheckedSuccessDayIndex = i;
+                    } else {
+                        break;
+                    }
+                }
+                maxStreak = Math.max(maxStreak, successfulDaysInSegment);
+            }
+
+            int successfulDaysAfterLastFail = sortedSuccessfulDays.size() - (lastCheckedSuccessDayIndex + 1);
+            maxStreak = Math.max(maxStreak, successfulDaysAfterLastFail);
+        }
+
+        if (maxStreak == 0 && !sortedSuccessfulDays.isEmpty()) {
+            maxStreak = sortedSuccessfulDays.size();
+        }
+
         longestSuccessStreak.postValue(String.valueOf(maxStreak));
     }
 
