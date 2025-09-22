@@ -168,7 +168,7 @@ public class Battle {
 
         // Odeća/oprema
         if (user.getEquipped() != null) {
-            for (UserItem item : user.getEquipped().values()) {
+            for (EquippedItem item : user.getEquipped().values()) {
                 if (item.getBonusType() == BonusType.PERMANENT_PP) {
                     permanentMultiplier *= (1.0 + item.getCurrentBonus());
                 }
@@ -195,7 +195,7 @@ public class Battle {
 
         // TEMP bonusi iz odeće
         if (user.getEquipped() != null) {
-            for (UserItem item : user.getEquipped().values()) {
+            for (EquippedItem item : user.getEquipped().values()) {
                 if (item.getBonusType() == BonusType.TEMPORARY_PP) {
                     temporaryBonusValue += (basePP * item.getCurrentBonus());
                 }

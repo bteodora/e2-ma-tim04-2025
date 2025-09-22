@@ -40,6 +40,7 @@ import com.example.rpgapp.model.Battle;
 import com.example.rpgapp.model.BonusType;
 import com.example.rpgapp.model.Boss;
 import com.example.rpgapp.model.EquipmentDisplay;
+import com.example.rpgapp.model.EquippedItem;
 import com.example.rpgapp.model.Item;
 import com.example.rpgapp.model.MissionTask;
 import com.example.rpgapp.model.SpecialMission;
@@ -94,9 +95,6 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-
-
-        // Dobavljanje ulogovanog korisnika iz UserRepository, isto kao u TaskPageFragment
         user = UserRepository.getInstance(requireContext()).getLoggedInUser();
 
         if (user == null) {
@@ -122,12 +120,11 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
                 .get(SpecialMissionViewModel.class);
 
         specialMissionViewModel.getCurrentMission().observe(getViewLifecycleOwner(), mission -> {
-            activeMission = mission; // čuvamo lokalno
+            activeMission = mission;
         });
 
         View view = inflater.inflate(R.layout.fragment_boss_battle, container, false);
 
-        // --- Bind UI ---
         bossImageView = view.findViewById(R.id.bossImageView);
         treasureChestImage = view.findViewById(R.id.treasureChestImage);
         bossHpBar = view.findViewById(R.id.bossHpBar);
@@ -349,7 +346,7 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
 
         if (battle.getRemainingAttacks() == 0 && !battle.getBoss().isDefeated()) {
             if (user.getEquipped() != null) {
-                for (UserItem item : user.getEquipped().values()) {
+                for (EquippedItem item : user.getEquipped().values()) {
                     if (item.getBonusType() == BonusType.ATTACK_NUM) {
                         if (item.isBonusTriggered()) {
                             Toast.makeText(getContext(), "Bonus: Dobili ste dodatni napad!", Toast.LENGTH_LONG).show();
@@ -522,15 +519,12 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
     }
 
     private int calculateTotalPP(User u) {
-        double currentPP = u.getPowerPoints();    // vrednost koja može da se menja u toku igre
-        Toast.makeText(requireContext(), "User PP iz baze: " + currentPP, Toast.LENGTH_SHORT).show();
-
-        double finalPP = currentPP;
+        double basePP = u.getPowerPoints();
 
         double permanentMultiplier = 1.0;
 
         if (u.getEquipped() != null) {
-            for (UserItem item : u.getEquipped().values()) {
+            for (EquippedItem item : u.getEquipped().values()) {
                 if (item.getBonusType() == BonusType.PERMANENT_PP) {
                     permanentMultiplier *= (1.0 + item.getCurrentBonus());
                 }
@@ -545,39 +539,28 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
             }
         }
 
-        if (battle != null && battle.getActiveWeapon() != null && battle.getActiveWeapon().getBoostType() == BonusType.PERMANENT_PP) {
+        double ppAfterPermanentBonuses = Math.round(basePP * permanentMultiplier);
 
-            permanentMultiplier *= (1.0 + battle.getActiveWeapon().getCurrentBoost());
-        }
-
-
-        finalPP = currentPP * permanentMultiplier;
-
-        double temporaryBonusValue = 0.0;
+        double totalTemporaryBonusValue = 0.0;
 
         if (u.getEquipped() != null) {
-            for (UserItem item : u.getEquipped().values()) {
+            for (EquippedItem item : u.getEquipped().values()) {
                 if (item.getBonusType() == BonusType.TEMPORARY_PP) {
-                    temporaryBonusValue += (currentPP * item.getCurrentBonus());
+                    totalTemporaryBonusValue += (ppAfterPermanentBonuses * item.getCurrentBonus());
                 }
             }
         }
 
-        if (battle != null && battle.getActiveWeapon() != null && battle.getActiveWeapon().getBoostType() == BonusType.TEMPORARY_PP) {
-            temporaryBonusValue += (currentPP * battle.getActiveWeapon().getCurrentBoost());
-        }
-
-        finalPP += temporaryBonusValue;
-
-        //u.setPowerPoints((int)Math.round(finalPP));
+        double finalPP = ppAfterPermanentBonuses + totalTemporaryBonusValue;
 
         return (int) Math.round(finalPP);
     }
 
+
     private int calculateSuccessRate(User u, int baseRate) {
         double finalRate = baseRate;
         if (u.getEquipped() != null) {
-            for (UserItem item : u.getEquipped().values()) {
+            for (EquippedItem item : u.getEquipped().values()) {
                 if (item.getBonusType() == BonusType.SUCCESS_PERCENTAGE) {
                     finalRate += item.getCurrentBonus();
                 }
@@ -590,7 +573,7 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
     private double getMoneyBoostPercent(User u) {
         double sum = 0.0;
         if (u.getEquipped() != null)
-            for (UserItem it : u.getEquipped().values())
+            for (EquippedItem it : u.getEquipped().values())
                 if (it.getBonusType() == BonusType.MONEY_BOOST) sum += it.getCurrentBonus();
         if (u.getUserWeapons() != null)
             for (UserWeapon w : u.getUserWeapons().values())

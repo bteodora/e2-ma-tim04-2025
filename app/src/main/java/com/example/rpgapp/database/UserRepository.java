@@ -420,12 +420,13 @@ public class UserRepository {
                 Type userWeaponMapType = new TypeToken<Map<String, UserWeapon>>(){}.getType();
                 Type frirendsListType = new TypeToken<List<String>>(){}.getType();
                 Type listStringType = new TypeToken<List<String>>(){}.getType();
+                Type equippedItemMapType = new TypeToken<Map<String, com.example.rpgapp.model.EquippedItem>>(){}.getType();
 
                 String badgesJson = cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_BADGES_JSON));
                 if (badgesJson != null) user.setBadges(gson.fromJson(badgesJson, badgeListType));
 
                 String equippedJson = cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_EQUIPPED_ITEMS_JSON));
-                if (equippedJson != null) user.setEquipped(gson.fromJson(equippedJson, userItemMapType));
+                if (equippedJson != null) user.setEquipped(gson.fromJson(equippedJson, equippedItemMapType));
 
                 String userItemsJson = cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_ITEMS_JSON));
                 if (userItemsJson != null) user.setUserItems(gson.fromJson(userItemsJson, userItemMapType));
@@ -573,6 +574,7 @@ public class UserRepository {
                 Type userWeaponMapType = new TypeToken<Map<String, UserWeapon>>(){}.getType();
                 Type frirendsListType = new TypeToken<List<String>>(){}.getType();
                 Type listStringType = new TypeToken<List<String>>(){}.getType();
+                Type equippedItemMapType = new TypeToken<Map<String, com.example.rpgapp.model.EquippedItem>>(){}.getType();
 
                 String badgesJson = cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_BADGES_JSON));
                 if (badgesJson != null) {
@@ -581,7 +583,7 @@ public class UserRepository {
 
                 String equippedJson = cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_EQUIPPED_ITEMS_JSON));
                 if (equippedJson != null) {
-                    user.setEquipped(gson.fromJson(equippedJson, userItemMapType));
+                    user.setEquipped(gson.fromJson(equippedJson, equippedItemMapType));
                 }
 
                 String userItemsJson = cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.COLUMN_ITEMS_JSON));

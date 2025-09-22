@@ -25,6 +25,7 @@ import androidx.navigation.fragment.NavHostFragment;
 
 import com.bumptech.glide.Glide;
 import com.example.rpgapp.R;
+import com.example.rpgapp.model.EquippedItem;
 import com.example.rpgapp.model.Item;
 import com.example.rpgapp.model.ItemType;
 import com.example.rpgapp.model.MissionTask;
@@ -343,19 +344,38 @@ public class ProfileFragment extends Fragment {
                 .show();
     }
 
+    // U ProfileFragment.java
+
     private void populateEquipped(User user) {
         grid_equipped_container.removeAllViews();
-        if (user.getEquipped() == null || !isAdded()) return;
+        if (user.getEquipped() == null || user.getEquipped().isEmpty() || !isAdded()) {
+            return;
+        }
 
         LayoutInflater inflater = LayoutInflater.from(getContext());
-        for (UserItem equippedItem : user.getEquipped().values()) {
+
+        // Privremene mape za grupisanje istih predmeta radi prikaza
+        Map<String, Integer> itemCounts = new HashMap<>();
+        Map<String, EquippedItem> representativeItems = new HashMap<>();
+
+        for (EquippedItem equippedItem : user.getEquipped().values()) {
+            String itemId = equippedItem.getItemId();
+            itemCounts.put(itemId, itemCounts.getOrDefault(itemId, 0) + 1);
+            // Čuvamo samo jedan primerak item-a po itemId-ju za dohvat podataka kao što su slika, ime...
+            if (!representativeItems.containsKey(itemId)) {
+                representativeItems.put(itemId, equippedItem);
+            }
+        }
+
+        for (String itemId : representativeItems.keySet()) {
+            EquippedItem representativeItem = representativeItems.get(itemId);
+            int quantity = itemCounts.get(itemId);
+
             View itemView = inflater.inflate(R.layout.grid_item_equipment, grid_equipped_container, false);
-
-
             ImageView itemIcon = itemView.findViewById(R.id.imageViewItemIcon);
             TextView itemQuantity = itemView.findViewById(R.id.textViewItemQuantity);
 
-            Item baseItem = GameData.getAllItems().get(equippedItem.getItemId());
+            Item baseItem = GameData.getAllItems().get(representativeItem.getItemId());
             if (baseItem == null) continue;
 
             String imageId = baseItem.getImage();
@@ -364,8 +384,11 @@ public class ProfileFragment extends Fragment {
             if (resourceId == 0) resourceId = R.drawable.default_avatar;
             Glide.with(requireContext()).load(resourceId).into(itemIcon);
 
-            if (equippedItem.getQuantity() > 1 || equippedItem.isDuplicated()) {
-                itemQuantity.setText(String.valueOf(equippedItem.getQuantity()));
+            boolean isDuplicatedClothing = baseItem.getType() == ItemType.CLOTHING && representativeItem.isDuplicated();
+
+            if (quantity > 1 || isDuplicatedClothing) {
+                // Za odeću prikaži "x2" ako je bonus dupliran, za ostale prikaži količinu
+                itemQuantity.setText(isDuplicatedClothing ? "x2" : String.valueOf(quantity));
                 itemQuantity.setVisibility(View.VISIBLE);
             } else {
                 itemQuantity.setVisibility(View.GONE);
@@ -429,9 +452,13 @@ public class ProfileFragment extends Fragment {
                 .show();
     }
 
+    // U ProfileFragment.java
+
     private void equipItem(User user, UserItem itemToEquipFromInventory) {
-        if (user.getUserItems() == null) user.setUserItems(new HashMap<>());
-        if (user.getEquipped() == null) user.setEquipped(new HashMap<>());
+        // Inicijalizacija mape ako je potrebno
+        if (user.getEquipped() == null) {
+            user.setEquipped(new HashMap<>());
+        }
 
         Item baseItem = GameData.getAllItems().get(itemToEquipFromInventory.getItemId());
         if (baseItem == null) {
@@ -439,75 +466,74 @@ public class ProfileFragment extends Fragment {
             return;
         }
 
+        String itemIdToEquip = itemToEquipFromInventory.getItemId();
+
         if (baseItem.getType() == ItemType.CLOTHING) {
             final int MAX_EQUIPPED_CLOTHES = 2;
-            Map<String, UserItem> equippedItems = user.getEquipped();
-            String itemIdToEquip = itemToEquipFromInventory.getItemId();
+            Map<String, EquippedItem> equippedItems = user.getEquipped();
 
-            if (equippedItems.containsKey(itemIdToEquip)) {
-                UserItem equippedVersion = equippedItems.get(itemIdToEquip);
+            // Provera da li već postoji opremljen komad odeće sa istim ID-jem
+            EquippedItem existingClothing = null;
+            for (EquippedItem equipped : equippedItems.values()) {
+                if (equipped.getItemId().equals(itemIdToEquip)) {
+                    existingClothing = equipped;
+                    break;
+                }
+            }
 
-                if (equippedVersion.isDuplicated()) {
+            if (existingClothing != null) {
+                // Ako postoji, dupliraj bonus
+                if (existingClothing.isDuplicated()) {
                     Toast.makeText(getContext(), "Bonus for this item is already doubled.", Toast.LENGTH_SHORT).show();
                     return;
                 }
-
-                equippedVersion.duplicateBonus();
+                existingClothing.duplicateBonus();
                 smanjiKolicinuUInventaru(user, itemIdToEquip);
-
-                viewModel.updateUser(user);
                 Toast.makeText(getContext(), baseItem.getName() + " bonus doubled!", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            int currentEquippedClothesCount = 0;
-            for (UserItem equippedItem : equippedItems.values()) {
-                Item equippedBaseItem = GameData.getAllItems().get(equippedItem.getItemId());
-                if (equippedBaseItem != null && equippedBaseItem.getType() == ItemType.CLOTHING) {
-                    currentEquippedClothesCount++;
+            } else {
+                // Ako ne postoji, proveri da li ima mesta za novi komad odeće
+                int currentEquippedClothesCount = 0;
+                for (EquippedItem equipped : equippedItems.values()) {
+                    Item equippedBase = GameData.getAllItems().get(equipped.getItemId());
+                    if (equippedBase != null && equippedBase.getType() == ItemType.CLOTHING) {
+                        currentEquippedClothesCount++;
+                    }
                 }
+
+                if (currentEquippedClothesCount >= MAX_EQUIPPED_CLOTHES) {
+                    Toast.makeText(getContext(), "You can only equip " + MAX_EQUIPPED_CLOTHES + " different clothing items.", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                // Ako ima mesta, opremi novi komad
+                smanjiKolicinuUInventaru(user, itemIdToEquip);
+                EquippedItem newEquippedItem = new EquippedItem(
+                        itemIdToEquip,
+                        baseItem.getLifespan(),
+                        baseItem.getBonusValue(),
+                        baseItem.getBonusType()
+                );
+                // Koristimo jedinstveni instanceId kao ključ
+                equippedItems.put(newEquippedItem.getInstanceId(), newEquippedItem);
+                Toast.makeText(getContext(), baseItem.getName() + " equipped!", Toast.LENGTH_SHORT).show();
             }
 
-            if (currentEquippedClothesCount >= MAX_EQUIPPED_CLOTHES) {
-                Toast.makeText(getContext(), "You can only equip " + MAX_EQUIPPED_CLOTHES + " different clothing items.", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
+        } else { // Za ostale tipove predmeta (potrošni materijal)
             smanjiKolicinuUInventaru(user, itemIdToEquip);
 
-            UserItem newEquippedItem = new UserItem();
-            newEquippedItem.setItemId(itemIdToEquip);
-            newEquippedItem.setQuantity(1);
-            newEquippedItem.setLifespan(baseItem.getLifespan());
-            newEquippedItem.setBonusType(baseItem.getBonusType());
-            newEquippedItem.setCurrentBonus(baseItem.getBonusValue());
-            newEquippedItem.setDuplicated(false);
-
-            equippedItems.put(itemIdToEquip, newEquippedItem);
-
-            viewModel.updateUser(user);
-            Toast.makeText(getContext(), baseItem.getName() + " equipped!", Toast.LENGTH_SHORT).show();
-
-        } else {
-            smanjiKolicinuUInventaru(user, itemToEquipFromInventory.getItemId());
-
-            UserItem equippedVersion;
-            if (user.getEquipped().containsKey(itemToEquipFromInventory.getItemId())) {
-                equippedVersion = user.getEquipped().get(itemToEquipFromInventory.getItemId());
-                equippedVersion.setQuantity(equippedVersion.getQuantity() + 1);
-            } else {
-                equippedVersion = new UserItem();
-                equippedVersion.setItemId(itemToEquipFromInventory.getItemId());
-                equippedVersion.setQuantity(1);
-                equippedVersion.setLifespan(baseItem.getLifespan());
-                equippedVersion.setBonusType(baseItem.getBonusType());
-                equippedVersion.setCurrentBonus(baseItem.getBonusValue());
-                user.getEquipped().put(itemToEquipFromInventory.getItemId(), equippedVersion);
-            }
-
-            viewModel.updateUser(user);
+            // Uvek kreiraj novu instancu za potrošne predmete
+            EquippedItem newEquippedItem = new EquippedItem(
+                    itemIdToEquip,
+                    baseItem.getLifespan(),
+                    baseItem.getBonusValue(),
+                    baseItem.getBonusType()
+            );
+            // Koristimo jedinstveni instanceId kao ključ
+            user.getEquipped().put(newEquippedItem.getInstanceId(), newEquippedItem);
             Toast.makeText(getContext(), baseItem.getName() + " activated!", Toast.LENGTH_SHORT).show();
         }
+
+        viewModel.updateUser(user);
     }
 
     private void smanjiKolicinuUInventaru(User user, String itemId) {

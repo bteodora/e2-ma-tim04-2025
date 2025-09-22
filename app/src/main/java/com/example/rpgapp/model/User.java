@@ -1,10 +1,12 @@
 package com.example.rpgapp.model;
 
+import com.example.rpgapp.tools.GameData;
 import com.google.firebase.firestore.Exclude;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -20,7 +22,7 @@ public class User {
     private List<String> badges;
     private Map<String, UserItem> userItems;
     private Map<String, UserWeapon> userWeapons;
-    private Map<String, UserItem> equipped;
+    private Map<String, EquippedItem> equipped;
 
     private int powerPoints;
     private long coins;
@@ -38,14 +40,20 @@ public class User {
 
 
     public void reduceLifespan() {
-        userItems.entrySet().removeIf(entry -> {
-            UserItem item = entry.getValue();
-            if (item.bonusType != BonusType.PERMANENT_PP) {
-                item.lifespan--;
-                return item.lifespan == 0;
+        if (equipped == null || equipped.isEmpty()) {
+            return;
+        }
+        Iterator<Map.Entry<String, EquippedItem>> iterator = equipped.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<String, EquippedItem> entry = iterator.next();
+            EquippedItem item = entry.getValue();
+            if (item.getBonusType() != BonusType.PERMANENT_PP) {
+                item.setLifespan(item.getLifespan() - 1);
+                if (item.getLifespan() <= 0) {
+                    iterator.remove();
+                }
             }
-            return false;
-        });
+        }
     }
 
     public long getRequiredXpForNextLevel() {
@@ -214,11 +222,11 @@ public class User {
         this.userWeapons = userWeapons;
     }
 
-    public Map<String, UserItem> getEquipped() {
+    public Map<String, EquippedItem> getEquipped() {
         return equipped;
     }
 
-    public void setEquipped(Map<String, UserItem> equipped) {
+    public void setEquipped(Map<String, EquippedItem> equipped) {
         this.equipped = equipped;
     }
 
