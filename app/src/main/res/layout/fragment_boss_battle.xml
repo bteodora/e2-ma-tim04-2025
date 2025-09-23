@@ -150,7 +150,7 @@
             android:id="@+id/successRateText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Chance to hit: 0%"
+            android:text="Šansa za udarac: 0%"
             android:textSize="16sp"
             android:textColor="@android:color/black"
             android:layout_marginBottom="4dp"/>
@@ -159,19 +159,10 @@
             android:id="@+id/remainingAttacksText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Remaining attacks: 5/5"
+            android:text="Preostalo napada: 5/5"
             android:textSize="16sp"
             android:textColor="@android:color/black"
             android:layout_marginBottom="16dp"/>
-
-        <!-- ===== ATTACK BUTTON ===== -->
-        <Button
-            android:id="@+id/attackButton"
-            style="@style/PixelButtonStyle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Attack"
-            android:layout_marginBottom="24dp"/>
 
         <!-- ===== TREASURE ===== -->
         <LinearLayout
@@ -200,6 +191,17 @@
                 android:textSize="16sp"
                 android:textColor="@android:color/black"/>
         </LinearLayout>
+
+        <!-- ===== ATTACK BUTTON ===== -->
+        <Button
+            android:id="@+id/attackButton"
+            style="@style/PixelButtonStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Attack"
+            android:layout_marginBottom="24dp"/>
+
+
 
     </LinearLayout>
 </ScrollView>
