@@ -1,5 +1,7 @@
 package com.example.rpgapp.model;
 
+import android.widget.Toast;
+
 import com.example.rpgapp.model.BonusType;
 import com.example.rpgapp.model.Boss;
 import com.example.rpgapp.model.User;
@@ -133,6 +135,38 @@ public class Battle {
         this.droppedWeapon = new Gson().fromJson(json, UserWeapon.class);
     }
 
+    public User getUser() {
+        return user;
+    }
+
+    public void setBossHpBeforeFight(int bossHpBeforeFight) {
+        this.bossHpBeforeFight = bossHpBeforeFight;
+    }
+
+    public void setDroppedWeapon(UserWeapon droppedWeapon) {
+        this.droppedWeapon = droppedWeapon;
+    }
+
+    public void setDroppedItems(Map<String, UserItem> droppedItems) {
+        this.droppedItems = droppedItems;
+    }
+
+    public void setDroppedItem(boolean droppedItem) {
+        this.droppedItem = droppedItem;
+    }
+
+    public void setCoinsEarned(int coinsEarned) {
+        this.coinsEarned = coinsEarned;
+    }
+
+
+    public void setBoss(Boss boss) {
+        this.boss = boss;
+    }
+
+    public void setBattleId(String battleId) {
+        this.battleId = battleId;
+    }
     // --- BORBA ---
     public boolean attack() {
         if (remainingAttacks <= 0 || finished) return false;
@@ -224,10 +258,6 @@ public class Battle {
             coinsEarned = (int)(baseCoins * Math.pow(1.2, bossLevel - 1));
             droppedItem = dropEquipment();
 
-            // level up bossa prema zadatoj formuli
-
-
-            //TODO
         } else if ((boss.getMaxHp() - boss.getCurrentHp()) >= boss.getMaxHp() / 2) {
             // ako je umanjeno 50% HP-a
             coinsEarned = (int)((baseCoins * Math.pow(1.2, bossLevel - 1)) / 2);
@@ -261,49 +291,20 @@ public class Battle {
         int baseCoins = 200;
         int bossLevel = boss.getLevel();
 
+
         if (boss.isDefeated()) {
             // Bos mrtav -> puna nagrada
-            coinsEarned = (int)(baseCoins * Math.pow(1.2, bossLevel - 1));
-        } else if (boss.getMaxHp() <= boss.getCurrentHp() / 2) {
+            this.coinsEarned = (int)(baseCoins * Math.pow(1.2, bossLevel - 1));
+        } else if ((boss.getMaxHp() - boss.getCurrentHp()) >= boss.getMaxHp() / 2) {
             // Bos preživeo ali je skinuto > 50% HP -> pola nagrade
-            coinsEarned = (int)((baseCoins * Math.pow(1.2, bossLevel - 1)) / 2);
+            this.coinsEarned = (int)((baseCoins * Math.pow(1.2, bossLevel - 1)) / 2);
         } else {
             // Bos živ i nije skinuto 50% -> nema nagrade
-            coinsEarned = 0;
+            this.coinsEarned = 0;
+
         }
-        return coinsEarned;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setBossHpBeforeFight(int bossHpBeforeFight) {
-        this.bossHpBeforeFight = bossHpBeforeFight;
-    }
-
-    public void setDroppedWeapon(UserWeapon droppedWeapon) {
-        this.droppedWeapon = droppedWeapon;
-    }
-
-    public void setDroppedItems(Map<String, UserItem> droppedItems) {
-        this.droppedItems = droppedItems;
-    }
-
-    public void setDroppedItem(boolean droppedItem) {
-        this.droppedItem = droppedItem;
-    }
-
-    public void setCoinsEarned(int coinsEarned) {
-        this.coinsEarned = coinsEarned;
+        return this.coinsEarned;
     }
 
 
-    public void setBoss(Boss boss) {
-        this.boss = boss;
-    }
-
-    public void setBattleId(String battleId) {
-        this.battleId = battleId;
-    }
 }

@@ -13,6 +13,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -247,6 +248,7 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
 
     if (user == null || battle == null) return;
 
+        loadBossGif(R.drawable.boss); // npr. boss_idle.gif
 
         int totalPP = calculateTotalPP(user);
         //user.setPowerPoints(totalPP);
@@ -268,7 +270,7 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
         bossHpText.setText("HP: " + battle.getBoss().getCurrentHp() + "/" + battle.getBoss().getMaxHp());
 
 
-        remainingAttacksText.setText("Remaining attacks: " + battle.getRemainingAttacks() + "/5");
+        remainingAttacksText.setText("Preostalo napada: " + battle.getRemainingAttacks() + "/5");
 
         attackButton.setOnClickListener(v -> handleAttack());
         selectWeaponButton.setOnClickListener(v -> showEquipmentSelectionDialog());
@@ -279,7 +281,7 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
             int baseSuccessRate = (int) Math.round(rate);
             successRate = calculateSuccessRate(user, baseSuccessRate);
 
-            successRateText.setText("Chance to hit: " + successRate + "%");
+            successRateText.setText("Šansa za udarac: " + successRate + "%");
             if (battle != null) battle.setSuccessRate(successRate);
         });
 
@@ -322,8 +324,12 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
 
         boolean hit = battle.attack();
         if (hit) {
-            bossImageView.setImageResource(R.drawable.boss_borba);
-            bossImageView.postDelayed(() -> bossImageView.setImageResource(R.drawable.boss), 300);
+            //bossImageView.setImageResource(R.drawable.boss_borba);
+            //bossImageView.postDelayed(() -> bossImageView.setImageResource(R.drawable.boss), 300);
+
+            loadBossGif(R.drawable.bossborba); // animacija kad primi udarac
+            bossImageView.postDelayed(() -> loadBossGif(R.drawable.boss), 800);
+
             Toast.makeText(getContext(), "Hit!", Toast.LENGTH_SHORT).show();
 
             // --- Active mission update ---
@@ -359,7 +365,7 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
         }
 
         // Ažuriraj tekst o broju preostalih napada
-        remainingAttacksText.setText("Remaining attacks: " + battle.getRemainingAttacks() + "/5");
+        remainingAttacksText.setText("Presotalo napada: " + battle.getRemainingAttacks() + "/5");
 
         // Ažuriraj stanje borbe u bazi
         battleRepository.updateBattle(battle, t -> {});
@@ -382,6 +388,10 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
 
     private void showResults() {
         attackButton.setEnabled(false);
+
+        LinearLayout treasureSection = requireView().findViewById(R.id.treasureSection);
+        treasureSection.setVisibility(View.VISIBLE);
+
         treasureChestImage.setVisibility(View.VISIBLE);
         coinsEarnedText.setVisibility(View.VISIBLE);
 
@@ -408,23 +418,27 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
         if (userWon) {
             int nextLevel = battle.getBoss().getLevel() + 1;
             saveBossLevel(nextLevel);
+
+            loadBossGif(R.drawable.bosspobedjen_transparent);
         } else {
             persistBossState(battle.getBoss().getLevel(), battle.getBoss().getCurrentHp());
+            loadBossGif(R.drawable.boss);
         }
 
         UserRepository.getInstance(requireContext()).updateUser(user);
     }
 
 
+    // Dodaj ovo kao polje fragmenta
+    private boolean canOpenChest = false; // da zna kada se kovčeg može otvoriti
+
     private void giveReward() {
         if (user == null || battle == null) return;
-
-        treasureChestImage.setImageResource(R.drawable.sanduk_otvoren);
 
         int bossMaxHp = battle.getBoss().getMaxHp();
         int bossCurrentHp = battle.getBoss().getCurrentHp();
         boolean defeated = battle.getBoss().isDefeated();
-        boolean didAtLeastHalfDamage = (bossMaxHp - bossCurrentHp) * 2 >= bossMaxHp;
+        boolean didAtLeastHalfDamage = (bossMaxHp - bossCurrentHp) >= bossMaxHp / 2;
 
         int baseCoins = battle.calculateCoins();
         int coinsReward = 0;
@@ -434,15 +448,11 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
             coinsReward = baseCoins;
             equipmentChance = 20;
 
-
             clearBossState();
-            battle.getBoss().levelUp(); // podigni level i resetuj HP
+            battle.getBoss().levelUp();
             saveBossLevel(battle.getBoss().getLevel());
             battle.setRemainingAttacks(5);
             battleRepository.updateBattle(battle, t -> {});
-
-
-
         } else if (didAtLeastHalfDamage) {
             coinsReward = baseCoins / 2;
             equipmentChance = 10;
@@ -455,56 +465,74 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
 
         if (equipmentChance > 0 && random.nextInt(100) < equipmentChance) {
             if (random.nextInt(100) < 95) {
-                // Dodaj ITEM (odeća / napitak)
+                // Dodela itema
                 Map<String, Item> allItems = GameData.getAllItems();
                 List<String> ids = new ArrayList<>(allItems.keySet());
-
-                // Izaberi nasumičan Item ID
                 String randomItemId = ids.get(random.nextInt(ids.size()));
                 Item baseItem = allItems.get(randomItemId);
 
-                UserItem clothing = new UserItem();
-                clothing.setItemId(baseItem.getId());                // <-- koristi pravi ID iz GameData
-                clothing.setQuantity(1);
-                clothing.setBonusType(baseItem.getBonusType());      // koristi bonus iz GameData
-                clothing.setCurrentBonus(baseItem.getBonusValue());
-                clothing.setLifespan(baseItem.getLifespan());
+                UserItem newItem = new UserItem();
+                newItem.setItemId(baseItem.getId());
+                newItem.setQuantity(1);
+                newItem.setBonusType(baseItem.getBonusType());
+                newItem.setCurrentBonus(baseItem.getBonusValue());
+                newItem.setLifespan(baseItem.getLifespan());
+                newItem.setDuplicated(false);
 
-                if (user.getUserItems() == null) {
-                    user.setUserItems(new HashMap<>());
+
+                if (user.getUserItems() == null) user.setUserItems(new HashMap<>());
+                if (user.getUserItems().containsKey(newItem.getItemId())) {
+                    UserItem existing = user.getUserItems().get(newItem.getItemId());
+                    existing.setQuantity(existing.getQuantity() + 1);
+                } else {
+                    user.getUserItems().put(newItem.getItemId(), newItem);
                 }
-                user.getUserItems().put(clothing.getItemId(), clothing);
 
                 equipmentMsg = " +1 Item (" + baseItem.getName() + ")";
             } else {
-                // Dodaj WEAPON
+                // Dodela weapon-a
                 Map<String, Weapon> allWeapons = GameData.getAllWeapons();
                 List<String> weaponIds = new ArrayList<>(allWeapons.keySet());
-
-                // Izaberi nasumično oružje
                 String randomWeaponId = weaponIds.get(random.nextInt(weaponIds.size()));
                 Weapon baseWeapon = allWeapons.get(randomWeaponId);
 
-                UserWeapon weapon = new UserWeapon();
-                weapon.setWeaponId(baseWeapon.getId());              // <-- koristi pravi ID iz GameData
-                weapon.setLevel(baseWeapon.getLevel());
-                weapon.setCurrentBoost(baseWeapon.getBoost());
-                weapon.setBoostType(baseWeapon.getBoost_type());
+                UserWeapon newWeapon = new UserWeapon();
+                newWeapon.setWeaponId(baseWeapon.getId());
+                newWeapon.setName(baseWeapon.getName());
+                newWeapon.setLevel(baseWeapon.getLevel());
+                newWeapon.setBoostType(baseWeapon.getBoost_type());
+                newWeapon.setCurrentBoost(baseWeapon.getBoost());
 
-                if (user.getUserWeapons() == null) {
-                    user.setUserWeapons(new HashMap<>());
-                }
-                user.getUserWeapons().put(weapon.getWeaponId(), weapon);
+                if (user.getUserWeapons() == null) user.setUserWeapons(new HashMap<>());
+                user.getUserWeapons().put(newWeapon.getWeaponId(), newWeapon);
 
                 equipmentMsg = " +1 Weapon (" + baseWeapon.getName() + ")";
             }
         }
 
-
+        // Dodaj novčiće
         user.setCoins(user.getCoins() + coinsReward);
-        String text = "Coins earned: " + coinsReward + " (Total: " + user.getCoins() + ")";
-        if (!equipmentMsg.isEmpty()) text += equipmentMsg;
-        coinsEarnedText.setText(text);
+
+        // Ažuriranje baze i SharedPreferences
+        UserRepository.getInstance(requireContext()).updateUser(user);
+        requireContext().getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
+                .edit().putLong("coins", user.getCoins()).apply();
+
+        final String finalText = "Dobijeno novčića: " + coinsReward + " (Ukupno: " + user.getCoins() + ")"
+                + (equipmentMsg.isEmpty() ? "" : equipmentMsg);
+
+        Toast.makeText(getContext(), "Nagrada: " + finalText, Toast.LENGTH_SHORT).show();
+
+        // Pokaži kovčeg zatvoren
+        requireActivity().runOnUiThread(() -> {
+            coinsEarnedText.setText(finalText);
+            coinsEarnedText.setVisibility(View.VISIBLE);
+
+            treasureChestImage.setVisibility(View.VISIBLE);
+            treasureChestImage.setImageResource(R.drawable.sanduk);
+
+            canOpenChest = true;
+        });
 
         if (defeated) {
             clearBossState();
@@ -512,11 +540,42 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
         } else {
             persistBossState(battle.getBoss().getLevel(), battle.getBoss().getCurrentHp());
         }
-
-        UserRepository.getInstance(requireContext()).updateUser(user);
-        requireContext().getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
-                .edit().putLong("user_coins", user.getCoins()).apply();
     }
+
+
+    // --- Shake metoda ---
+
+
+    private void openChestAnimation() {
+        // Animacija otvaranja kovčega
+        treasureChestImage.setImageResource(R.drawable.sanduk_otvoren);
+
+        // Pokaži nagrade
+        int bossMaxHp = battle.getBoss().getMaxHp();
+        int bossCurrentHp = battle.getBoss().getCurrentHp();
+        boolean defeated = battle.getBoss().isDefeated();
+        boolean didAtLeastHalfDamage = (bossMaxHp - bossCurrentHp) >= bossMaxHp / 2;
+
+        int baseCoins = battle.calculateCoins();
+        int coinsReward = defeated ? baseCoins : (didAtLeastHalfDamage ? baseCoins / 2 : 0);
+        coinsReward = (int) Math.round(coinsReward * (1.0 + getMoneyBoostPercent(user)));
+
+        String equipmentMsg = "";
+        if (user.getUserItems() != null && !user.getUserItems().isEmpty()) {
+            equipmentMsg = " +1 Item"; // primer
+        }
+
+        final String finalText = "Nagrada: " + coinsReward + " novčića" + (equipmentMsg.isEmpty() ? "" : equipmentMsg);
+
+        coinsEarnedText.setVisibility(View.VISIBLE);
+        coinsEarnedText.setText(finalText);
+
+        // Fade-in animacija
+        coinsEarnedText.setAlpha(0f);
+        coinsEarnedText.animate().alpha(1f).setDuration(500).start();
+    }
+
+
 
     private int calculateTotalPP(User u) {
         double basePP = u.getPowerPoints();
@@ -705,6 +764,12 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
         return resId != 0 ? resId : R.drawable.ic_face; // fallback
     }
 
+    private void loadBossGif(int resId) {
+        Glide.with(this)
+                .asGif()
+                .load(resId)
+                .into(bossImageView);
+    }
 
 
     // === Sensor ===
@@ -720,17 +785,31 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
         sensorManager.unregisterListener(this);
     }
 
+//    @Override
+//    public void onSensorChanged(SensorEvent event) {
+//        float x = event.values[0], y = event.values[1], z = event.values[2];
+//        long curTime = System.currentTimeMillis();
+//        if (curTime - lastUpdate > 100) {
+//            float delta = Math.abs(x + y + z - lastX - lastY - lastZ);
+//            if (delta > 15 && !isAttackInProgress) handleAttack();
+//            lastX = x; lastY = y; lastZ = z; lastUpdate = curTime;
+//        }
+//    }
+
     @Override
     public void onSensorChanged(SensorEvent event) {
         float x = event.values[0], y = event.values[1], z = event.values[2];
         long curTime = System.currentTimeMillis();
         if (curTime - lastUpdate > 100) {
             float delta = Math.abs(x + y + z - lastX - lastY - lastZ);
-            if (delta > 15 && !isAttackInProgress) handleAttack();
+            if (delta > 15 && canOpenChest) {
+                openChestAnimation();
+                canOpenChest = false; // ne dozvoljava višestruko otvaranje
+            }
+            //if (delta > 15 && !isAttackInProgress) handleAttack();
             lastX = x; lastY = y; lastZ = z; lastUpdate = curTime;
         }
     }
-
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {}
 }
