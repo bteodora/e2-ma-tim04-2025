@@ -463,50 +463,53 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
         String equipmentMsg = "";
         Random random = new Random();
 
-        if (equipmentChance > 0 && random.nextInt(100) < equipmentChance) {
-            if (random.nextInt(100) < 95) {
-                // Dodela itema
-                Map<String, Item> allItems = GameData.getAllItems();
-                List<String> ids = new ArrayList<>(allItems.keySet());
-                String randomItemId = ids.get(random.nextInt(ids.size()));
-                Item baseItem = allItems.get(randomItemId);
+        if (defeated || didAtLeastHalfDamage) {
 
-                UserItem newItem = new UserItem();
-                newItem.setItemId(baseItem.getId());
-                newItem.setQuantity(1);
-                newItem.setBonusType(baseItem.getBonusType());
-                newItem.setCurrentBonus(baseItem.getBonusValue());
-                newItem.setLifespan(baseItem.getLifespan());
-                newItem.setDuplicated(false);
+            if (equipmentChance > 0 && random.nextInt(100) < equipmentChance) {
+                if (random.nextInt(100) < 95) {
+                    // Dodela itema
+                    Map<String, Item> allItems = GameData.getAllItems();
+                    List<String> ids = new ArrayList<>(allItems.keySet());
+                    String randomItemId = ids.get(random.nextInt(ids.size()));
+                    Item baseItem = allItems.get(randomItemId);
+
+                    UserItem newItem = new UserItem();
+                    newItem.setItemId(baseItem.getId());
+                    newItem.setQuantity(1);
+                    newItem.setBonusType(baseItem.getBonusType());
+                    newItem.setCurrentBonus(baseItem.getBonusValue());
+                    newItem.setLifespan(baseItem.getLifespan());
+                    newItem.setDuplicated(false);
 
 
-                if (user.getUserItems() == null) user.setUserItems(new HashMap<>());
-                if (user.getUserItems().containsKey(newItem.getItemId())) {
-                    UserItem existing = user.getUserItems().get(newItem.getItemId());
-                    existing.setQuantity(existing.getQuantity() + 1);
+                    if (user.getUserItems() == null) user.setUserItems(new HashMap<>());
+                    if (user.getUserItems().containsKey(newItem.getItemId())) {
+                        UserItem existing = user.getUserItems().get(newItem.getItemId());
+                        existing.setQuantity(existing.getQuantity() + 1);
+                    } else {
+                        user.getUserItems().put(newItem.getItemId(), newItem);
+                    }
+
+                    equipmentMsg = " +1 Item (" + baseItem.getName() + ")";
                 } else {
-                    user.getUserItems().put(newItem.getItemId(), newItem);
+                    // Dodela weapon-a
+                    Map<String, Weapon> allWeapons = GameData.getAllWeapons();
+                    List<String> weaponIds = new ArrayList<>(allWeapons.keySet());
+                    String randomWeaponId = weaponIds.get(random.nextInt(weaponIds.size()));
+                    Weapon baseWeapon = allWeapons.get(randomWeaponId);
+
+                    UserWeapon newWeapon = new UserWeapon();
+                    newWeapon.setWeaponId(baseWeapon.getId());
+                    newWeapon.setName(baseWeapon.getName());
+                    newWeapon.setLevel(baseWeapon.getLevel());
+                    newWeapon.setBoostType(baseWeapon.getBoost_type());
+                    newWeapon.setCurrentBoost(baseWeapon.getBoost());
+
+                    if (user.getUserWeapons() == null) user.setUserWeapons(new HashMap<>());
+                    user.getUserWeapons().put(newWeapon.getWeaponId(), newWeapon);
+
+                    equipmentMsg = " +1 Weapon (" + baseWeapon.getName() + ")";
                 }
-
-                equipmentMsg = " +1 Item (" + baseItem.getName() + ")";
-            } else {
-                // Dodela weapon-a
-                Map<String, Weapon> allWeapons = GameData.getAllWeapons();
-                List<String> weaponIds = new ArrayList<>(allWeapons.keySet());
-                String randomWeaponId = weaponIds.get(random.nextInt(weaponIds.size()));
-                Weapon baseWeapon = allWeapons.get(randomWeaponId);
-
-                UserWeapon newWeapon = new UserWeapon();
-                newWeapon.setWeaponId(baseWeapon.getId());
-                newWeapon.setName(baseWeapon.getName());
-                newWeapon.setLevel(baseWeapon.getLevel());
-                newWeapon.setBoostType(baseWeapon.getBoost_type());
-                newWeapon.setCurrentBoost(baseWeapon.getBoost());
-
-                if (user.getUserWeapons() == null) user.setUserWeapons(new HashMap<>());
-                user.getUserWeapons().put(newWeapon.getWeaponId(), newWeapon);
-
-                equipmentMsg = " +1 Weapon (" + baseWeapon.getName() + ")";
             }
         }
 

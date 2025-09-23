@@ -11,6 +11,7 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.example.rpgapp.model.Alliance;
+import com.example.rpgapp.model.Item;
 import com.example.rpgapp.model.Notification;
 import com.example.rpgapp.model.SendRequestStatus;
 import com.example.rpgapp.model.User;
@@ -26,8 +27,11 @@ import com.google.firebase.firestore.Transaction;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
+import org.json.JSONObject;
+
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -641,36 +645,98 @@ public class UserRepository {
                         SQLiteHelper.COLUMN_USER_ID + "=?", new String[]{userId}, null, null, null);
 
                 if (cursor != null && cursor.moveToFirst()) {
-                    int potions = cursor.getInt(cursor.getColumnIndexOrThrow("potions"));
-                    int clothes = cursor.getInt(cursor.getColumnIndexOrThrow("clothes"));
+                    // --------- Coins ----------
                     int coins = cursor.getInt(cursor.getColumnIndexOrThrow("coins"));
-                    int badges = cursor.getInt(cursor.getColumnIndexOrThrow("badges"));
-
-                    potions += (int) reward.get("potions");
-                    clothes += (int) reward.get("clothes");
                     coins += (int) reward.get("coins");
-                    badges += (int) reward.get("badge");
+
+                    // --------- User Items (potions i clothes) ----------
+                    String userItemsJson = cursor.getString(cursor.getColumnIndexOrThrow("userItems"));
+                    JSONObject userItems = userItemsJson != null ? new JSONObject(userItemsJson) : new JSONObject();
+
+                    // Potion
+                    Item potion = (Item) reward.get("potion");
+                    if (potion != null) {
+                        String potionId = potion.getId();
+                        if (userItems.has(potionId)) {
+                            JSONObject existingPotion = userItems.getJSONObject(potionId);
+                            int quantity = existingPotion.getInt("quantity");
+                            existingPotion.put("quantity", quantity + 1);
+                            userItems.put(potionId, existingPotion);
+                        } else {
+                            JSONObject newPotion = new JSONObject();
+                            newPotion.put("quantity", 1);
+                            newPotion.put("bonusType", potion.getBonusType());
+                            userItems.put(potionId, newPotion);
+                        }
+                    }
+
+                    // Clothing
+                    Item clothing = (Item) reward.get("clothing");
+                    if (clothing != null) {
+                        String clothingId = clothing.getId();
+                        if (userItems.has(clothingId)) {
+                            JSONObject existingClothing = userItems.getJSONObject(clothingId);
+                            int quantity = existingClothing.getInt("quantity");
+                            existingClothing.put("quantity", quantity + 1);
+                            userItems.put(clothingId, existingClothing);
+                        } else {
+                            JSONObject newClothing = new JSONObject();
+                            newClothing.put("quantity", 1);
+                            newClothing.put("bonusType", clothing.getBonusType());
+                            userItems.put(clothingId, newClothing);
+                        }
+                    }
+
+                    // Badge
+                    String badge = (String) reward.get("badge");
 
                     ContentValues cv = new ContentValues();
-                    cv.put("potions", potions);
-                    cv.put("clothes", clothes);
                     cv.put("coins", coins);
-                    cv.put("badges", badges);
+                    cv.put("userItems", userItems.toString());
+                    if (badge != null) cv.put("badges", badge);
 
                     db.update(SQLiteHelper.TABLE_USERS, cv,
                             SQLiteHelper.COLUMN_USER_ID + "=?", new String[]{userId});
+
+                    // --------- Firestore update ----------
+                    FirebaseFirestore dbFirebase = FirebaseFirestore.getInstance();
+                    DocumentReference userRef = dbFirebase.collection("users").document(userId);
+
+                    Map<String, Object> firebaseUpdate = new HashMap<>();
+                    firebaseUpdate.put("coins", coins);
+
+                    if (potion != null) {
+                        firebaseUpdate.put("userItems." + potion.getId() + ".quantity",
+                                FieldValue.increment(1));
+                        firebaseUpdate.put("userItems." + potion.getId() + ".bonusType",
+                                potion.getBonusType());
+                    }
+
+                    if (clothing != null) {
+                        firebaseUpdate.put("userItems." + clothing.getId() + ".quantity",
+                                FieldValue.increment(1));
+                        firebaseUpdate.put("userItems." + clothing.getId() + ".bonusType",
+                                clothing.getBonusType());
+                    }
+
+                    if (badge != null) {
+                        firebaseUpdate.put("badges", FieldValue.arrayUnion(badge));
+                    }
+
+                    userRef.update(firebaseUpdate)
+                            .addOnSuccessListener(aVoid -> Log.d("updateUserReward", "Firestore updated"))
+                            .addOnFailureListener(e -> e.printStackTrace());
+
                 }
             } catch (Exception e) {
                 e.printStackTrace();
             } finally {
-                if (cursor != null) {
-                    cursor.close();
-                }
-                if (db != null) {
-                    db.close();
-                }
+                if (cursor != null) cursor.close();
+                if (db != null) db.close();
             }
         });
     }
+
+
 
 }
