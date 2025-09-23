@@ -9,7 +9,8 @@ import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
-
+import com.bumptech.glide.Glide;
+import android.widget.ImageView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -68,6 +69,14 @@ public class SpecialMissionFragment extends Fragment {
         setupAdapters();
         setupInitialUI();
         observeUserAndAlliance();
+
+        ImageView bossImageView = view.findViewById(R.id.bossImageView);
+
+// učitaj GIF iz resursa
+        Glide.with(this)
+                .asGif()
+                .load(R.drawable.boss) // tvoj GIF u res/drawable
+                .into(bossImageView);
     }
 
     private void bindViews(View view) {

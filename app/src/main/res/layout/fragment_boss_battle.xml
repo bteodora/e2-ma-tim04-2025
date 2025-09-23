@@ -16,13 +16,20 @@
         android:gravity="center_horizontal">
 
         <!-- ===== BOSS IDENTITET ===== -->
+<!--        <ImageView-->
+<!--            android:id="@+id/bossImageView"-->
+<!--            android:layout_width="200dp"-->
+<!--            android:layout_height="200dp"-->
+<!--            android:src="@drawable/boss"-->
+<!--            android:contentDescription="Boss Image"-->
+<!--            android:layout_marginBottom="16dp"/>-->
         <ImageView
             android:id="@+id/bossImageView"
             android:layout_width="200dp"
             android:layout_height="200dp"
-            android:src="@drawable/boss"
             android:contentDescription="Boss Image"
             android:layout_marginBottom="16dp"/>
+
 
         <!-- ===== BOSS LEVEL ===== -->
         <LinearLayout

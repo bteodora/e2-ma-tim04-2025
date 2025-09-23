@@ -247,6 +247,7 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
 
     if (user == null || battle == null) return;
 
+        loadBossGif(R.drawable.boss); // npr. boss_idle.gif
 
         int totalPP = calculateTotalPP(user);
         //user.setPowerPoints(totalPP);
@@ -322,8 +323,12 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
 
         boolean hit = battle.attack();
         if (hit) {
-            bossImageView.setImageResource(R.drawable.boss_borba);
-            bossImageView.postDelayed(() -> bossImageView.setImageResource(R.drawable.boss), 300);
+            //bossImageView.setImageResource(R.drawable.boss_borba);
+            //bossImageView.postDelayed(() -> bossImageView.setImageResource(R.drawable.boss), 300);
+
+            loadBossGif(R.drawable.bossborba); // animacija kad primi udarac
+            bossImageView.postDelayed(() -> loadBossGif(R.drawable.boss), 800);
+
             Toast.makeText(getContext(), "Hit!", Toast.LENGTH_SHORT).show();
 
             // --- Active mission update ---
@@ -408,8 +413,11 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
         if (userWon) {
             int nextLevel = battle.getBoss().getLevel() + 1;
             saveBossLevel(nextLevel);
+
+            loadBossGif(R.drawable.bosspobedjen_transparent);
         } else {
             persistBossState(battle.getBoss().getLevel(), battle.getBoss().getCurrentHp());
+            loadBossGif(R.drawable.boss);
         }
 
         UserRepository.getInstance(requireContext()).updateUser(user);
@@ -516,6 +524,9 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
         UserRepository.getInstance(requireContext()).updateUser(user);
         requireContext().getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
                 .edit().putLong("user_coins", user.getCoins()).apply();
+
+        loadBossGif(R.drawable.boss);
+
     }
 
     private int calculateTotalPP(User u) {
@@ -705,6 +716,12 @@ public class BossBattleFragment extends Fragment implements SensorEventListener 
         return resId != 0 ? resId : R.drawable.ic_face; // fallback
     }
 
+    private void loadBossGif(int resId) {
+        Glide.with(this)
+                .asGif()
+                .load(resId)
+                .into(bossImageView);
+    }
 
 
     // === Sensor ===

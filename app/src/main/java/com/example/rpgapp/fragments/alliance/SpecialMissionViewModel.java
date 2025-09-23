@@ -13,9 +13,12 @@ import androidx.lifecycle.MutableLiveData;
 import com.example.rpgapp.database.SpecialMissionRepository;
 import com.example.rpgapp.database.UserRepository;
 import com.example.rpgapp.model.Alliance;
+import com.example.rpgapp.model.Item;
+import com.example.rpgapp.model.ItemType;
 import com.example.rpgapp.model.SpecialMission;
 import com.example.rpgapp.model.MissionTask;
 import com.example.rpgapp.model.Task;
+import com.example.rpgapp.tools.GameData;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -23,7 +26,9 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class SpecialMissionViewModel extends AndroidViewModel {
 
@@ -351,50 +356,120 @@ public class SpecialMissionViewModel extends AndroidViewModel {
         return (int) (base * Math.pow(1.2, previousBossLevel));
     }
 
+//    public void claimRewards() {
+//        SpecialMission mission = currentMission.getValue();
+//        if (mission == null || mission.isActive()) return;
+//
+//        UserRepository userRepo = UserRepository.getInstance(getApplication());
+//        FirebaseFirestore db = FirebaseFirestore.getInstance(); // ⬅ ovde definišeš db
+//
+//        // 1️⃣ Izračunaj nagradu za sledećeg bossa
+//        int previousBossLevel = mission.getCompletedBossCount(); // broj već pobedjenih bossova
+//        int nextBossCoins = calculateNextBossRewardCoins(previousBossLevel);
+//        int coinsReward = nextBossCoins / 2; // 50% od nagrade za sledećeg bossa
+//
+//        int potionsReward = 1; // 1 napitak
+//        int clothesReward = 1; // 1 komad odeće
+//
+//        // 2️⃣ Prođi kroz sve članove saveza
+//        for (String userId : mission.getUserTaskProgress().keySet()) {
+//
+//            // 2a️⃣ Dobij bedž za korisnika
+//            int newBossCount = previousBossLevel + 1; // novi boss koji je pobedjen
+//            String badgeImage = getBadgeForBossCount(newBossCount);
+//
+//            Map<String, Object> reward = new HashMap<>();
+//            reward.put("coins", coinsReward);
+//            reward.put("potions", potionsReward);
+//            reward.put("clothes", clothesReward);
+//
+//            // 2b️⃣ Dodaj bedž u Firestore
+//            db.collection("users").document(userId)
+//                    .update("badges", FieldValue.arrayUnion(badgeImage));
+//
+//            // 2c️⃣ Sačuvaj ostale nagrade preko repozitorijuma
+//            userRepo.updateUserReward(userId, reward);
+//        }
+//
+//        // 3️⃣ Obeleži misiju kao završenu
+//        mission.endMission();
+//        mission.incrementCompletedBossCount(); // povećaj broj pobedjenih bossova
+//
+//        db.collection("alliances")
+//                .document(mission.getAllianceId())
+//                .update("missionStarted", false);
+//
+//        // 4️⃣ Sačuvaj promene u repozitorijumu
+//        repository.updateMission(mission, new UserRepository.RequestCallback() {
+//            @Override
+//            public void onSuccess() {
+//                Log.d("SpecialMissionVM", "Rewards claimed for all members");
+//            }
+//
+//            @Override
+//            public void onFailure(Exception e) {
+//                e.printStackTrace();
+//            }
+//        });
+//    }
+
     public void claimRewards() {
         SpecialMission mission = currentMission.getValue();
         if (mission == null || mission.isActive()) return;
 
         UserRepository userRepo = UserRepository.getInstance(getApplication());
-        FirebaseFirestore db = FirebaseFirestore.getInstance(); // ⬅ ovde definišeš db
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-        // 1️⃣ Izračunaj nagradu za sledećeg bossa
-        int previousBossLevel = mission.getCompletedBossCount(); // broj već pobedjenih bossova
+        //  Izračunaj nagradu za sledećeg bossa
+        int previousBossLevel = mission.getCompletedBossCount();
         int nextBossCoins = calculateNextBossRewardCoins(previousBossLevel);
         int coinsReward = nextBossCoins / 2; // 50% od nagrade za sledećeg bossa
 
-        int potionsReward = 1; // 1 napitak
-        int clothesReward = 1; // 1 komad odeće
+        //  Pripremi sve iteme
+        List<Item> potions = GameData.getAllItems().values().stream()
+                .filter(item -> item.getType() == ItemType.POTION)
+                .collect(Collectors.toList());
 
-        // 2️⃣ Prođi kroz sve članove saveza
+        List<Item> clothes = GameData.getAllItems().values().stream()
+                .filter(item -> item.getType() == ItemType.CLOTHING)
+                .collect(Collectors.toList());
+
+        Random random = new Random();
+
+        // 3️⃣ Prođi kroz sve članove saveza
         for (String userId : mission.getUserTaskProgress().keySet()) {
 
-            // 2a️⃣ Dobij bedž za korisnika
-            int newBossCount = previousBossLevel + 1; // novi boss koji je pobedjen
+            // Izaberi 1 random napitak i 1 random odeću
+            Item potionReward = potions.get(random.nextInt(potions.size()));
+            Item clothingReward = clothes.get(random.nextInt(clothes.size()));
+
+            // Odredi bedž
+            int newBossCount = previousBossLevel + 1;
             String badgeImage = getBadgeForBossCount(newBossCount);
 
+            // Spremi nagradu
             Map<String, Object> reward = new HashMap<>();
             reward.put("coins", coinsReward);
-            reward.put("potions", potionsReward);
-            reward.put("clothes", clothesReward);
+            reward.put("potion", potionReward);   // čuvaš ceo objekat ili samo ID
+            reward.put("clothing", clothingReward);
+            reward.put("badge", badgeImage);
 
-            // 2b️⃣ Dodaj bedž u Firestore
+            // Bedž u Firestore
             db.collection("users").document(userId)
                     .update("badges", FieldValue.arrayUnion(badgeImage));
 
-            // 2c️⃣ Sačuvaj ostale nagrade preko repozitorijuma
+            // Ostale nagrade preko repozitorijuma
             userRepo.updateUserReward(userId, reward);
         }
 
-        // 3️⃣ Obeleži misiju kao završenu
+        // 4️⃣ Obeleži misiju kao završenu
         mission.endMission();
-        mission.incrementCompletedBossCount(); // povećaj broj pobedjenih bossova
+        mission.incrementCompletedBossCount();
 
         db.collection("alliances")
                 .document(mission.getAllianceId())
                 .update("missionStarted", false);
 
-        // 4️⃣ Sačuvaj promene u repozitorijumu
         repository.updateMission(mission, new UserRepository.RequestCallback() {
             @Override
             public void onSuccess() {
