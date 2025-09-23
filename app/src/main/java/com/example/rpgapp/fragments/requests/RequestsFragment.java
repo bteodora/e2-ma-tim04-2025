@@ -24,6 +24,7 @@ public class RequestsFragment extends Fragment {
     private RequestsViewModel viewModel;
     private RecyclerView recyclerView;
     private UserAdapter userAdapter;
+    private View layoutNoRequests;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -35,6 +36,8 @@ public class RequestsFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         recyclerView = view.findViewById(R.id.recyclerViewRequests);
+        layoutNoRequests = view.findViewById(R.id.layout_no_requests);
+
         viewModel = new ViewModelProvider(this).get(RequestsViewModel.class);
 
         setupRecyclerView();
@@ -63,10 +66,17 @@ public class RequestsFragment extends Fragment {
         recyclerView.setAdapter(userAdapter);
     }
 
+    // U RequestsFragment.java
+
     private void observeViewModel() {
         viewModel.getRequestingUsers().observe(getViewLifecycleOwner(), users -> {
-            if (users != null) {
+            if (users != null && !users.isEmpty()) {
+                recyclerView.setVisibility(View.VISIBLE);
+                layoutNoRequests.setVisibility(View.GONE);
                 userAdapter.setUsers(users, "Respond");
+            } else {
+                recyclerView.setVisibility(View.GONE);
+                layoutNoRequests.setVisibility(View.VISIBLE);
             }
         });
 

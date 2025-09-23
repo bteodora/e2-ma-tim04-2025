@@ -6,16 +6,13 @@
     android:layout_height="match_parent"
     tools:context=".fragments.requests.RequestsFragment">
 
-    <!-- This is your existing list. It will be shown when there are requests. -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerViewRequests"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:padding="8dp"
-        android:visibility="gone" /> <!-- Start with it gone -->
+        android:visibility="gone" />
 
-    <!-- This is the new "empty state" layout, inspired by your example. -->
-    <!-- It will be shown when the list of requests is empty. -->
     <LinearLayout
         android:id="@+id/layout_no_requests"
         android:layout_width="match_parent"
