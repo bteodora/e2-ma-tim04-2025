@@ -343,30 +343,29 @@ public class SpecialMissionViewModel extends AndroidViewModel {
                         FirebaseFirestore db = FirebaseFirestore.getInstance();
                         DocumentReference userRef = db.collection("users").document(userId);
 
-// Novi potion
-                        Map<String, Object> potionMap = new HashMap<>();
-                        potionMap.put("itemId", potionReward.getId());
-                        potionMap.put("quantity", 1);
-                        potionMap.put("bonusType", potionReward.getBonusType());
-                        potionMap.put("currentBonus", potionReward.getBonusValue());
-                        potionMap.put("lifespan", potionReward.getLifespan());
-                        potionMap.put("duplicated", false);
+// Potion
+                        Map<String, Object> potionUpdate = new HashMap<>();
+                        potionUpdate.put("userItems." + potionReward.getId() + ".itemId", potionReward.getId());
+                        potionUpdate.put("userItems." + potionReward.getId() + ".bonusType", potionReward.getBonusType());
+                        potionUpdate.put("userItems." + potionReward.getId() + ".currentBonus", potionReward.getBonusValue());
+                        potionUpdate.put("userItems." + potionReward.getId() + ".lifespan", potionReward.getLifespan());
+                        potionUpdate.put("userItems." + potionReward.getId() + ".duplicated", false);
+                        potionUpdate.put("userItems." + potionReward.getId() + ".quantity", FieldValue.increment(1));
 
-                        userRef.collection("userItems").document(potionReward.getId())
-                                .set(potionMap, SetOptions.merge());
+                        userRef.update(potionUpdate);
 
-                        Map<String, Object> clothingMap = new HashMap<>();
-                        clothingMap.put("itemId", clothingReward.getId());
-                        clothingMap.put("quantity", 1);
-                        clothingMap.put("bonusType", clothingReward.getBonusType());
-                        clothingMap.put("currentBonus", clothingReward.getBonusValue());
-                        clothingMap.put("lifespan", clothingReward.getLifespan());
-                        clothingMap.put("duplicated", false);
+// Clothing
+                        Map<String, Object> clothingUpdate = new HashMap<>();
+                        clothingUpdate.put("userItems." + clothingReward.getId() + ".itemId", clothingReward.getId());
+                        clothingUpdate.put("userItems." + clothingReward.getId() + ".bonusType", clothingReward.getBonusType());
+                        clothingUpdate.put("userItems." + clothingReward.getId() + ".currentBonus", clothingReward.getBonusValue());
+                        clothingUpdate.put("userItems." + clothingReward.getId() + ".lifespan", clothingReward.getLifespan());
+                        clothingUpdate.put("userItems." + clothingReward.getId() + ".duplicated", false);
+                        clothingUpdate.put("userItems." + clothingReward.getId() + ".quantity", FieldValue.increment(1));
 
-                        userRef.collection("userItems").document(clothingReward.getId())
-                                .set(clothingMap, SetOptions.merge());
+                        userRef.update(clothingUpdate);
 
-                        // Poruka za korisnika
+
                         rewardMessages.put(userId, "💰 " + coinsReward + " coins, "
                                 + potionReward.getName() + ", "
                                 + clothingReward.getName() + ", "

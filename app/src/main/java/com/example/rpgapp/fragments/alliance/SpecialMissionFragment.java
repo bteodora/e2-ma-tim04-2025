@@ -275,7 +275,7 @@ public class SpecialMissionFragment extends Fragment {
 
                        // if ((!mission.isActive() || timeLeft <= 0) && mission.getBossHP() <= 0) {
 
-                    if (mission.getBossHP() <= 255) {
+                    if (mission.getBossHP() <= 249) {
                         allianceViewModel.setMissionStarted(false);
                         mission.setActive(false);
 
