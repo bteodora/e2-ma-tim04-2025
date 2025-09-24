@@ -5,6 +5,7 @@ import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
@@ -18,11 +19,17 @@ import com.example.rpgapp.model.ItemType;
 import com.example.rpgapp.model.SpecialMission;
 import com.example.rpgapp.model.MissionTask;
 import com.example.rpgapp.model.Task;
+import com.example.rpgapp.model.User;
+import com.example.rpgapp.model.UserItem;
 import com.example.rpgapp.tools.GameData;
+import java.util.stream.Collectors;
 import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +52,17 @@ public class SpecialMissionViewModel extends AndroidViewModel {
     public void setCurrentMission(SpecialMission mission) {
         currentMission.postValue(mission);
     }
+
+    private boolean rewardsAlreadyClaimed = false;
+
+    public boolean isRewardsAlreadyClaimed() {
+        return rewardsAlreadyClaimed;
+    }
+
+    public void setRewardsAlreadyClaimed(boolean claimed) {
+        rewardsAlreadyClaimed = claimed;
+    }
+
     public SpecialMissionViewModel(@NonNull Application application) {
         super(application);
         repository = SpecialMissionRepository.getInstance(application);
@@ -153,41 +171,6 @@ public class SpecialMissionViewModel extends AndroidViewModel {
     }
 
 
-
-    // Za obične korisničke Task-ove
-    public int calculateHpReductionFromTask(Task task) {
-        if (task == null || task.getTitle() == null) return 0;
-
-        String title = task.getTitle().trim().toLowerCase();
-
-        if (title.equals("veoma lak") || title.equals("važni")) {
-            return 1;
-        }
-        if (title.equals("laki") || title.equals("normalni")) {
-            return 2;
-        }
-
-        return 0; // ako nije nijedan od poznatih
-    }
-    // Za MissionTask-ove
-    public int calculateHpReductionFromMissionTask(MissionTask missionTask) {
-        if (missionTask == null || missionTask.getName() == null) return 0;
-
-        String name = missionTask.getName().trim().toLowerCase();
-
-        switch (name) {
-            case "kupovina u prodavnici":
-            case "udarac u regularnoj borbi":
-                return 2;
-            case "ostali zadaci":
-            case "poruka u savezu":
-                return 4;
-            default:
-                return 10;
-        }
-    }
-
-    // U SpecialMissionViewModel
     public static class TaskResult {
         public int hpReduction;
         public String missionTaskName; // naziv MissionTask-a koji će biti update-ovan
@@ -279,201 +262,146 @@ public class SpecialMissionViewModel extends AndroidViewModel {
                 .addOnFailureListener(e -> Log.e("SpecialMissionVM", "Error updating mission from task completion", e));
     }
 
-//    public boolean areAllTasksCompleted() {
-//        SpecialMission mission = currentMission.getValue();
-//        if (mission == null) return false;
-//        return mission.getTasks().stream()
-//                .allMatch(t -> t.isCompleted(currentUserId)); // currentUserId možeš čuvati u VM
-//    }
-
-    public void reduceHP(int amount, String userId, MissionTask task) {
-        SpecialMission mission = currentMission.getValue();
-        if (mission == null) return;
-
-        // Smanjenje HP bossa
-        mission.reduceBossHP(amount);
-        mission.increaseUserProgress(userId, amount);
-        mission.increaseAllianceProgress(amount);
-
-        // Update task progres
-        task.incrementProgress(userId);
-
-        // Snimi u Firestore
-        firestore.collection("specialMissions")
-                .document(mission.getMissionId())
-                .set(mission)
-                .addOnSuccessListener(aVoid -> {
-                    _taskCompletedLiveData.setValue(task);
-                    currentMission.postValue(mission);
-                });
-    }
-
-    public void checkMissionStatus(SpecialMission mission) {
-        if (mission == null) return;
-
-        // Ako HP = 0 -> boss poražen
-        if (mission.getBossHP() <= 0) {
-            mission.endMission();
-            // ovde možeš da dodeliš nagrade
-        }
-
-        // Ako je isteklo 14 dana -> vreme je prošlo
-        if (System.currentTimeMillis() - mission.getStartTime() > mission.getDurationMillis()) {
-            mission.endMission();
-            // nagrade ili neuspeh, zavisi od logike
-        }
-    }
-    public void abortMission() {
-        SpecialMission mission = currentMission.getValue();
-        if (mission == null) return;
-
-        mission.setActive(false);
-        repository.updateMission(mission, new UserRepository.RequestCallback() {
-            @Override
-            public void onSuccess() { currentMission.postValue(null); }
-            @Override
-            public void onFailure(Exception e) { e.printStackTrace(); }
-        });
-    }
-
-    public boolean isUserEligible(String userId) {
-        SpecialMission mission = currentMission.getValue();
-        return mission != null && mission.getUserTaskProgress().containsKey(userId);
-    }
-    public void refreshMission(String allianceId) {
-        repository.getMission(allianceId).observeForever(mission -> {
-            if (mission != null) {
-                currentMission.postValue(mission);
-            }
-        });
-    }
-
-
-
     private int calculateNextBossRewardCoins(int previousBossLevel) {
         // prvi boss = 200, svaki naredni +20%
         double base = 200;
         return (int) (base * Math.pow(1.2, previousBossLevel));
     }
 
-//    public void claimRewards() {
-//        SpecialMission mission = currentMission.getValue();
-//        if (mission == null || mission.isActive()) return;
-//
-//        UserRepository userRepo = UserRepository.getInstance(getApplication());
-//        FirebaseFirestore db = FirebaseFirestore.getInstance(); // ⬅ ovde definišeš db
-//
-//        // 1️⃣ Izračunaj nagradu za sledećeg bossa
-//        int previousBossLevel = mission.getCompletedBossCount(); // broj već pobedjenih bossova
-//        int nextBossCoins = calculateNextBossRewardCoins(previousBossLevel);
-//        int coinsReward = nextBossCoins / 2; // 50% od nagrade za sledećeg bossa
-//
-//        int potionsReward = 1; // 1 napitak
-//        int clothesReward = 1; // 1 komad odeće
-//
-//        // 2️⃣ Prođi kroz sve članove saveza
-//        for (String userId : mission.getUserTaskProgress().keySet()) {
-//
-//            // 2a️⃣ Dobij bedž za korisnika
-//            int newBossCount = previousBossLevel + 1; // novi boss koji je pobedjen
-//            String badgeImage = getBadgeForBossCount(newBossCount);
-//
-//            Map<String, Object> reward = new HashMap<>();
-//            reward.put("coins", coinsReward);
-//            reward.put("potions", potionsReward);
-//            reward.put("clothes", clothesReward);
-//
-//            // 2b️⃣ Dodaj bedž u Firestore
-//            db.collection("users").document(userId)
-//                    .update("badges", FieldValue.arrayUnion(badgeImage));
-//
-//            // 2c️⃣ Sačuvaj ostale nagrade preko repozitorijuma
-//            userRepo.updateUserReward(userId, reward);
-//        }
-//
-//        // 3️⃣ Obeleži misiju kao završenu
-//        mission.endMission();
-//        mission.incrementCompletedBossCount(); // povećaj broj pobedjenih bossova
-//
-//        db.collection("alliances")
-//                .document(mission.getAllianceId())
-//                .update("missionStarted", false);
-//
-//        // 4️⃣ Sačuvaj promene u repozitorijumu
-//        repository.updateMission(mission, new UserRepository.RequestCallback() {
-//            @Override
-//            public void onSuccess() {
-//                Log.d("SpecialMissionVM", "Rewards claimed for all members");
-//            }
-//
-//            @Override
-//            public void onFailure(Exception e) {
-//                e.printStackTrace();
-//            }
-//        });
-//    }
 
-    public void claimRewards() {
+    public void claimRewards(RewardMessagesCallback callback) {
         SpecialMission mission = currentMission.getValue();
-        if (mission == null || mission.isActive()) return;
+        if (mission == null || mission.isActive()) {
+            callback.onComplete("Misija je aktivna", null);
+            return;
+        }
 
-        UserRepository userRepo = UserRepository.getInstance(getApplication());
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-
-        //  Izračunaj nagradu za sledećeg bossa
+        Random random = new Random();
         int previousBossLevel = mission.getCompletedBossCount();
         int nextBossCoins = calculateNextBossRewardCoins(previousBossLevel);
-        int coinsReward = nextBossCoins / 2; // 50% od nagrade za sledećeg bossa
+        int coinsReward = nextBossCoins / 2;
 
-        //  Pripremi sve iteme
-        List<Item> potions = GameData.getAllItems().values().stream()
+        Map<String, Item> allItems = GameData.getAllItems();
+        List<Item> potions = allItems.values().stream()
                 .filter(item -> item.getType() == ItemType.POTION)
                 .collect(Collectors.toList());
 
-        List<Item> clothes = GameData.getAllItems().values().stream()
+        List<Item> clothes = allItems.values().stream()
                 .filter(item -> item.getType() == ItemType.CLOTHING)
                 .collect(Collectors.toList());
 
-        Random random = new Random();
+        Map<String, String> rewardMessages = new HashMap<>();
+        final int[] tasksCompleted = {0};
+        int totalUsers = mission.getUserTaskProgress().size();
 
-        // 3️⃣ Prođi kroz sve članove saveza
         for (String userId : mission.getUserTaskProgress().keySet()) {
+            UserRepository.getInstance(getApplication()).getUserById(userId, new UserRepository.UserCallback() {
+                @Override
+                public void onUserLoaded(User user) {
+                    if (user != null) {
+                        Item potionReward = potions.get(random.nextInt(potions.size()));
+                        Item clothingReward = clothes.get(random.nextInt(clothes.size()));
+                        int newBossCount = previousBossLevel + 1;
+                        String badgeImage = getBadgeForBossCount(newBossCount);
 
-            // Izaberi 1 random napitak i 1 random odeću
-            Item potionReward = potions.get(random.nextInt(potions.size()));
-            Item clothingReward = clothes.get(random.nextInt(clothes.size()));
+                        FirebaseFirestore.getInstance().collection("users").document(userId)
+                                .update(
+                                        "coins", FieldValue.increment(coinsReward),
+                                        "badges", FieldValue.arrayUnion(badgeImage)
+                                );
 
-            // Odredi bedž
-            int newBossCount = previousBossLevel + 1;
-            String badgeImage = getBadgeForBossCount(newBossCount);
+                        if (user.getUserItems() == null) user.setUserItems(new HashMap<>());
 
-            // Spremi nagradu
-            Map<String, Object> reward = new HashMap<>();
-            reward.put("coins", coinsReward);
-            reward.put("potion", potionReward);   // čuvaš ceo objekat ili samo ID
-            reward.put("clothing", clothingReward);
-            reward.put("badge", badgeImage);
+                        UserItem newPotion = new UserItem();
+                        newPotion.setItemId(potionReward.getId());
+                        newPotion.setQuantity(1);
+                        newPotion.setBonusType(potionReward.getBonusType());
+                        newPotion.setCurrentBonus(potionReward.getBonusValue());
+                        newPotion.setLifespan(potionReward.getLifespan());
+                        newPotion.setDuplicated(false);
+                        user.getUserItems().merge(potionReward.getId(), newPotion, (existing, incoming) -> {
+                            existing.setQuantity(existing.getQuantity() + 1);
+                            return existing;
+                        });
 
-            // Bedž u Firestore
-            db.collection("users").document(userId)
-                    .update("badges", FieldValue.arrayUnion(badgeImage));
+                        UserItem newClothing = new UserItem();
+                        newClothing.setItemId(clothingReward.getId());
+                        newClothing.setQuantity(1);
+                        newClothing.setBonusType(clothingReward.getBonusType());
+                        newClothing.setCurrentBonus(clothingReward.getBonusValue());
+                        newClothing.setLifespan(clothingReward.getLifespan());
+                        newClothing.setDuplicated(false);
+                        user.getUserItems().merge(clothingReward.getId(), newClothing, (existing, incoming) -> {
+                            existing.setQuantity(existing.getQuantity() + 1);
+                            return existing;
+                        });
 
-            // Ostale nagrade preko repozitorijuma
-            userRepo.updateUserReward(userId, reward);
+                        if (user.getBadges() == null) user.setBadges(new ArrayList<>());
+                        if (!user.getBadges().contains(badgeImage)) user.getBadges().add(badgeImage);
+
+                        FirebaseFirestore db = FirebaseFirestore.getInstance();
+                        DocumentReference userRef = db.collection("users").document(userId);
+
+// Novi potion
+                        Map<String, Object> potionMap = new HashMap<>();
+                        potionMap.put("itemId", potionReward.getId());
+                        potionMap.put("quantity", 1);
+                        potionMap.put("bonusType", potionReward.getBonusType());
+                        potionMap.put("currentBonus", potionReward.getBonusValue());
+                        potionMap.put("lifespan", potionReward.getLifespan());
+                        potionMap.put("duplicated", false);
+
+                        userRef.collection("userItems").document(potionReward.getId())
+                                .set(potionMap, SetOptions.merge());
+
+                        Map<String, Object> clothingMap = new HashMap<>();
+                        clothingMap.put("itemId", clothingReward.getId());
+                        clothingMap.put("quantity", 1);
+                        clothingMap.put("bonusType", clothingReward.getBonusType());
+                        clothingMap.put("currentBonus", clothingReward.getBonusValue());
+                        clothingMap.put("lifespan", clothingReward.getLifespan());
+                        clothingMap.put("duplicated", false);
+
+                        userRef.collection("userItems").document(clothingReward.getId())
+                                .set(clothingMap, SetOptions.merge());
+
+                        // Poruka za korisnika
+                        rewardMessages.put(userId, "💰 " + coinsReward + " coins, "
+                                + potionReward.getName() + ", "
+                                + clothingReward.getName() + ", "
+                                + "badge: " + badgeImage);
+                    }
+
+                    tasksCompleted[0]++;
+                    if (tasksCompleted[0] == totalUsers) {
+                        // Svi korisnici završeni, pozovi callback
+                        String finalMessage = String.join("\n", rewardMessages.values());
+                        callback.onComplete(finalMessage, null);
+                    }
+                }
+
+                @Override
+                public void onError(Exception e) {
+                    tasksCompleted[0]++;
+                    if (tasksCompleted[0] == totalUsers) {
+                        String finalMessage = String.join("\n", rewardMessages.values());
+                        callback.onComplete(finalMessage, e);
+                    }
+                }
+            });
         }
 
-        // 4️⃣ Obeleži misiju kao završenu
+        // Završavanje misije
         mission.endMission();
         mission.incrementCompletedBossCount();
-
-        db.collection("alliances")
-                .document(mission.getAllianceId())
+        db.collection("alliances").document(mission.getAllianceId())
                 .update("missionStarted", false);
 
         repository.updateMission(mission, new UserRepository.RequestCallback() {
             @Override
             public void onSuccess() {
-                Log.d("SpecialMissionVM", "Rewards claimed for all members");
+                Log.d("SpecialMissionVM", "All rewards claimed successfully");
             }
 
             @Override
@@ -481,6 +409,11 @@ public class SpecialMissionViewModel extends AndroidViewModel {
                 e.printStackTrace();
             }
         });
+    }
+
+    // Callback interfejs
+    public interface RewardMessagesCallback {
+        void onComplete(String rewardMessages, @Nullable Exception e);
     }
 
 
@@ -494,56 +427,16 @@ public class SpecialMissionViewModel extends AndroidViewModel {
         }
     }
 
-
-    public LiveData<Boolean> hasActiveMission(String allianceId) {
-        MutableLiveData<Boolean> result = new MutableLiveData<>();
-        repository.getMission(allianceId).observeForever(mission -> {
-            result.postValue(mission != null && mission.isActive());
-        });
-        return result;
-    }
-
-
-    public void startMission(Alliance alliance) {
-        if (alliance == null) return;
-
-        SpecialMission newMission = new SpecialMission(alliance.getMemberIds().size());
-        newMission.setAllianceId(alliance.getAllianceId());
-
-        repository.saveMission(newMission, new UserRepository.RequestCallback() {
-            @Override
-            public void onSuccess() {
-                currentMission.postValue(newMission);
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                e.printStackTrace();
-            }
-        });
-    }
-    public LiveData<SpecialMission> refreshCurrentMission(String allianceId) {
-        MutableLiveData<SpecialMission> liveData = new MutableLiveData<>();
-        firestore.collection("specialMissions")
-                .whereEqualTo("allianceId", allianceId)
-                .get()
-                .addOnSuccessListener(querySnapshot -> {
-                    if (!querySnapshot.isEmpty()) {
-                        SpecialMission mission = querySnapshot.getDocuments().get(0).toObject(SpecialMission.class);
-                        liveData.setValue(mission);
-                    } else {
-                        liveData.setValue(null);
-                    }
-                });
-        return liveData;
-    }
-
-
     public void forceEndMission(String allianceId) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection("specialMissions")
+//        db.collection("specialMissions")
+//                .document(allianceId)
+//                .update("isActive", false);
+        FirebaseFirestore.getInstance()
+                .collection("missions")
                 .document(allianceId)
-                .update("isActive", false);
+                .delete();
+
 
         db.collection("alliances")
                 .document(allianceId)

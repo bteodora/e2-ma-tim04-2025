@@ -116,6 +116,7 @@
         <!-- Interval ponavljanja -->
         <LinearLayout
             style="@style/PixelPanelFilledStyle"
+            android:id="@+id/repeatLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"

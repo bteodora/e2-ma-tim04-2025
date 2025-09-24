@@ -170,7 +170,27 @@ public class SpecialMissionFragment extends Fragment {
                 btnStartMission.setVisibility(View.GONE);
                 showMissionUI(mission);
                 startMissionTimer();
-            } else {
+            }
+            else if(!mission.isActive() && viewModel.isRewardsAlreadyClaimed()){
+
+                viewModel.claimRewards((rewardMessage, e) -> {
+                    if (e != null) {
+                        Toast.makeText(getContext(), "Došlo je do greške prilikom nagrada", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(getContext(),
+                                "Misija je završena!\nDobio si: " + rewardMessage,
+                                Toast.LENGTH_LONG).show();
+                    }
+                });
+
+
+                viewModel.setRewardsAlreadyClaimed(true);
+                hideMissionUI();
+                textViewBossHP.setText("Nema aktivne misije");
+
+
+            }
+            else {
                 hideMissionUI();
                 textViewBossHP.setVisibility(View.VISIBLE);
                 textViewBossHP.setText("Nema aktivne misije");
@@ -253,14 +273,35 @@ public class SpecialMissionFragment extends Fragment {
                     long timeLeft = mission.getDurationMillis() - (System.currentTimeMillis() - mission.getStartTime());
                     textViewTimeLeft.setText(timeLeft > 0 ? "Preostalo dana: " + TimeUnit.MILLISECONDS.toDays(timeLeft) : "Misija je završena");
 
-                    if (!mission.isActive() || timeLeft <= 0) {
-                        viewModel.claimRewards();
+                       // if ((!mission.isActive() || timeLeft <= 0) && mission.getBossHP() <= 0) {
+
+                    if (mission.getBossHP() <= 255) {
                         allianceViewModel.setMissionStarted(false);
-                        viewModel.forceEndMission(mission.getAllianceId());
-                        stopMissionTimer();
-                        Toast.makeText(getContext(), "Misija je završena!", Toast.LENGTH_SHORT).show();
-                        return;
+                        mission.setActive(false);
+
+                        FirebaseFirestore.getInstance()
+                                .collection("specialMissions")
+                                .document(mission.getMissionId())
+                                .set(mission)   // ovo snima izmene u bazu
+                                .addOnSuccessListener(aVoid -> {
+                                    //String rewardMessage = viewModel.claimRewards();
+                                    viewModel.claimRewards((rewardMessage, e) -> {
+                                        if (e != null) {
+                                            Toast.makeText(getContext(), "Došlo je do greške prilikom nagrada", Toast.LENGTH_SHORT).show();
+                                        } else {
+                                            Toast.makeText(getContext(),
+                                                    "Misija je završena!\nDobio si: " + rewardMessage,
+                                                    Toast.LENGTH_LONG).show();
+                                        }
+                                    });
+
+                                    viewModel.forceEndMission(mission.getAllianceId());
+                                    stopMissionTimer();
+
+
+                                });
                     }
+
                     missionHandler.postDelayed(this, MISSION_CHECK_INTERVAL);
                 }
             }

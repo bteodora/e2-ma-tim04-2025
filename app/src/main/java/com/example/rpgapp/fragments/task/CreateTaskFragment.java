@@ -9,6 +9,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.Toast;
 
@@ -44,6 +45,7 @@ public class CreateTaskFragment extends Fragment {
     private int selectedYear, selectedMonth, selectedDay;
     private String selectedDueDate, selectedStartDate, selectedEndDate;
 
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -64,6 +66,8 @@ public class CreateTaskFragment extends Fragment {
         pickDueDateBtn = view.findViewById(R.id.btnPickDueDate);
         pickStartDateBtn = view.findViewById(R.id.btnPickStartDate);
         pickEndDateBtn = view.findViewById(R.id.btnPickEndDate);
+
+        LinearLayout repeatLayout = view.findViewById(R.id.repeatLayout);
 
         // Spinneri za ostale atribute
         frequencySpinner.setAdapter(new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_dropdown_item, frequencies));
@@ -93,12 +97,14 @@ public class CreateTaskFragment extends Fragment {
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 String freq = parent.getItemAtPosition(position).toString();
                 if(freq.equalsIgnoreCase("ponavljajući")) {
+                    repeatLayout.setVisibility(View.VISIBLE);
                     repeatIntervalEdit.setVisibility(View.VISIBLE);
                     repeatUnitSpinner.setVisibility(View.VISIBLE);
                     pickStartDateBtn.setVisibility(View.VISIBLE);
                     pickEndDateBtn.setVisibility(View.VISIBLE);
                     pickDueDateBtn.setVisibility(View.GONE);
                 } else {
+                    repeatLayout.setVisibility(View.GONE);
                     repeatIntervalEdit.setVisibility(View.GONE);
                     repeatUnitSpinner.setVisibility(View.GONE);
                     pickStartDateBtn.setVisibility(View.GONE);
