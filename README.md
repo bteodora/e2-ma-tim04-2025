@@ -36,34 +36,39 @@ Korisnici kreiraju svakodnevne zadatke i navike koje im donose XP poene, otklju�
 - **Lottie** – animacije (otvaranje kovčega, uspešan udarac bosa, konfete)  
 - **ZXing QR Code Scanner** – generisanje i skeniranje QR kodova korisnika  
 
-# 📱 Pregled ekrana aplikacije
+# Pregled ekrana aplikacije
 
 Svi screenshotovi podržavaju **svetli** i **tamni** režim (automatski prema podešavanju sistema).
 
 ---
 
-## 🔑 Autentikacija
+## Autentikacija
 | Registracija | Prijava | Profil |
 |--------------|---------|--------|
 | <picture><source srcset="screenshots/Register_dark.jpg" media="(prefers-color-scheme: dark)"><source srcset="screenshots/Register_light.jpg" media="(prefers-color-scheme: light)"><img src="screenshots/Register_light.jpg" width="200"></picture> | <picture><source srcset="screenshots/Login_dark.jpg" media="(prefers-color-scheme: dark)"><source srcset="screenshots/Login_light.jpg" media="(prefers-color-scheme: light)"><img src="screenshots/Login_light.jpg" width="200"></picture> | <picture><source srcset="screenshots/Profile_dark.jpg" media="(prefers-color-scheme: dark)"><source srcset="screenshots/Profile_light.jpg" media="(prefers-color-scheme: light)"><img src="screenshots/Profile_light.jpg" width="200"></picture> |
 
 ---
 
-## 👥 Društvene funkcije
+## Društvene funkcije
 | Prijatelji | Alijansa Info | Alijansa Chat |
 |------------|---------------|---------------|
 | <picture><source srcset="screenshots/Friends_dark.jpg" media="(prefers-color-scheme: dark)"><source srcset="screenshots/Friends_light.jpg" media="(prefers-color-scheme: light)"><img src="screenshots/Friends_light.jpg" width="200"></picture> | <picture><source srcset="screenshots/AllianceInfo_dark.jpg" media="(prefers-color-scheme: dark)"><source srcset="screenshots/AllianceInfo_light.jpg" media="(prefers-color-scheme: light)"><img src="screenshots/AllianceInfo_light.jpg" width="200"></picture> | <picture><source srcset="screenshots/AllianceChat_dark.jpg" media="(prefers-color-scheme: dark)"><source srcset="screenshots/AllianceChat_light.jpg" media="(prefers-color-scheme: light)"><img src="screenshots/AllianceChat_light.jpg" width="200"></picture> |
 
 ---
 
-## 🛒 Inventar i Shop
+## Inventar i Shop
 | Shop | Oprema |
 |------|--------|
 | <picture><source srcset="screenshots/Shop_dark.jpg" media="(prefers-color-scheme: dark)"><source srcset="screenshots/Shop_light.jpg" media="(prefers-color-scheme: light)"><img src="screenshots/Shop_light.jpg" width="200"></picture> | <picture><source srcset="screenshots/Equipped_dark.jpg" media="(prefers-color-scheme: dark)"><source srcset="screenshots/Equipped_light.jpg" media="(prefers-color-scheme: light)"><img src="screenshots/Equipped_light.jpg" width="200"></picture> |
 
 ---
 
-## 📊 Statistike
+## Statistike
 | Stats 1 | Stats 2 |
 |---------|---------|
 | <picture><source srcset="screenshots/Stats1_dark.jpg" media="(prefers-color-scheme: dark)"><source srcset="screenshots/Stats1_light.jpg" media="(prefers-color-scheme: light)"><img src="screenshots/Stats1_light.jpg" width="200"></picture> | <picture><source srcset="screenshots/Stats2_dark.jpg" media="(prefers-color-scheme: dark)"><source srcset="screenshots/Stats2_light.jpg" media="(prefers-color-scheme: light)"><img src="screenshots/Stats2_light.jpg" width="200"></picture> |
+
+## Demo
+
+[![Demo Video](screenshots/Login_dark.jpg)](screenshots/demo.mp4)
+
