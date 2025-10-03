@@ -72,7 +72,7 @@ Svi screenshotovi podržavaju **svetli** i **tamni** režim (automatski prema po
 ## 🎬 Demo
 
 <a href="screenshots/Demo.mp4">
-  <img src="screenshots/demo_preview.jpg" alt="Demo Video" width="200"/>
+  <img src="screenshots/Login_dark.jpg" alt="Demo Video" width="200"/>
 </a>
 
 
