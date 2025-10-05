@@ -69,10 +69,4 @@ Svi screenshotovi podržavaju **svetli** i **tamni** režim (automatski prema po
 | <picture><source srcset="screenshots/Stats1_dark.jpg" media="(prefers-color-scheme: dark)"><source srcset="screenshots/Stats1_light.jpg" media="(prefers-color-scheme: light)"><img src="screenshots/Stats1_light.jpg" width="200"></picture> | <picture><source srcset="screenshots/Stats2_dark.jpg" media="(prefers-color-scheme: dark)"><source srcset="screenshots/Stats2_light.jpg" media="(prefers-color-scheme: light)"><img src="screenshots/Stats2_light.jpg" width="200"></picture> |
 
 ## Demo
-## 🎬 Demo
-
-<a href="screenshots/Demo.mp4">
-  <img src="screenshots/Login_dark.jpg" alt="Demo Video" width="200"/>
-</a>
-
-
+<img src="screenshots/Demo.gif" alt="Demo Video" width="400"/>
