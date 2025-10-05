@@ -70,5 +70,7 @@ Svi screenshotovi podržavaju **svetli** i **tamni** režim (automatski prema po
 
 ## Demo
 <p align="center">
-  <img src="https://raw.githubusercontent.com/bteodora/e2-ma-tim04-2025/blob/main/screenshots/Demo.gif" alt="Demo Video" width="400"/>
+  <a href="https://github.com/user-attachments/assets/9473a89a-8e74-4167-9904-aef7dd8c234f">
+    <img src="screenshots/demo_preview.jpg" alt="Demo Video" width="400"/>
+  </a>
 </p>
