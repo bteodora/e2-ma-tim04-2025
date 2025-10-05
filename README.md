@@ -69,4 +69,6 @@ Svi screenshotovi podržavaju **svetli** i **tamni** režim (automatski prema po
 | <picture><source srcset="screenshots/Stats1_dark.jpg" media="(prefers-color-scheme: dark)"><source srcset="screenshots/Stats1_light.jpg" media="(prefers-color-scheme: light)"><img src="screenshots/Stats1_light.jpg" width="200"></picture> | <picture><source srcset="screenshots/Stats2_dark.jpg" media="(prefers-color-scheme: dark)"><source srcset="screenshots/Stats2_light.jpg" media="(prefers-color-scheme: light)"><img src="screenshots/Stats2_light.jpg" width="200"></picture> |
 
 ## Demo
-<img src="screenshots/Demo.gif" alt="Demo Video" width="400"/>
+<p align="center">
+  <img src="https://raw.githubusercontent.com/bteodora/e2-ma-tim04-2025/blob/main/screenshots/Demo.gif" alt="Demo Video" width="400"/>
+</p>
