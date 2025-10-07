@@ -74,3 +74,14 @@ Svi screenshotovi podržavaju **svetli** i **tamni** režim (automatski prema po
     <img src="screenshots/thumbnail.png" alt="Demo Video" width="400"/>
   </a>
 </p>
+
+---
+
+<h2 align="left"> Specifikacija projekta</h2>
+
+<p align="center">
+  <a href="https://raw.githubusercontent.com/bteodora/e2-ma-tim04-2025/main/screenshots/Specifikacija%20projekta.pdf" target="_blank">
+    <img src="https://img.shields.io/badge/Pogledaj%20PDF%20specifikaciju-ACB2E2?style=for-the-badge&logo=adobeacrobatreader&logoColor=white" alt="Specifikacija projekta"/>
+  </a>
+</p>
+
