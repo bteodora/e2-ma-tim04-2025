@@ -69,8 +69,8 @@ Svi screenshotovi podržavaju **svetli** i **tamni** režim (automatski prema po
 | <picture><source srcset="screenshots/Stats1_dark.jpg" media="(prefers-color-scheme: dark)"><source srcset="screenshots/Stats1_light.jpg" media="(prefers-color-scheme: light)"><img src="screenshots/Stats1_light.jpg" width="200"></picture> | <picture><source srcset="screenshots/Stats2_dark.jpg" media="(prefers-color-scheme: dark)"><source srcset="screenshots/Stats2_light.jpg" media="(prefers-color-scheme: light)"><img src="screenshots/Stats2_light.jpg" width="200"></picture> |
 
 ## Demo
-<p align="center">
+<p align="left">
   <a href="https://github.com/user-attachments/assets/9473a89a-8e74-4167-9904-aef7dd8c234f">
-    <img src="screenshots/demo_preview.jpg" alt="Demo Video" width="400"/>
+    <img src="screenshots/thumbnail.png" alt="Demo Video" width="400"/>
   </a>
 </p>
